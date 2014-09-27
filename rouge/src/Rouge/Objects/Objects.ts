@@ -1,0 +1,4 @@
+﻿module Rouge.Objects {
+
+   
+}
