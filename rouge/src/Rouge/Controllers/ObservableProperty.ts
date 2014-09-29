@@ -1,4 +1,4 @@
-﻿module Rouge.Control {
+﻿module Rouge.Controllers.Player {
 
     export class ObservableProperty<T> implements IObservable {
 

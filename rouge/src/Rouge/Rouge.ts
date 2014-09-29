@@ -4,7 +4,7 @@
         name: string;
         x: number;
         y: number;
-        tryStrike(attack: any);
+        getStruck(attack: any): Entities.AttackResult;
         nextAction;
         hasAP(): boolean;
     }
@@ -56,4 +56,5 @@
 
 window.onload = () => {
     document.getElementById("content").appendChild(new Rouge.Console.Game().display.getContainer());
+    Rouge.Controllers.Player.init();
 };

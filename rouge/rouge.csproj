@@ -25,15 +25,18 @@
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
+    <TypeScriptCompile Include="src\Rouge\Constants.ts" />
+    <TypeScriptCompile Include="src\Rouge\Controllers\Player.ts" />
+    <TypeScriptCompile Include="src\Rouge\Entities\AttackResult.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\Entities.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\Skill.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\Skillset.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\Trait.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\Console.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\Game.ts" />
-    <TypeScriptCompile Include="src\Rouge\Control\ChangeProperty.ts" />
-    <TypeScriptCompile Include="src\Rouge\Control\Control.ts" />
-    <TypeScriptCompile Include="src\Rouge\Control\EntityManager.ts" />
+    <TypeScriptCompile Include="src\Rouge\Controllers\ChangeProperty.ts" />
+    <TypeScriptCompile Include="src\Rouge\Controllers\Controllers.ts" />
+    <TypeScriptCompile Include="src\Rouge\Controllers\EntityManager.ts" />
     <TypeScriptCompile Include="src\Rouge\Dungeon\Dungeon.ts" />
     <TypeScriptCompile Include="src\Rouge\Dungeon\Level.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\Foe.ts" />
@@ -48,7 +51,7 @@
     <TypeScriptCompile Include="src\Rouge\Objects\Objects.ts" />
     <TypeScriptCompile Include="src\Rouge\Objects\Weapon.ts" />
     <TypeScriptCompile Include="src\Rouge\Rouge.ts" />
-    <TypeScriptCompile Include="src\Rouge\Control\ObservableProperty.ts" />
+    <TypeScriptCompile Include="src\Rouge\Controllers\ObservableProperty.ts" />
   </ItemGroup>
   <ItemGroup>
     <None Include="web.Debug.config">

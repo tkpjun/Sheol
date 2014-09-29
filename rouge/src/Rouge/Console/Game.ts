@@ -4,14 +4,14 @@
         display: ROT.Display;
         dungeon: Dungeon.Level[];
         currLevel: number;
-        manager: Control.EntityManager;
+        manager: Controllers.Player.EntityManager;
         
 
         constructor() {
             this.display = new ROT.Display({ fontSize: 23 });
             this.dungeon = new Array<Dungeon.Level>(new Dungeon.Level(Dungeon.MapType.MINES));
             this.currLevel = 0;
-            this.manager = new Control.EntityManager(this.dungeon[this.currLevel]);
+            this.manager = new Controllers.Player.EntityManager(this.dungeon[this.currLevel]);
             this.manager.changed.attach({ update: () => { this.drawMap(); this.drawEntities(); } });
             this.drawMap();
             this.drawEntities();

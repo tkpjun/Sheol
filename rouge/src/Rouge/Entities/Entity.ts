@@ -21,7 +21,7 @@
             this._y = value;
         }
 
-        tryStrike(attack) {
+        getStruck(attack): AttackResult {
             throw ("Abstract!");
         }
 

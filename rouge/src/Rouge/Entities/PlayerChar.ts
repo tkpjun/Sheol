@@ -9,5 +9,13 @@ module Rouge.Entities {
         inventory: IItem[];
         equipment: any;
         effects: any;
+
+        constructor() {
+            super();
+            this.skills = new Skillset();
+            this.traits = new Array<Trait>();
+            this.stats = new Stats(30, 6, 100, 30);
+            this.inventory = new Array<IItem>();
+        }
     }
 } 

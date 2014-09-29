@@ -1,4 +1,4 @@
-﻿module Rouge.Control {
+﻿module Rouge.Controllers.Player {
 
     export class EntityManager {
 
@@ -26,7 +26,7 @@
             player1.y = room.getCenter()[1];
             this.characters.push(player1);
             this.level.scheduler.add(
-                new Control.ChangeProperty(this.currEntity, player1), true);
+                new Controllers.Player.ChangeProperty(this.currEntity, player1), true);
 
 
             this.engine.start();
@@ -34,20 +34,22 @@
 
         private update() {
             this.engine.lock();
-
-            /*
             var entity = this.currEntity.property;
-            while (entity.hasAP) {
+
+            var pollForAction = () => {
                 planAction(entity, this.level);
                 var action = entity.nextAction;
-                if (action != null) {
+                if (action) {
                     action();
                     this.changed.notify();
                 }
+                if (entity.hasAP) {
+                    setTimeout(pollForAction, 33);
+                }
             }
-*/
+            pollForAction();
 
-            this.changed.notify();
+            //this.changed.notify();
             this.level.scheduler.setDuration(1);
             //setTimeout(this.engine.unlock(), 100);
         }

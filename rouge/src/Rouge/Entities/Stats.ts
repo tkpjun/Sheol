@@ -10,7 +10,31 @@
         enduranceMax: number;
         equipWeight: number;
         exp: number;
-        expToLevel: number;
-        level: number;
+
+        constructor(maxHp: number, maxAP: number, maxEnd: number, eqWt: number) {
+            this.hp = maxHp;
+            this.hpMax = maxHp;
+            this.ap = maxAP;
+            this.apMax = maxAP;
+            this.endurance = maxEnd;
+            this.enduranceMax = maxEnd;
+            this.equipWeight = eqWt;
+            this.exp = 0;
+        }
+
+        setHP(val: number): Stats {
+            this.hp = val;
+            return this;
+        }
+
+        setAP(val: number): Stats {
+            this.ap = val;
+            return this;
+        }
+
+        setEndurance(val: number): Stats {
+            this.endurance = val;
+            return this;
+        }
     }
 } 

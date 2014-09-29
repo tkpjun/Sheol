@@ -1,4 +1,4 @@
-﻿module Rouge.Control {
+﻿module Rouge.Controllers.Player {
 
     export class ChangeProperty<T> implements ROT.IActor {
 
