@@ -1,7 +1,7 @@
 ﻿///<reference path="Entity.ts"/>
 module Rouge.Entities {
 
-    export class PlayerChar extends Entity {
+    export class Enemy extends Entity {
 
         skills: Skillset;
         traits: Trait[];
@@ -33,4 +33,4 @@ module Rouge.Entities {
             this.active = true;
         }
     }
-} 
+}

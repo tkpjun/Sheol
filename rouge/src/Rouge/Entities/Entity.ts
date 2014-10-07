@@ -3,6 +3,7 @@
     export class Entity implements IEntity {
 
         name: string;
+        stats: Stats;
         private _x: number;
         private _y: number;
         private action: () => void;
@@ -35,6 +36,14 @@
 
         hasAP(): boolean {
             return false;
+        }
+
+        didntEnd(): boolean {
+            return false;
+        }
+
+        newTurn() {
+            throw ("Abstract!");
         }
     }
 }

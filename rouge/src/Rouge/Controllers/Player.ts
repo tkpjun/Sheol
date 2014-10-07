@@ -3,7 +3,7 @@
     var _canvas;
     var _lastDownTarget;
     var _char: Entities.PlayerChar;
-    var _map: ROT.IMap;
+    var _level: Dungeon.Level;
     var _active = false;
 
     export function init() {
@@ -38,10 +38,10 @@
         }, false);*/
     };
 
-    export function activate(char: Entities.PlayerChar, map: ROT.IMap) {
+    export function activate(char: Entities.PlayerChar, level: Dungeon.Level) {
         if (!_active) {
             _char = char;
-            _map = map;
+            _level = level;
             _active = true;
         }
     }
@@ -76,11 +76,13 @@
             case "VK_C":
                 tryMove(Direction.SOUTHEAST);
                 break;
+            case "VK_SPACE":
+                endTurn();
+                break;
             default:
                 break;
         }
 
-        _active = false;
     }
 
     function tryMove(dir: Direction) {
@@ -112,21 +114,61 @@
                 break;
         }
 
-        if (isPassable(location, _map)) {
+        function apCost() {
+            if (dir === Direction.NORTH || dir === Direction.SOUTH || dir === Direction.WEST || dir === Direction.EAST) {
+                return 2;
+            }
+            else {
+                return 3;
+            }
+        }
+
+        function canPass() {
+            switch (dir) {
+                case Direction.NORTHWEST:
+                    return isPassable(location, _level) &&
+                           isPassable({ x: location.x + 1, y: location.y }, _level) &&
+                           isPassable({ x: location.x, y: location.y + 1 }, _level);
+                    break;
+                case Direction.NORTHEAST:
+                    return isPassable(location, _level) &&
+                        isPassable({ x: location.x - 1, y: location.y }, _level) &&
+                        isPassable({ x: location.x, y: location.y + 1 }, _level);
+                    break;
+                case Direction.SOUTHWEST:
+                    return isPassable(location, _level) &&
+                        isPassable({ x: location.x + 1, y: location.y }, _level) &&
+                        isPassable({ x: location.x, y: location.y - 1 }, _level);
+                    break;
+                case Direction.SOUTHEAST:
+                    return isPassable(location, _level) &&
+                        isPassable({ x: location.x - 1, y: location.y }, _level) &&
+                        isPassable({ x: location.x, y: location.y - 1 }, _level);
+                    break;
+                default:
+                    return isPassable(location, _level);
+                    break;
+            }
+        }
+
+        if (canPass() && _char.stats.ap >= apCost()) {
             _char.nextAction = () => {
                 _char.x = location.x;
                 _char.y = location.y;
-                if (dir == Direction.NORTH || Direction.SOUTH || Direction.WEST || Direction.EAST) {
-                    _char.stats.ap -= 2;
-                }
-                else {
-                    _char.stats.ap -= 3;
+                _char.stats.ap -= apCost();
+                console.log("AP left: " + _char.stats.ap);
+
+                if (!_char.hasAP()) {
+                    _active = false;
                 }
             }
         }
-        else {
-            console.log("not passable");
-            return;
+    }
+
+    function endTurn() {
+        _char.nextAction = () => {
+            _char.active = false;
+            _active = false;
         }
     }
 } 

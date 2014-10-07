@@ -1,9 +1,9 @@
-﻿module Rouge.Controllers.Player {
+﻿module Rouge.Controllers {
 
     export class EntityManager {
 
         level: Dungeon.Level;
-        currEntity: ObservableProperty<IEntity>;
+        currEntity: ObservableProperty<Entities.Entity>;
         characters: Entities.PlayerChar[];
         engine: ROT.Engine;
         changed: IObservable;
@@ -19,20 +19,37 @@
             this.start();
         }
 
-        start() {
+        pause() {
+            this.engine.lock();
+        }
+
+        private start() {
             var room = (<ROT.Map.Dungeon>this.level.map).getRooms()[0];
-            var player1 = new Entities.PlayerChar();
+            var player1 = new Entities.PlayerChar("char1");
             player1.x = room.getCenter()[0];
             player1.y = room.getCenter()[1];
             this.characters.push(player1);
             this.level.scheduler.add(
-                new Controllers.Player.ChangeProperty(this.currEntity, player1), true);
+                new Controllers.ChangeProperty(this.currEntity, player1), true);
 
+            var player2 = new Entities.PlayerChar("char2");
+            player2.x = room.getCenter()[0] + 1;
+            player2.y = room.getCenter()[1];
+            this.characters.push(player2);
+            this.level.scheduler.add(
+                new Controllers.ChangeProperty(this.currEntity, player2), true);
+
+            var enemy = new Entities.Enemy("enemy");
+            var room2 = (<ROT.Map.Dungeon>this.level.map).getRooms()[1];
+            enemy.x = room2.getCenter()[0];
+            enemy.y = room2.getCenter()[1];
+            this.level.entities.push(enemy);
+            this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true);
 
             this.engine.start();
         }
 
-        private update() {
+        update() {
             this.engine.lock();
             var entity = this.currEntity.property;
 
@@ -41,17 +58,23 @@
                 var action = entity.nextAction;
                 if (action) {
                     action();
+                    entity.nextAction = undefined;
                     this.changed.notify();
                 }
-                if (entity.hasAP) {
-                    setTimeout(pollForAction, 33);
+
+                if (entity.hasAP() && entity.didntEnd()) {
+                    setTimeout(pollForAction, Constants.UPDATE_RATE);
+                }
+                else {
+                    this.level.scheduler.setDuration(1 - (entity.stats.ap / entity.stats.apMax));
+                    console.log("Time until next turn: " + (1 - (entity.stats.ap / entity.stats.apMax)).toFixed(2));
+                    entity.newTurn();
+                    this.changed.notify();
+                    this.engine.unlock();
                 }
             }
-            pollForAction();
-
-            //this.changed.notify();
-            this.level.scheduler.setDuration(1);
-            //setTimeout(this.engine.unlock(), 100);
+            //entity.newTurn();
+            pollForAction();           
         }
     }
 } 

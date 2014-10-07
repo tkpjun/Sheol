@@ -7,6 +7,7 @@
         getStruck(attack: any): Entities.AttackResult;
         nextAction;
         hasAP(): boolean;
+        newTurn();
     }
 
     export interface IObject {

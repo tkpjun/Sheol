@@ -1,4 +1,4 @@
-﻿module Rouge.Controllers.Player {
+﻿module Rouge.Controllers {
 
     export enum Direction {
         NORTH, 
@@ -16,19 +16,19 @@
         y: number
     }
 
-    export function isPassable(loc: ILocation, map: ROT.IMap): boolean {
-        var cell = map[loc.x + "," + loc.y];
-        //return cell === 0;
-        return true;
+    export function isPassable(loc: ILocation, level: Dungeon.Level): boolean {
+        var cell = level.map[loc.x + "," + loc.y];
+        return cell !== " ";
     }
 
     export function planAction(entity: IEntity, level: Dungeon.Level) {
 
         if (entity instanceof Entities.PlayerChar) {
-            Player.activate(<Entities.PlayerChar>entity, level.map);
+            Player.activate(<Entities.PlayerChar>entity, level);
         }
-        else {
-
+        else if (entity instanceof Entities.Enemy) {
+            var enemy = <Entities.Enemy>entity;
+            enemy.nextAction = () => { enemy.stats.ap = 0; enemy.active = false; }
         }
     }
 }
