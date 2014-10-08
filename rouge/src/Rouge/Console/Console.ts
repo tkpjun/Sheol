@@ -1,10 +1,22 @@
 ﻿module Rouge.Console {
 
-    export interface IPrintable {
+    export class Constants {
+
+        static get LEFT_UI_WIDTH(): number {
+            return 12
+        }
+        static get DISPLAY_WIDTH(): number {
+            return 92
+        }
+        static get DISPLAY_HEIGHT(): number {
+            return 34
+        }
+    }
+
+    export interface IDrawable {
         symbol: string;
-        color: ROT.Color;
-        x: number;
-        y: number;
+        color?: string;
+        bgColor?: string;
     }
 
     export function symbolO(item: IObject): string {

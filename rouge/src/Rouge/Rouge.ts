@@ -4,7 +4,7 @@
         name: string;
         x: number;
         y: number;
-        getStruck(attack: any): Entities.AttackResult;
+        //getStruck(attack: any): Entities.AttackResult;
         nextAction;
         hasAP(): boolean;
         newTurn();

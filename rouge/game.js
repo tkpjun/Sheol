@@ -12,9 +12,9 @@
                 this.display = display;
             }
             Camera.prototype.centerOn = function (x, y) {
-                this.x = Math.floor(x - this.width / 2);
+                this.x = Math.floor(x - this.width / 2) - 1;
                 if (y)
-                    this.y = Math.floor(y - this.height / 2);
+                    this.y = Math.floor(y - this.height / 2) - 1;
             };
 
             Camera.prototype.translate = function (x, y) {
@@ -22,43 +22,195 @@
                 this.y += y;
             };
 
-            Camera.prototype.draw = function (level, players) {
-                this.drawMap(level.map);
-                this.drawEntities(level.entities, players);
+            Camera.prototype.getView = function (level, players) {
+                var map = this.getMapView(level.map);
+                return this.addEntities(map, level.entities, players);
             };
 
-            Camera.prototype.drawMap = function (map) {
+            Camera.prototype.getMapView = function (map) {
+                var matrix = new Array();
+                for (var i = 0; i < this.width; i++) {
+                    matrix[i] = new Array();
+                }
+
                 for (var key in map) {
                     var parts = key.split(",");
                     var x = parseInt(parts[0]);
                     var y = parseInt(parts[1]);
+
+                    if (isNaN(x) || isNaN(y)) {
+                        continue;
+                    }
                     if (x < this.x || y < this.y || x > this.x + this.width - 1 || y > this.y + this.height - 1) {
                         continue;
                     }
 
                     switch (map[key]) {
                         case " ":
-                            this.display.draw(x - this.x + this.xOffset, y - this.y + this.yOffset, map[key], "white", "gray");
+                            matrix[x - this.x][y - this.y] = {
+                                symbol: map[key],
+                                color: "white",
+                                bgColor: "gray"
+                            };
                             break;
                         default:
-                            this.display.draw(x - this.x + this.xOffset, y - this.y + this.yOffset, map[key]);
+                            matrix[x - this.x][y - this.y] = {
+                                symbol: map[key]
+                            };
                             break;
                     }
                 }
+                return new Console.DrawMatrix(this.xOffset, this.yOffset, matrix);
             };
 
-            Camera.prototype.drawEntities = function (entities, characters) {
+            Camera.prototype.addEntities = function (matrix, entities, characters) {
                 var _this = this;
                 entities.forEach(function (e) {
-                    _this.display.draw(e.x - _this.x + _this.xOffset, e.y - _this.y + _this.yOffset, "e");
+                    if (e.x < _this.x || e.y < _this.y || e.x > _this.x + _this.width - 1 || e.y > _this.y + _this.height - 1) {
+                    } else {
+                        matrix.matrix[e.x - _this.x][e.y - _this.y] = {
+                            symbol: "e"
+                        };
+                    }
                 });
                 characters.forEach(function (p) {
-                    _this.display.draw(p.x - _this.x + _this.xOffset, p.y - _this.y + _this.yOffset, "@");
+                    matrix.matrix[p.x - _this.x][p.y - _this.y] = {
+                        symbol: "@"
+                    };
                 });
+
+                return matrix;
             };
             return Camera;
         })();
         Console.Camera = Camera;
+    })(Rouge.Console || (Rouge.Console = {}));
+    var Console = Rouge.Console;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Console) {
+        var Constants = (function () {
+            function Constants() {
+            }
+            Object.defineProperty(Constants, "LEFT_UI_WIDTH", {
+                get: function () {
+                    return 12;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Constants, "DISPLAY_WIDTH", {
+                get: function () {
+                    return 92;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Constants, "DISPLAY_HEIGHT", {
+                get: function () {
+                    return 34;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            return Constants;
+        })();
+        Console.Constants = Constants;
+
+        function symbolO(item) {
+            throw ("TODO");
+        }
+        Console.symbolO = symbolO;
+
+        function colorO(item) {
+            throw ("TODO");
+        }
+        Console.colorO = colorO;
+
+        function symbolE(entity) {
+            throw ("TODO");
+        }
+        Console.symbolE = symbolE;
+
+        function colorE(entity) {
+            throw ("TODO");
+        }
+        Console.colorE = colorE;
+    })(Rouge.Console || (Rouge.Console = {}));
+    var Console = Rouge.Console;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Console) {
+        var DrawMatrix = (function () {
+            function DrawMatrix(xOffset, yOffset, matrix) {
+                this.xOffset = xOffset;
+                this.yOffset = yOffset;
+                this.matrix = matrix;
+            }
+            DrawMatrix.prototype.combine = function (other) {
+                var newXOff = Math.min(this.xOffset, other.xOffset);
+                var newYOff = Math.min(this.yOffset, other.yOffset);
+
+                if (newXOff < this.xOffset) {
+                    var ext = new Array();
+                    for (var i = 0; i < newXOff - this.xOffset; i++) {
+                        ext[i] = new Array();
+                        for (var j = 0; j < this.matrix[0].length; j++) {
+                            ext[i][j] = { symbol: " " };
+                        }
+                    }
+                    this.matrix = ext.concat(this.matrix);
+                    this.xOffset = newXOff;
+                }
+                if (newYOff < this.yOffset) {
+                    for (var i = 0; i < this.matrix.length; i++) {
+                        var ext2 = new Array();
+                        for (var j = 0; j < newYOff - this.yOffset; j++) {
+                            ext2[j] = { symbol: " " };
+                        }
+                        this.matrix[i] = ext2.concat(this.matrix[i]);
+                    }
+                    this.yOffset = newYOff;
+                }
+
+                for (var i = 0; i < other.matrix.length; i++) {
+                    for (var j = 0; j < other.matrix[0].length; j++) {
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].symbol = other.matrix[i][j].symbol;
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = other.matrix[i][j].color;
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor = other.matrix[i][j].bgColor;
+                    }
+                }
+
+                return this;
+            };
+
+            DrawMatrix.prototype.draw = function (display) {
+                for (var i = 0; i < this.matrix.length; i++) {
+                    for (var j = 0; j < this.matrix[0].length; j++) {
+                        display.draw(i + this.xOffset, j + this.yOffset, this.matrix[i][j].symbol, this.matrix[i][j].color, this.matrix[i][j].bgColor);
+                    }
+                }
+            };
+            return DrawMatrix;
+        })();
+        Console.DrawMatrix = DrawMatrix;
+    })(Rouge.Console || (Rouge.Console = {}));
+    var Console = Rouge.Console;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Console) {
+        var Game = (function () {
+            function Game() {
+                this.display = new ROT.Display({ fontSize: 23, width: Console.Constants.DISPLAY_WIDTH, height: Console.Constants.DISPLAY_HEIGHT });
+                this.gameScreen = new Console.GameScreen(this.display);
+                this.screen = this.gameScreen;
+            }
+            return Game;
+        })();
+        Console.Game = Game;
     })(Rouge.Console || (Rouge.Console = {}));
     var Console = Rouge.Console;
 })(Rouge || (Rouge = {}));
@@ -91,19 +243,19 @@ var Rouge;
                         _this.draw();
                     }
                 });
-                this.camera = new Console.Camera(Rouge.Constants.LEFT_UI_WIDTH, this.display.getOptions().width - Rouge.Constants.LEFT_UI_WIDTH, 0, this.display.getOptions().height, this.display);
+                this.camera = new Console.Camera(Console.Constants.LEFT_UI_WIDTH, this.display.getOptions().width - Console.Constants.LEFT_UI_WIDTH * 2, 0, this.display.getOptions().height - 1, this.display);
                 this.draw();
             }
             GameScreen.prototype.draw = function () {
                 this.display.clear();
-                this.camera.draw(this.manager.level, this.manager.characters);
+                this.camera.getView(this.manager.level, this.manager.characters).draw(this.display);
                 this.drawUI();
             };
 
             GameScreen.prototype.drawUI = function () {
                 var p1 = this.manager.characters[0];
                 var p2 = this.manager.characters[1];
-                var w = Rouge.Constants.LEFT_UI_WIDTH;
+                var w = Console.Constants.LEFT_UI_WIDTH;
 
                 this.display.drawText(1, 1, p1.name, w);
                 this.display.drawText(1, 3, "HP: " + p1.stats.hp + "/" + p1.stats.hpMax, w);
@@ -143,30 +295,182 @@ var Rouge;
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(Constants, "LEFT_UI_WIDTH", {
-            get: function () {
-                return 12;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Constants, "DISPLAY_WIDTH", {
-            get: function () {
-                return 92;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Constants, "DISPLAY_HEIGHT", {
-            get: function () {
-                return 34;
-            },
-            enumerable: true,
-            configurable: true
-        });
         return Constants;
     })();
     Rouge.Constants = Constants;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Controllers) {
+        var ChangeProperty = (function () {
+            function ChangeProperty(which, to) {
+                this.func = function () {
+                    which.property = to;
+                };
+            }
+            ChangeProperty.prototype.act = function () {
+                this.func();
+            };
+            return ChangeProperty;
+        })();
+        Controllers.ChangeProperty = ChangeProperty;
+    })(Rouge.Controllers || (Rouge.Controllers = {}));
+    var Controllers = Rouge.Controllers;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Controllers) {
+        (function (Direction) {
+            Direction[Direction["NORTH"] = 0] = "NORTH";
+            Direction[Direction["SOUTH"] = 1] = "SOUTH";
+            Direction[Direction["WEST"] = 2] = "WEST";
+            Direction[Direction["EAST"] = 3] = "EAST";
+            Direction[Direction["NORTHWEST"] = 4] = "NORTHWEST";
+            Direction[Direction["NORTHEAST"] = 5] = "NORTHEAST";
+            Direction[Direction["SOUTHWEST"] = 6] = "SOUTHWEST";
+            Direction[Direction["SOUTHEAST"] = 7] = "SOUTHEAST";
+        })(Controllers.Direction || (Controllers.Direction = {}));
+        var Direction = Controllers.Direction;
+
+        function isPassable(loc, level) {
+            var cell = level.map[loc.x + "," + loc.y];
+            return cell !== " ";
+        }
+        Controllers.isPassable = isPassable;
+
+        function planAction(entity, level) {
+            if (entity instanceof Rouge.Entities.PlayerChar) {
+                Controllers.Player.activate(entity, level);
+            } else if (entity instanceof Rouge.Entities.Enemy) {
+                var enemy = entity;
+                enemy.nextAction = function () {
+                    enemy.stats.ap = 0;
+                    enemy.active = false;
+                };
+            }
+        }
+        Controllers.planAction = planAction;
+    })(Rouge.Controllers || (Rouge.Controllers = {}));
+    var Controllers = Rouge.Controllers;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Controllers) {
+        var EntityManager = (function () {
+            function EntityManager(level) {
+                var _this = this;
+                this.level = level;
+                this.currEntity = new Controllers.ObservableProperty(null);
+                this.currEntity.attach({ update: function () {
+                        return _this.update();
+                    } });
+                this.engine = new ROT.Engine(this.level.scheduler);
+                this.changed = new Rouge.Observable();
+                this.characters = new Array();
+
+                this.start();
+            }
+            EntityManager.prototype.pause = function () {
+                this.engine.lock();
+            };
+
+            EntityManager.prototype.start = function () {
+                var room = this.level.map.getRooms()[0];
+                var player1 = new Rouge.Entities.PlayerChar("char1");
+                player1.x = room.getCenter()[0];
+                player1.y = room.getCenter()[1];
+                this.characters.push(player1);
+                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player1), true);
+
+                var player2 = new Rouge.Entities.PlayerChar("char2");
+                player2.x = room.getCenter()[0] + 1;
+                player2.y = room.getCenter()[1];
+                this.characters.push(player2);
+                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player2), true);
+
+                var enemy = new Rouge.Entities.Enemy("enemy");
+                var room2 = this.level.map.getRooms()[1];
+                enemy.x = room2.getCenter()[0];
+                enemy.y = room2.getCenter()[1];
+                this.level.entities.push(enemy);
+                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true);
+
+                this.engine.start();
+            };
+
+            EntityManager.prototype.update = function () {
+                var _this = this;
+                this.engine.lock();
+                var entity = this.currEntity.property;
+
+                var pollForAction = function () {
+                    Controllers.planAction(entity, _this.level);
+                    var action = entity.nextAction;
+                    if (action) {
+                        action();
+                        entity.nextAction = undefined;
+                        _this.changed.notify();
+                    }
+
+                    if (entity.hasAP() && entity.didntEnd()) {
+                        setTimeout(pollForAction, Rouge.Constants.UPDATE_RATE);
+                    } else {
+                        _this.level.scheduler.setDuration(1 - (entity.stats.ap / entity.stats.apMax));
+                        console.log("Time until next turn: " + (1 - (entity.stats.ap / entity.stats.apMax)).toFixed(2));
+                        entity.newTurn();
+                        _this.changed.notify();
+                        _this.engine.unlock();
+                    }
+                };
+
+                //entity.newTurn();
+                pollForAction();
+            };
+            return EntityManager;
+        })();
+        Controllers.EntityManager = EntityManager;
+    })(Rouge.Controllers || (Rouge.Controllers = {}));
+    var Controllers = Rouge.Controllers;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Controllers) {
+        var ObservableProperty = (function () {
+            function ObservableProperty(property) {
+                this.observers = new Array();
+                this._property = property;
+            }
+            ObservableProperty.prototype.attach = function (observer) {
+                this.observers.push(observer);
+            };
+
+            ObservableProperty.prototype.detach = function (observer) {
+                var index = this.observers.indexOf(observer);
+                this.observers.splice(index, 1);
+            };
+
+            ObservableProperty.prototype.notify = function () {
+                this.observers.forEach(function (o) {
+                    o.update();
+                });
+            };
+
+            Object.defineProperty(ObservableProperty.prototype, "property", {
+                get: function () {
+                    return this._property;
+                },
+                set: function (property) {
+                    this._property = property;
+                    this.notify();
+                },
+                enumerable: true,
+                configurable: true
+            });
+            return ObservableProperty;
+        })();
+        Controllers.ObservableProperty = ObservableProperty;
+    })(Rouge.Controllers || (Rouge.Controllers = {}));
+    var Controllers = Rouge.Controllers;
 })(Rouge || (Rouge = {}));
 var Rouge;
 (function (Rouge) {
@@ -342,243 +646,6 @@ var Rouge;
 })(Rouge || (Rouge = {}));
 var Rouge;
 (function (Rouge) {
-    (function (Entities) {
-        var AttackResult = (function () {
-            function AttackResult() {
-            }
-            return AttackResult;
-        })();
-        Entities.AttackResult = AttackResult;
-    })(Rouge.Entities || (Rouge.Entities = {}));
-    var Entities = Rouge.Entities;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Entities) {
-        (function (Skills) {
-            Skills[Skills["prowess"] = 0] = "prowess";
-            Skills[Skills["perception"] = 1] = "perception";
-            Skills[Skills["wrestling"] = 2] = "wrestling";
-            Skills[Skills["evasion"] = 3] = "evasion";
-            Skills[Skills["fortitude"] = 4] = "fortitude";
-            Skills[Skills["will"] = 5] = "will";
-            Skills[Skills["stealth"] = 6] = "stealth";
-        })(Entities.Skills || (Entities.Skills = {}));
-        var Skills = Entities.Skills;
-    })(Rouge.Entities || (Rouge.Entities = {}));
-    var Entities = Rouge.Entities;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Entities) {
-        var Skill = (function () {
-            function Skill() {
-            }
-            return Skill;
-        })();
-        Entities.Skill = Skill;
-    })(Rouge.Entities || (Rouge.Entities = {}));
-    var Entities = Rouge.Entities;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Entities) {
-        var Skillset = (function () {
-            function Skillset() {
-            }
-            return Skillset;
-        })();
-        Entities.Skillset = Skillset;
-    })(Rouge.Entities || (Rouge.Entities = {}));
-    var Entities = Rouge.Entities;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Entities) {
-        var Trait = (function () {
-            function Trait() {
-            }
-            return Trait;
-        })();
-        Entities.Trait = Trait;
-    })(Rouge.Entities || (Rouge.Entities = {}));
-    var Entities = Rouge.Entities;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Console) {
-        function symbolO(item) {
-            throw ("TODO");
-        }
-        Console.symbolO = symbolO;
-
-        function colorO(item) {
-            throw ("TODO");
-        }
-        Console.colorO = colorO;
-
-        function symbolE(entity) {
-            throw ("TODO");
-        }
-        Console.symbolE = symbolE;
-
-        function colorE(entity) {
-            throw ("TODO");
-        }
-        Console.colorE = colorE;
-    })(Rouge.Console || (Rouge.Console = {}));
-    var Console = Rouge.Console;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Console) {
-        var Game = (function () {
-            function Game() {
-                this.display = new ROT.Display({ fontSize: 23, width: Rouge.Constants.DISPLAY_WIDTH, height: Rouge.Constants.DISPLAY_HEIGHT });
-                this.gameScreen = new Console.GameScreen(this.display);
-                this.screen = this.gameScreen;
-            }
-            return Game;
-        })();
-        Console.Game = Game;
-    })(Rouge.Console || (Rouge.Console = {}));
-    var Console = Rouge.Console;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Controllers) {
-        var ChangeProperty = (function () {
-            function ChangeProperty(which, to) {
-                this.func = function () {
-                    which.property = to;
-                };
-            }
-            ChangeProperty.prototype.act = function () {
-                this.func();
-            };
-            return ChangeProperty;
-        })();
-        Controllers.ChangeProperty = ChangeProperty;
-    })(Rouge.Controllers || (Rouge.Controllers = {}));
-    var Controllers = Rouge.Controllers;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Controllers) {
-        (function (Direction) {
-            Direction[Direction["NORTH"] = 0] = "NORTH";
-            Direction[Direction["SOUTH"] = 1] = "SOUTH";
-            Direction[Direction["WEST"] = 2] = "WEST";
-            Direction[Direction["EAST"] = 3] = "EAST";
-            Direction[Direction["NORTHWEST"] = 4] = "NORTHWEST";
-            Direction[Direction["NORTHEAST"] = 5] = "NORTHEAST";
-            Direction[Direction["SOUTHWEST"] = 6] = "SOUTHWEST";
-            Direction[Direction["SOUTHEAST"] = 7] = "SOUTHEAST";
-        })(Controllers.Direction || (Controllers.Direction = {}));
-        var Direction = Controllers.Direction;
-
-        function isPassable(loc, level) {
-            var cell = level.map[loc.x + "," + loc.y];
-            return cell !== " ";
-        }
-        Controllers.isPassable = isPassable;
-
-        function planAction(entity, level) {
-            if (entity instanceof Rouge.Entities.PlayerChar) {
-                Controllers.Player.activate(entity, level);
-            } else if (entity instanceof Rouge.Entities.Enemy) {
-                var enemy = entity;
-                enemy.nextAction = function () {
-                    enemy.stats.ap = 0;
-                    enemy.active = false;
-                };
-            }
-        }
-        Controllers.planAction = planAction;
-    })(Rouge.Controllers || (Rouge.Controllers = {}));
-    var Controllers = Rouge.Controllers;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Controllers) {
-        var EntityManager = (function () {
-            function EntityManager(level) {
-                var _this = this;
-                this.level = level;
-                this.currEntity = new Controllers.ObservableProperty(null);
-                this.currEntity.attach({ update: function () {
-                        return _this.update();
-                    } });
-                this.engine = new ROT.Engine(this.level.scheduler);
-                this.changed = new Rouge.Observable();
-                this.characters = new Array();
-
-                this.start();
-            }
-            EntityManager.prototype.pause = function () {
-                this.engine.lock();
-            };
-
-            EntityManager.prototype.start = function () {
-                var room = this.level.map.getRooms()[0];
-                var player1 = new Rouge.Entities.PlayerChar("char1");
-                player1.x = room.getCenter()[0];
-                player1.y = room.getCenter()[1];
-                this.characters.push(player1);
-                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player1), true);
-
-                var player2 = new Rouge.Entities.PlayerChar("char2");
-                player2.x = room.getCenter()[0] + 1;
-                player2.y = room.getCenter()[1];
-                this.characters.push(player2);
-                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player2), true);
-
-                var enemy = new Rouge.Entities.Enemy("enemy");
-                var room2 = this.level.map.getRooms()[1];
-                enemy.x = room2.getCenter()[0];
-                enemy.y = room2.getCenter()[1];
-                this.level.entities.push(enemy);
-                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true);
-
-                this.engine.start();
-            };
-
-            EntityManager.prototype.update = function () {
-                var _this = this;
-                this.engine.lock();
-                var entity = this.currEntity.property;
-
-                var pollForAction = function () {
-                    Controllers.planAction(entity, _this.level);
-                    var action = entity.nextAction;
-                    if (action) {
-                        action();
-                        entity.nextAction = undefined;
-                        _this.changed.notify();
-                    }
-
-                    if (entity.hasAP() && entity.didntEnd()) {
-                        setTimeout(pollForAction, Rouge.Constants.UPDATE_RATE);
-                    } else {
-                        _this.level.scheduler.setDuration(1 - (entity.stats.ap / entity.stats.apMax));
-                        console.log("Time until next turn: " + (1 - (entity.stats.ap / entity.stats.apMax)).toFixed(2));
-                        entity.newTurn();
-                        _this.changed.notify();
-                        _this.engine.unlock();
-                    }
-                };
-
-                //entity.newTurn();
-                pollForAction();
-            };
-            return EntityManager;
-        })();
-        Controllers.EntityManager = EntityManager;
-    })(Rouge.Controllers || (Rouge.Controllers = {}));
-    var Controllers = Rouge.Controllers;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
     (function (Dungeon) {
         (function (MapType) {
             MapType[MapType["MINES"] = 0] = "MINES";
@@ -593,7 +660,7 @@ var Rouge;
 
             switch (type) {
                 case 0 /* MINES */:
-                    map = new ROT.Map.Digger(80, 34, {
+                    map = new ROT.Map.Digger(80, 33, {
                         dugPercentage: 0.55,
                         roomWidth: [4, 9],
                         roomHeight: [3, 7],
@@ -637,6 +704,51 @@ var Rouge;
 var Rouge;
 (function (Rouge) {
     (function (Entities) {
+        var Attack = (function () {
+            function Attack(user, damage, multiplier, hitSkill) {
+                this.user = user;
+                this.damage = damage;
+                this.multiplier = multiplier;
+                this.hitSkill = hitSkill;
+            }
+            return Attack;
+        })();
+        Entities.Attack = Attack;
+    })(Rouge.Entities || (Rouge.Entities = {}));
+    var Entities = Rouge.Entities;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Entities) {
+        var AttackResult = (function () {
+            function AttackResult(attack, defender, evadeSkill, armorMin, armorMax) {
+                this.attacker = attack.user;
+                this.attackDmg = attack.damage;
+                this.attackMul = attack.multiplier;
+                this.hitRoll = Math.ceil(ROT.RNG.getUniform() * 20) + attack.hitSkill.value;
+                this.defender = defender;
+                this.evadeRoll = Math.ceil(ROT.RNG.getUniform() * 20) + evadeSkill.value;
+
+                //evades and crits not implemented, only rolls
+                this.armorRolls = new Array();
+                for (var i = 0; i < this.attackMul; i++) {
+                    var roll = Math.floor(ROT.RNG.getUniform() * (armorMax - armorMin)) + armorMin;
+                    this.armorRolls.push(roll);
+                }
+                this.finalDmg = 0;
+                for (var j = 0; j < this.attackMul; j++) {
+                    this.finalDmg += Math.max(0, this.attackDmg - this.armorRolls[i]);
+                }
+            }
+            return AttackResult;
+        })();
+        Entities.AttackResult = AttackResult;
+    })(Rouge.Entities || (Rouge.Entities = {}));
+    var Entities = Rouge.Entities;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Entities) {
         var Entity = (function () {
             function Entity() {
             }
@@ -663,13 +775,18 @@ var Rouge;
             });
 
             Entity.prototype.getStruck = function (attack) {
-                throw ("Abstract!");
+                var evadeSkill;
+                switch (attack.hitSkill) {
+                    default:
+                        evadeSkill = this.skills.evasion;
+                }
+                return new Entities.AttackResult(attack, this, evadeSkill, 0, 0);
             };
 
             Object.defineProperty(Entity.prototype, "nextAction", {
                 get: function () {
                     return this.action;
-                    this.action = null;
+                    //this.action = null;
                 },
                 set: function (action) {
                     this.action = action;
@@ -712,7 +829,7 @@ var Rouge;
                 this.name = name;
                 this.skills = new Entities.Skillset();
                 this.traits = new Array();
-                this.stats = new Entities.Stats(30, 6, 100, 30);
+                this.stats = new Entities.Stats(300, 6, 100, 10);
                 this.inventory = new Array();
                 this.active = true;
             }
@@ -731,6 +848,97 @@ var Rouge;
             return Enemy;
         })(Entities.Entity);
         Entities.Enemy = Enemy;
+    })(Rouge.Entities || (Rouge.Entities = {}));
+    var Entities = Rouge.Entities;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Entities) {
+        (function (Skills) {
+            Skills[Skills["prowess"] = 0] = "prowess";
+            Skills[Skills["perception"] = 1] = "perception";
+            Skills[Skills["wrestling"] = 2] = "wrestling";
+            Skills[Skills["evasion"] = 3] = "evasion";
+            Skills[Skills["fortitude"] = 4] = "fortitude";
+            Skills[Skills["will"] = 5] = "will";
+            Skills[Skills["stealth"] = 6] = "stealth";
+        })(Entities.Skills || (Entities.Skills = {}));
+        var Skills = Entities.Skills;
+    })(Rouge.Entities || (Rouge.Entities = {}));
+    var Entities = Rouge.Entities;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    ///<reference path="Entity.ts"/>
+    (function (Entities) {
+        var PlayerChar = (function (_super) {
+            __extends(PlayerChar, _super);
+            function PlayerChar(name) {
+                _super.call(this);
+                this.name = name;
+                this.skills = new Entities.Skillset().setProwess(5).setEvasion(5);
+                this.traits = new Array();
+                this.stats = new Entities.Stats(30, 6, 100, 30);
+                this.inventory = new Array();
+                this.active = true;
+            }
+            PlayerChar.prototype.hasAP = function () {
+                return this.stats.ap > 0;
+            };
+
+            PlayerChar.prototype.didntEnd = function () {
+                return this.active;
+            };
+
+            PlayerChar.prototype.newTurn = function () {
+                this.stats.ap = this.stats.apMax;
+                this.active = true;
+            };
+            return PlayerChar;
+        })(Entities.Entity);
+        Entities.PlayerChar = PlayerChar;
+    })(Rouge.Entities || (Rouge.Entities = {}));
+    var Entities = Rouge.Entities;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Entities) {
+        var Skill = (function () {
+            function Skill(which, value) {
+                this.which = which;
+                this.value = value;
+            }
+            return Skill;
+        })();
+        Entities.Skill = Skill;
+    })(Rouge.Entities || (Rouge.Entities = {}));
+    var Entities = Rouge.Entities;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Entities) {
+        var Skillset = (function () {
+            function Skillset() {
+                this.prowess = new Entities.Skill(0 /* prowess */, 0);
+                this.perception = new Entities.Skill(1 /* perception */, 0);
+                this.wrestling = new Entities.Skill(2 /* wrestling */, 0);
+                this.evasion = new Entities.Skill(3 /* evasion */, 0);
+                this.fortitude = new Entities.Skill(4 /* fortitude */, 0);
+                this.will = new Entities.Skill(5 /* will */, 0);
+                this.stealth = new Entities.Skill(6 /* stealth */, 0);
+            }
+            Skillset.prototype.setProwess = function (amount) {
+                this.prowess.value = amount;
+                return this;
+            };
+
+            Skillset.prototype.setEvasion = function (amount) {
+                this.evasion.value = amount;
+                return this;
+            };
+            return Skillset;
+        })();
+        Entities.Skillset = Skillset;
     })(Rouge.Entities || (Rouge.Entities = {}));
     var Entities = Rouge.Entities;
 })(Rouge || (Rouge = {}));
@@ -770,34 +978,13 @@ var Rouge;
 })(Rouge || (Rouge = {}));
 var Rouge;
 (function (Rouge) {
-    ///<reference path="Entity.ts"/>
     (function (Entities) {
-        var PlayerChar = (function (_super) {
-            __extends(PlayerChar, _super);
-            function PlayerChar(name) {
-                _super.call(this);
-                this.name = name;
-                this.skills = new Entities.Skillset();
-                this.traits = new Array();
-                this.stats = new Entities.Stats(30, 6, 100, 30);
-                this.inventory = new Array();
-                this.active = true;
+        var Trait = (function () {
+            function Trait() {
             }
-            PlayerChar.prototype.hasAP = function () {
-                return this.stats.ap > 0;
-            };
-
-            PlayerChar.prototype.didntEnd = function () {
-                return this.active;
-            };
-
-            PlayerChar.prototype.newTurn = function () {
-                this.stats.ap = this.stats.apMax;
-                this.active = true;
-            };
-            return PlayerChar;
-        })(Entities.Entity);
-        Entities.PlayerChar = PlayerChar;
+            return Trait;
+        })();
+        Entities.Trait = Trait;
     })(Rouge.Entities || (Rouge.Entities = {}));
     var Entities = Rouge.Entities;
 })(Rouge || (Rouge = {}));
@@ -907,44 +1094,4 @@ window.onload = function () {
     document.getElementById("content").appendChild(new Rouge.Console.Game().display.getContainer());
     Rouge.Controllers.Player.init();
 };
-var Rouge;
-(function (Rouge) {
-    (function (Controllers) {
-        var ObservableProperty = (function () {
-            function ObservableProperty(property) {
-                this.observers = new Array();
-                this._property = property;
-            }
-            ObservableProperty.prototype.attach = function (observer) {
-                this.observers.push(observer);
-            };
-
-            ObservableProperty.prototype.detach = function (observer) {
-                var index = this.observers.indexOf(observer);
-                this.observers.splice(index, 1);
-            };
-
-            ObservableProperty.prototype.notify = function () {
-                this.observers.forEach(function (o) {
-                    o.update();
-                });
-            };
-
-            Object.defineProperty(ObservableProperty.prototype, "property", {
-                get: function () {
-                    return this._property;
-                },
-                set: function (property) {
-                    this._property = property;
-                    this.notify();
-                },
-                enumerable: true,
-                configurable: true
-            });
-            return ObservableProperty;
-        })();
-        Controllers.ObservableProperty = ObservableProperty;
-    })(Rouge.Controllers || (Rouge.Controllers = {}));
-    var Controllers = Rouge.Controllers;
-})(Rouge || (Rouge = {}));
 //# sourceMappingURL=game.js.map

@@ -31,16 +31,16 @@
                 }
             });
             this.camera = new Camera(Constants.LEFT_UI_WIDTH,
-                this.display.getOptions().width - Constants.LEFT_UI_WIDTH,
+                this.display.getOptions().width - Constants.LEFT_UI_WIDTH * 2,
                 0,
-                this.display.getOptions().height,
+                this.display.getOptions().height - 1,
                 this.display);
             this.draw();
         }
 
         draw() {
             this.display.clear();
-            this.camera.draw(this.manager.level, this.manager.characters);
+            this.camera.getView(this.manager.level, this.manager.characters).draw(this.display);
             this.drawUI();
         }
 

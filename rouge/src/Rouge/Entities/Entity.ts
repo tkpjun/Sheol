@@ -4,6 +4,9 @@
 
         name: string;
         stats: Stats;
+        skills: Skillset;
+        traits: Trait[];
+        inventory: IItem[];
         private _x: number;
         private _y: number;
         private action: () => void;
@@ -22,13 +25,17 @@
             this._y = value;
         }
 
-        getStruck(attack): AttackResult {
-            throw ("Abstract!");
+        getStruck(attack: Attack): AttackResult {
+            var evadeSkill;
+            switch (attack.hitSkill) {
+                default: evadeSkill = this.skills.evasion;
+            }
+            return new AttackResult(attack, this, evadeSkill, 0, 0);
         }
 
         get nextAction() {
             return this.action;
-            this.action = null;
+            //this.action = null;
         }
         set nextAction(action: () => void) {
             this.action = action;

@@ -26,10 +26,13 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="src\Rouge\Console\Camera.ts" />
+    <TypeScriptCompile Include="src\Rouge\Console\DrawMatrix.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\GameScreen.ts" />
+    <TypeScriptCompile Include="src\Rouge\Console\GameUI.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\MainMenuScreen.ts" />
     <TypeScriptCompile Include="src\Rouge\Constants.ts" />
     <TypeScriptCompile Include="src\Rouge\Controllers\Player.ts" />
+    <TypeScriptCompile Include="src\Rouge\Entities\Attack.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\AttackResult.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\Entities.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\Skill.ts" />

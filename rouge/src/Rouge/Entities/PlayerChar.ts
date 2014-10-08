@@ -3,9 +3,6 @@ module Rouge.Entities {
 
     export class PlayerChar extends Entity {
 
-        skills: Skillset;
-        traits: Trait[];
-        inventory: IItem[];
         equipment: any;
         effects: any;
         active: boolean;
@@ -13,7 +10,7 @@ module Rouge.Entities {
         constructor(name: string) {
             super();
             this.name = name;
-            this.skills = new Skillset();
+            this.skills = new Skillset().setProwess(5).setEvasion(5);
             this.traits = new Array<Trait>();
             this.stats = new Stats(30, 6, 100, 30);
             this.inventory = new Array<IItem>();

@@ -4,6 +4,11 @@
 
         which: Skills;
         value: number;
+
+        constructor(which: Skills, value: number) {
+            this.which = which;
+            this.value = value;
+        }
     }
 
 } 
