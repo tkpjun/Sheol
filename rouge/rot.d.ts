@@ -81,6 +81,17 @@
         next(): any;
         remove(item: IActor);
         getTime();
+        _queue: EventQueue;
+    }
+
+    export class EventQueue {
+        add(event: any, time: number);
+        clear();
+        //get();
+        getTime();
+        remove(event: any);
+        _events: any[];
+        _eventTimes: number[];
     }
 
     export class StringGenerator {

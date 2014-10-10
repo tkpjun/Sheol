@@ -39,9 +39,19 @@
         }
 
         draw() {
+            this.manager.engine.lock();
+
             this.display.clear();
             this.camera.getView(this.manager.level, this.manager.characters).draw(this.display);
-            this.drawUI();
+            //this.drawUI();
+            GameUI.getLeftBar(this.manager.characters).draw(this.display);
+            GameUI.getDPad().draw(this.display);
+            GameUI.getRightBar(this.manager.level.scheduler,
+                this.manager.currEntity.property,
+                (<Array<IEntity>>this.manager.characters).concat(this.manager.level.entities)
+                ).draw(this.display);
+
+            this.manager.engine.unlock();
         }
 
         private drawUI() {

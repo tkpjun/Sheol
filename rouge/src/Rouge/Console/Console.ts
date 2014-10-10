@@ -3,7 +3,7 @@
     export class Constants {
 
         static get LEFT_UI_WIDTH(): number {
-            return 12
+            return 16
         }
         static get DISPLAY_WIDTH(): number {
             return 92

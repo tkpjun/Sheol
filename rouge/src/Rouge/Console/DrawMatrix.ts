@@ -6,10 +6,39 @@
         yOffset: number;
         matrix: Array<Array<IDrawable>>;
 
-        constructor(xOffset, yOffset, matrix) {
+        constructor(xOffset: number, yOffset: number, matrix?: Array<Array<IDrawable>>, width?: number, height?: number, bgColor?: string) {
             this.xOffset = xOffset;
             this.yOffset = yOffset;
-            this.matrix = matrix;
+
+            if (matrix) {
+                this.matrix = matrix;
+            }
+            else {
+                this.matrix = new Array<Array<IDrawable>>();
+                for (var i = 0; i < width; i++) {
+                    this.matrix[i] = new Array<IDrawable>();
+                    for (var j = 0; j < height; j++) {
+                        this.matrix[i][j] = { symbol: " ", bgColor: bgColor };
+                    }
+                }
+            }
+        }
+
+        addString(x: number, y: number, str: string, wrapAt?: number, color?: string, bgColor?: string): DrawMatrix {
+            var limit = this.matrix.length;
+            if (wrapAt) {
+                limit = wrapAt;
+            }
+
+            for (var i = 0; i < str.length; i++) {
+                if (i < limit) {
+                    this.matrix[i + x][y] = { symbol: str[i], color: color, bgColor: bgColor };
+                }
+                else {
+                    //Add wrapping
+                }
+            }
+            return this;
         }
 
         combine(other: DrawMatrix): DrawMatrix {

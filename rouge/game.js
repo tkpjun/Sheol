@@ -95,7 +95,7 @@ var Rouge;
             }
             Object.defineProperty(Constants, "LEFT_UI_WIDTH", {
                 get: function () {
-                    return 12;
+                    return 16;
                 },
                 enumerable: true,
                 configurable: true
@@ -144,11 +144,38 @@ var Rouge;
 (function (Rouge) {
     (function (Console) {
         var DrawMatrix = (function () {
-            function DrawMatrix(xOffset, yOffset, matrix) {
+            function DrawMatrix(xOffset, yOffset, matrix, width, height, bgColor) {
                 this.xOffset = xOffset;
                 this.yOffset = yOffset;
-                this.matrix = matrix;
+
+                if (matrix) {
+                    this.matrix = matrix;
+                } else {
+                    this.matrix = new Array();
+                    for (var i = 0; i < width; i++) {
+                        this.matrix[i] = new Array();
+                        for (var j = 0; j < height; j++) {
+                            this.matrix[i][j] = { symbol: " ", bgColor: bgColor };
+                        }
+                    }
+                }
             }
+            DrawMatrix.prototype.addString = function (x, y, str, wrapAt, color, bgColor) {
+                var limit = this.matrix.length;
+                if (wrapAt) {
+                    limit = wrapAt;
+                }
+
+                for (var i = 0; i < str.length; i++) {
+                    if (i < limit) {
+                        this.matrix[i + x][y] = { symbol: str[i], color: color, bgColor: bgColor };
+                    } else {
+                        //Add wrapping
+                    }
+                }
+                return this;
+            };
+
             DrawMatrix.prototype.combine = function (other) {
                 var newXOff = Math.min(this.xOffset, other.xOffset);
                 var newYOff = Math.min(this.yOffset, other.yOffset);
@@ -204,9 +231,17 @@ var Rouge;
     (function (Console) {
         var Game = (function () {
             function Game() {
-                this.display = new ROT.Display({ fontSize: 23, width: Console.Constants.DISPLAY_WIDTH, height: Console.Constants.DISPLAY_HEIGHT });
+                var _this = this;
+                this.display = new ROT.Display({ width: Console.Constants.DISPLAY_WIDTH, height: Console.Constants.DISPLAY_HEIGHT });
                 this.gameScreen = new Console.GameScreen(this.display);
                 this.screen = this.gameScreen;
+
+                var resize = function () {
+                    var size = _this.display.computeFontSize(window.innerWidth, window.innerHeight);
+                    _this.display.setOptions({ fontSize: size });
+                };
+                window.onresize = resize;
+                resize();
             }
             return Game;
         })();
@@ -247,9 +282,17 @@ var Rouge;
                 this.draw();
             }
             GameScreen.prototype.draw = function () {
+                this.manager.engine.lock();
+
                 this.display.clear();
                 this.camera.getView(this.manager.level, this.manager.characters).draw(this.display);
-                this.drawUI();
+
+                //this.drawUI();
+                Console.GameUI.getLeftBar(this.manager.characters).draw(this.display);
+                Console.GameUI.getDPad().draw(this.display);
+                Console.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.property, this.manager.characters.concat(this.manager.level.entities)).draw(this.display);
+
+                this.manager.engine.unlock();
             };
 
             GameScreen.prototype.drawUI = function () {
@@ -268,6 +311,91 @@ var Rouge;
             return GameScreen;
         })();
         Console.GameScreen = GameScreen;
+    })(Rouge.Console || (Rouge.Console = {}));
+    var Console = Rouge.Console;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Console) {
+        (function (GameUI) {
+            function getLeftBar(characters) {
+                var p1 = characters[0];
+                var p2 = characters[1];
+                var w = Console.Constants.LEFT_UI_WIDTH;
+                var matrix = new Console.DrawMatrix(1, 1, null, w - 2, 9);
+
+                matrix.addString(0, 0, p1.name);
+                matrix.addString(0, 2, "HP: " + p1.stats.hp + "/" + p1.stats.hpMax);
+                matrix.addString(0, 3, "AP: " + p1.stats.ap + "/" + p1.stats.apMax);
+
+                matrix.addString(0, 5, p2.name);
+                matrix.addString(0, 7, "HP: " + p2.stats.hp + "/" + p2.stats.hpMax);
+                matrix.addString(0, 8, "AP: " + p2.stats.ap + "/" + p2.stats.apMax);
+
+                return matrix;
+            }
+            GameUI.getLeftBar = getLeftBar;
+
+            function getRightBar(scheduler, current, seen, baseTime) {
+                var w = Console.Constants.LEFT_UI_WIDTH;
+                var wDisp = Console.Constants.DISPLAY_WIDTH;
+                var leftEdge = wDisp - w + 1;
+                var matrix = new Console.DrawMatrix(leftEdge, 1, null, w - 2, Console.Constants.DISPLAY_HEIGHT - 2);
+                if (!baseTime)
+                    baseTime = 0;
+
+                var events = scheduler._queue._events;
+                var times = scheduler._queue._eventTimes;
+                var both = [];
+                for (var i = 0; i < events.length; i++) {
+                    both.push({ event: events[i], time: times[i] });
+                }
+                both = both.filter(function (obj) {
+                    return obj.event instanceof Rouge.Controllers.ChangeProperty && seen.indexOf(obj.event.target) >= 0;
+                }).map(function (obj) {
+                    return { entity: obj.event.target, time: obj.time };
+                }).sort(function (obj1, obj2) {
+                    return obj1.time - obj2.time;
+                });
+                both.unshift({ entity: current, time: baseTime });
+
+                for (var i = 0; i < both.length; i++) {
+                    matrix.addString(0, i * 3 + 1, both[i].entity.name, Console.Constants.LEFT_UI_WIDTH - 6);
+                    matrix.addString(Console.Constants.LEFT_UI_WIDTH - 5, i * 3, "---");
+                    matrix.addString(Console.Constants.LEFT_UI_WIDTH - 5, i * 3 + 1, "|e|");
+                    matrix.addString(Console.Constants.LEFT_UI_WIDTH - 5, i * 3 + 2, "---");
+                    if (both[i].time === 0) {
+                        matrix.addString(2, i * 3 + 2, "ready", null, "green");
+                    } else {
+                        matrix.addString(2, i * 3 + 2, both[i].time.toFixed(1) + "aut");
+                    }
+                }
+
+                return matrix;
+            }
+            GameUI.getRightBar = getRightBar;
+
+            function getDPad() {
+                var w = Console.Constants.LEFT_UI_WIDTH;
+                var hDisp = Console.Constants.DISPLAY_HEIGHT;
+                var hThis = 9;
+                var matrix = new Console.DrawMatrix(1, hDisp - hThis - 2, null, w - 2, hThis);
+
+                matrix.addString(0, 0, "q--- w--- e---");
+                matrix.addString(0, 1, "|  | |  | |  |");
+                matrix.addString(0, 2, "---- ---- ----");
+                matrix.addString(0, 3, "a--- s--- d---");
+                matrix.addString(0, 4, "|  | |  | |  |");
+                matrix.addString(0, 5, "---- ---- ----");
+                matrix.addString(0, 6, "z--- x--- c---");
+                matrix.addString(0, 7, "|  | |  | |  |");
+                matrix.addString(0, 8, "---- ---- ----");
+
+                return matrix;
+            }
+            GameUI.getDPad = getDPad;
+        })(Console.GameUI || (Console.GameUI = {}));
+        var GameUI = Console.GameUI;
     })(Rouge.Console || (Rouge.Console = {}));
     var Console = Rouge.Console;
 })(Rouge || (Rouge = {}));
@@ -304,6 +432,7 @@ var Rouge;
     (function (Controllers) {
         var ChangeProperty = (function () {
             function ChangeProperty(which, to) {
+                this.target = to;
                 this.func = function () {
                     which.property = to;
                 };
@@ -380,20 +509,20 @@ var Rouge;
                 player1.x = room.getCenter()[0];
                 player1.y = room.getCenter()[1];
                 this.characters.push(player1);
-                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player1), true);
+                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player1), true, 1);
 
                 var player2 = new Rouge.Entities.PlayerChar("char2");
                 player2.x = room.getCenter()[0] + 1;
                 player2.y = room.getCenter()[1];
                 this.characters.push(player2);
-                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player2), true);
+                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player2), true, 1.5);
 
                 var enemy = new Rouge.Entities.Enemy("enemy");
                 var room2 = this.level.map.getRooms()[1];
                 enemy.x = room2.getCenter()[0];
                 enemy.y = room2.getCenter()[1];
                 this.level.entities.push(enemy);
-                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true);
+                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true, 2);
 
                 this.engine.start();
             };

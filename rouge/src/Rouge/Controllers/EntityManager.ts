@@ -30,21 +30,21 @@
             player1.y = room.getCenter()[1];
             this.characters.push(player1);
             this.level.scheduler.add(
-                new Controllers.ChangeProperty(this.currEntity, player1), true);
+                new Controllers.ChangeProperty(this.currEntity, player1), true, 1);
 
             var player2 = new Entities.PlayerChar("char2");
             player2.x = room.getCenter()[0] + 1;
             player2.y = room.getCenter()[1];
             this.characters.push(player2);
             this.level.scheduler.add(
-                new Controllers.ChangeProperty(this.currEntity, player2), true);
+                new Controllers.ChangeProperty(this.currEntity, player2), true, 1.5);
 
             var enemy = new Entities.Enemy("enemy");
             var room2 = (<ROT.Map.Dungeon>this.level.map).getRooms()[1];
             enemy.x = room2.getCenter()[0];
             enemy.y = room2.getCenter()[1];
             this.level.entities.push(enemy);
-            this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true);
+            this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true, 2);
 
             this.engine.start();
         }

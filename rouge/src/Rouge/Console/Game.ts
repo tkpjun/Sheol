@@ -7,10 +7,18 @@
         gameScreen: GameScreen;
         menuScreen: MainMenuScreen;      
 
-        constructor() {
-            this.display = new ROT.Display({ fontSize: 23, width: Constants.DISPLAY_WIDTH, height: Constants.DISPLAY_HEIGHT });
+        constructor() { 
+
+            this.display = new ROT.Display({ width: Constants.DISPLAY_WIDTH, height: Constants.DISPLAY_HEIGHT });
             this.gameScreen = new GameScreen(this.display);
             this.screen = this.gameScreen;
+
+            var resize = () => {
+                var size = this.display.computeFontSize(window.innerWidth, window.innerHeight);
+                this.display.setOptions({ fontSize: size });
+            }
+            window.onresize = resize;
+            resize();
         }
 
     }
