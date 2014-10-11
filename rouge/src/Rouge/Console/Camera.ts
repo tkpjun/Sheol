@@ -9,6 +9,7 @@
         width: number;
         height: number;
         display: ROT.Display;
+        private _view: DrawMatrix;
 
         constructor(xOffset: number, width: number, yOffset: number, height: number, display: ROT.Display) {
             this.width = width;
@@ -20,11 +21,18 @@
             this.display = display;
         }
 
+        get view() {
+            return this._view;
+        }
+
         centerOn(x: number);
-        centerOn(x: number, y?: number) {
+        centerOn(x: number, y?: number);
+        centerOn(x: number, y?: number, level?: Dungeon.Level, players?: Array<Entities.PlayerChar>) {
             this.x = Math.floor(x - this.width / 2) - 1;
             if(y)
-                this.y = Math.floor(y - this.height/2) - 1;
+                this.y = Math.floor(y - this.height / 2) - 1;
+            if (level && players)
+                this.updateView(level, players);
         }
 
         translate(x: number, y: number) {
@@ -32,9 +40,9 @@
             this.y += y;
         }
 
-        getView(level: Dungeon.Level, players: Array<Entities.PlayerChar>): DrawMatrix {
+        updateView(level: Dungeon.Level, players: Array<Entities.PlayerChar>) {
             var map = this.getMapView(level.map);
-            return this.addEntities(map, level.entities, players);
+            this._view = this.addEntities(map, level.entities, players);
         }
 
         private getMapView(map: ROT.IMap): DrawMatrix {
@@ -42,6 +50,9 @@
             var matrix = new Array<Array<IDrawable>>();
             for (var i = 0; i < this.width; i++) {
                 matrix[i] = new Array<IDrawable>();
+                for (var j = 0; j < this.height; j++) {
+                    matrix[i][j] = { symbol: " " };
+                }
             }
 
             for (var key in map) {
@@ -87,9 +98,14 @@
                 }
             })
             characters.forEach((p) => {
-                matrix.matrix[p.x - this.x][p.y - this.y] = {
-                    symbol: "@"
-                };
+                if (p.x < this.x || p.y < this.y || p.x > this.x + this.width - 1 || p.y > this.y + this.height - 1) {
+
+                }
+                else {
+                    matrix.matrix[p.x - this.x][p.y - this.y] = {
+                        symbol: "@"
+                    };
+                }
             })
 
             return matrix;

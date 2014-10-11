@@ -11,10 +11,20 @@
                 this.y = 0;
                 this.display = display;
             }
-            Camera.prototype.centerOn = function (x, y) {
+            Object.defineProperty(Camera.prototype, "view", {
+                get: function () {
+                    return this._view;
+                },
+                enumerable: true,
+                configurable: true
+            });
+
+            Camera.prototype.centerOn = function (x, y, level, players) {
                 this.x = Math.floor(x - this.width / 2) - 1;
                 if (y)
                     this.y = Math.floor(y - this.height / 2) - 1;
+                if (level && players)
+                    this.updateView(level, players);
             };
 
             Camera.prototype.translate = function (x, y) {
@@ -22,15 +32,18 @@
                 this.y += y;
             };
 
-            Camera.prototype.getView = function (level, players) {
+            Camera.prototype.updateView = function (level, players) {
                 var map = this.getMapView(level.map);
-                return this.addEntities(map, level.entities, players);
+                this._view = this.addEntities(map, level.entities, players);
             };
 
             Camera.prototype.getMapView = function (map) {
                 var matrix = new Array();
                 for (var i = 0; i < this.width; i++) {
                     matrix[i] = new Array();
+                    for (var j = 0; j < this.height; j++) {
+                        matrix[i][j] = { symbol: " " };
+                    }
                 }
 
                 for (var key in map) {
@@ -74,9 +87,12 @@
                     }
                 });
                 characters.forEach(function (p) {
-                    matrix.matrix[p.x - _this.x][p.y - _this.y] = {
-                        symbol: "@"
-                    };
+                    if (p.x < _this.x || p.y < _this.y || p.x > _this.x + _this.width - 1 || p.y > _this.y + _this.height - 1) {
+                    } else {
+                        matrix.matrix[p.x - _this.x][p.y - _this.y] = {
+                            symbol: "@"
+                        };
+                    }
                 });
 
                 return matrix;
@@ -100,9 +116,12 @@ var Rouge;
                 enumerable: true,
                 configurable: true
             });
-            Object.defineProperty(Constants, "DISPLAY_WIDTH", {
+            Object.defineProperty(Constants, "displayWidth", {
                 get: function () {
-                    return 92;
+                    return Constants._displayWidth;
+                },
+                set: function (val) {
+                    Constants._displayWidth = val;
                 },
                 enumerable: true,
                 configurable: true
@@ -114,6 +133,7 @@ var Rouge;
                 enumerable: true,
                 configurable: true
             });
+            Constants._displayWidth = 92;
             return Constants;
         })();
         Console.Constants = Constants;
@@ -216,6 +236,9 @@ var Rouge;
             DrawMatrix.prototype.draw = function (display) {
                 for (var i = 0; i < this.matrix.length; i++) {
                     for (var j = 0; j < this.matrix[0].length; j++) {
+                        if (!this.matrix[i][j])
+                            continue;
+
                         display.draw(i + this.xOffset, j + this.yOffset, this.matrix[i][j].symbol, this.matrix[i][j].color, this.matrix[i][j].bgColor);
                     }
                 }
@@ -232,13 +255,25 @@ var Rouge;
         var Game = (function () {
             function Game() {
                 var _this = this;
-                this.display = new ROT.Display({ width: Console.Constants.DISPLAY_WIDTH, height: Console.Constants.DISPLAY_HEIGHT });
+                this.display = new ROT.Display({ width: Console.Constants.displayWidth, height: Console.Constants.DISPLAY_HEIGHT });
                 this.gameScreen = new Console.GameScreen(this.display);
                 this.screen = this.gameScreen;
 
                 var resize = function () {
-                    var size = _this.display.computeFontSize(window.innerWidth, window.innerHeight);
+                    var size = _this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight);
                     _this.display.setOptions({ fontSize: size });
+
+                    while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) > size) {
+                        _this.display.setOptions({ width: _this.display.getOptions().width + 1 });
+                    }
+                    while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) < size) {
+                        _this.display.setOptions({ width: _this.display.getOptions().width - 1 });
+                    }
+
+                    //console.log(this.display.getOptions().width);
+                    Console.Constants.displayWidth = _this.display.getOptions().width;
+                    _this.gameScreen.camera.width = Console.Constants.displayWidth - Console.Constants.LEFT_UI_WIDTH * 2;
+                    _this.screen.draw();
                 };
                 window.onresize = resize;
                 resize();
@@ -259,35 +294,35 @@ var Rouge;
                 this.dungeon = new Array(new Rouge.Dungeon.Level(0 /* MINES */));
                 this.currLevel = 0;
                 this.manager = new Rouge.Controllers.EntityManager(this.dungeon[this.currLevel]);
+
+                var update = function () {
+                    function distance(x1, y1, x2, y2) {
+                        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                    }
+                    var e = _this.manager.currEntity.property;
+                    var short = _this.manager.characters[0];
+                    _this.manager.characters.forEach(function (c) {
+                        if (distance(c.x, c.y, e.x, e.y) < distance(short.x, short.y, e.x, e.y)) {
+                            short = c;
+                        }
+                    });
+                    _this.camera.centerOn(short.x);
+                    _this.draw();
+                };
+                this.manager.currEntity.attach({ update: update });
+                this.manager.changed.attach({ update: update });
                 this.manager.changed.attach({ update: function () {
                         _this.draw();
                     } });
-                this.manager.currEntity.attach({
-                    update: function () {
-                        function distance(x1, y1, x2, y2) {
-                            return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-                        }
-                        var e = _this.manager.currEntity.property;
-                        var short = _this.manager.characters[0];
-                        _this.manager.characters.forEach(function (c) {
-                            if (distance(c.x, c.y, e.x, e.y) < distance(short.x, short.y, e.x, e.y)) {
-                                short = c;
-                            }
-                        });
-                        _this.camera.centerOn(short.x);
-                        _this.draw();
-                    }
-                });
-                this.camera = new Console.Camera(Console.Constants.LEFT_UI_WIDTH, this.display.getOptions().width - Console.Constants.LEFT_UI_WIDTH * 2, 0, this.display.getOptions().height - 1, this.display);
-                this.draw();
+                this.camera = new Console.Camera(Console.Constants.LEFT_UI_WIDTH, Console.Constants.displayWidth - Console.Constants.LEFT_UI_WIDTH * 2, 0, Console.Constants.DISPLAY_HEIGHT - 1, this.display);
+                update();
             }
             GameScreen.prototype.draw = function () {
                 this.manager.engine.lock();
 
                 this.display.clear();
-                this.camera.getView(this.manager.level, this.manager.characters).draw(this.display);
-
-                //this.drawUI();
+                this.camera.updateView(this.manager.level, this.manager.characters);
+                this.camera.view.draw(this.display);
                 Console.GameUI.getLeftBar(this.manager.characters).draw(this.display);
                 Console.GameUI.getDPad().draw(this.display);
                 Console.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.property, this.manager.characters.concat(this.manager.level.entities)).draw(this.display);
@@ -338,7 +373,7 @@ var Rouge;
 
             function getRightBar(scheduler, current, seen, baseTime) {
                 var w = Console.Constants.LEFT_UI_WIDTH;
-                var wDisp = Console.Constants.DISPLAY_WIDTH;
+                var wDisp = Console.Constants.displayWidth;
                 var leftEdge = wDisp - w + 1;
                 var matrix = new Console.DrawMatrix(leftEdge, 1, null, w - 2, Console.Constants.DISPLAY_HEIGHT - 2);
                 if (!baseTime)
@@ -367,7 +402,7 @@ var Rouge;
                     if (both[i].time === 0) {
                         matrix.addString(2, i * 3 + 2, "ready", null, "green");
                     } else {
-                        matrix.addString(2, i * 3 + 2, both[i].time.toFixed(1) + "aut");
+                        matrix.addString(2, i * 3 + 2, both[i].time.toFixed(2) + "aut");
                     }
                 }
 
@@ -418,7 +453,7 @@ var Rouge;
         }
         Object.defineProperty(Constants, "UPDATE_RATE", {
             get: function () {
-                return 0.033;
+                return 33;
             },
             enumerable: true,
             configurable: true
@@ -426,6 +461,94 @@ var Rouge;
         return Constants;
     })();
     Rouge.Constants = Constants;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Controllers) {
+        var AutoPath = (function () {
+            function AutoPath(from, to, level) {
+                var _this = this;
+                this._nodes = new Array();
+                this._astar = new ROT.Path.AStar(to.x, to.y, function (x, y) {
+                    Controllers.isPassable({ x: x, y: y }, level);
+                }, { topology: 4 });
+                this._astar.compute(from.x, from.y, function (x, y) {
+                    _this._nodes.push({ x: x, y: y });
+                });
+                this.straightenPath(level);
+                this.calculateCosts();
+            }
+            AutoPath.prototype.nodes = function (maxCost) {
+                var arr = new Array();
+                var cost = 0;
+                for (var i = 0; i < this._nodes.length - 1; i++) {
+                    if (cost > maxCost)
+                        break;
+
+                    arr.push(this._nodes[i]);
+                    cost += this._costs[i];
+                }
+                return arr;
+            };
+
+            AutoPath.prototype.calculateCosts = function () {
+                var arr = this._nodes;
+                this._costs = new Array();
+                this._costs.push(0);
+                for (var i = 0; i < arr.length - 1; i++) {
+                    if (!arr[i + 1])
+                        break;
+
+                    this._costs.push(this.calculateCost(arr[i], arr[i + 1]));
+                    /*
+                    if (Math.abs(arr[i].x - arr[i + 1].x) == 1 &&
+                    Math.abs(arr[i].y - arr[i + 1].y) == 1) {
+                    this.costs.push(3);
+                    }
+                    else this.costs.push(2);
+                    */
+                }
+            };
+
+            AutoPath.prototype.calculateCost = function (n1, n2) {
+                if (Math.abs(n1.x - n2.x) == 1 && Math.abs(n1.y - n2.y) == 1) {
+                    return 3;
+                } else
+                    return 2;
+            };
+
+            AutoPath.prototype.straightenPath = function (level) {
+                var arr = this._nodes;
+                for (var i = 0; i < arr.length - 2; i++) {
+                    if (!arr[i + 2])
+                        break;
+
+                    if (Math.abs(arr[i].x - arr[i + 2].x) == 1 && Math.abs(arr[i].y - arr[i + 2].y) == 1) {
+                        if (Controllers.isPassable(this.getFourth(arr[i], arr[i + 1], arr[i + 2]), level)) {
+                            arr.splice(i + 1);
+                        }
+                    }
+                }
+            };
+
+            AutoPath.prototype.getFourth = function (n1, n2, n3) {
+                var x, y;
+                if (n2.x == n1.x) {
+                    x = n3.x;
+                } else
+                    x = n1.x;
+
+                if (n2.y == n1.y) {
+                    y = n3.y;
+                } else
+                    y = n1.y;
+                return { x: x, y: y };
+            };
+            return AutoPath;
+        })();
+        Controllers.AutoPath = AutoPath;
+    })(Rouge.Controllers || (Rouge.Controllers = {}));
+    var Controllers = Rouge.Controllers;
 })(Rouge || (Rouge = {}));
 var Rouge;
 (function (Rouge) {
@@ -473,7 +596,7 @@ var Rouge;
             } else if (entity instanceof Rouge.Entities.Enemy) {
                 var enemy = entity;
                 enemy.nextAction = function () {
-                    enemy.stats.ap = 0;
+                    enemy.stats.ap = 2;
                     enemy.active = false;
                 };
             }
@@ -544,15 +667,16 @@ var Rouge;
                     if (entity.hasAP() && entity.didntEnd()) {
                         setTimeout(pollForAction, Rouge.Constants.UPDATE_RATE);
                     } else {
-                        _this.level.scheduler.setDuration(1 - (entity.stats.ap / entity.stats.apMax));
-                        console.log("Time until next turn: " + (1 - (entity.stats.ap / entity.stats.apMax)).toFixed(2));
+                        _this.level.scheduler.setDuration(Math.max(0.5, 1 - (entity.stats.ap / entity.stats.apMax)));
                         entity.newTurn();
                         _this.changed.notify();
-                        _this.engine.unlock();
+
+                        var unlock = function () {
+                            _this.engine.unlock();
+                        };
+                        setTimeout(unlock, Rouge.Constants.UPDATE_RATE * 4);
                     }
                 };
-
-                //entity.newTurn();
                 pollForAction();
             };
             return EntityManager;
@@ -598,6 +722,65 @@ var Rouge;
             return ObservableProperty;
         })();
         Controllers.ObservableProperty = ObservableProperty;
+    })(Rouge.Controllers || (Rouge.Controllers = {}));
+    var Controllers = Rouge.Controllers;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Controllers) {
+        var PathBuilder = (function () {
+            function PathBuilder(from, maxCost) {
+                this.max = maxCost;
+                this._nodes = new Array();
+                this._costs = new Array();
+                this._nodes.push(from);
+                this._costs.push(0);
+                this.pointer = from;
+            }
+            PathBuilder.prototype.calculateCost = function (n1, n2) {
+                if (Math.abs(n1.x - n2.x) == 1 && Math.abs(n1.y - n2.y) == 1) {
+                    return 3;
+                } else
+                    return 2;
+            };
+
+            PathBuilder.prototype.movePointer = function (dir) {
+                switch (dir) {
+                    case 4 /* NORTHWEST */:
+                        this.pointer.y -= 1;
+                        this.pointer.x -= 1;
+                        break;
+                    case 0 /* NORTH */:
+                        this.pointer.y -= 1;
+                        break;
+                    case 5 /* NORTHEAST */:
+                        this.pointer.y -= 1;
+                        this.pointer.x += 1;
+                        break;
+                    case 2 /* WEST */:
+                        this.pointer.x -= 1;
+                        break;
+                    case 3 /* EAST */:
+                        this.pointer.x += 1;
+                        break;
+                    case 6 /* SOUTHWEST */:
+                        this.pointer.y += 1;
+                        this.pointer.x -= 1;
+                        break;
+                    case 1 /* SOUTH */:
+                        this.pointer.y += 1;
+                        break;
+                    case 7 /* SOUTHEAST */:
+                        this.pointer.y += 1;
+                        this.pointer.x += 1;
+                        break;
+                }
+
+                throw ("TODO");
+            };
+            return PathBuilder;
+        })();
+        Controllers.PathBuilder = PathBuilder;
     })(Rouge.Controllers || (Rouge.Controllers = {}));
     var Controllers = Rouge.Controllers;
 })(Rouge || (Rouge = {}));
@@ -753,7 +936,6 @@ var Rouge;
                         _char.x = location.x;
                         _char.y = location.y;
                         _char.stats.ap -= apCost();
-                        console.log("AP left: " + _char.stats.ap);
 
                         if (!_char.hasAP()) {
                             _active = false;
@@ -789,7 +971,7 @@ var Rouge;
 
             switch (type) {
                 case 0 /* MINES */:
-                    map = new ROT.Map.Digger(80, 33, {
+                    map = new ROT.Map.Digger(100, 33, {
                         dugPercentage: 0.55,
                         roomWidth: [4, 9],
                         roomHeight: [3, 7],

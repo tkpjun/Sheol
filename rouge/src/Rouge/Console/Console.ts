@@ -2,11 +2,16 @@
 
     export class Constants {
 
+        private static _displayWidth = 92;
+
         static get LEFT_UI_WIDTH(): number {
             return 16
         }
-        static get DISPLAY_WIDTH(): number {
-            return 92
+        static set displayWidth(val: number) {
+            Constants._displayWidth = val;
+        }
+        static get displayWidth(): number {
+            return Constants._displayWidth;
         }
         static get DISPLAY_HEIGHT(): number {
             return 34

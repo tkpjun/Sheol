@@ -66,14 +66,14 @@
                     setTimeout(pollForAction, Constants.UPDATE_RATE);
                 }
                 else {
-                    this.level.scheduler.setDuration(1 - (entity.stats.ap / entity.stats.apMax));
-                    console.log("Time until next turn: " + (1 - (entity.stats.ap / entity.stats.apMax)).toFixed(2));
+                    this.level.scheduler.setDuration(Math.max(0.5, 1 - (entity.stats.ap / entity.stats.apMax)));
                     entity.newTurn();
                     this.changed.notify();
-                    this.engine.unlock();
+
+                    var unlock = () => { this.engine.unlock() };
+                    setTimeout(unlock, Constants.UPDATE_RATE * 4);
                 }
             }
-            //entity.newTurn();
             pollForAction();           
         }
     }

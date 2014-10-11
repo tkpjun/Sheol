@@ -19,7 +19,7 @@
 
     export function getRightBar(scheduler: ROT.Scheduler.Action, current: IEntity, seen: Array<IEntity>, baseTime?: number): DrawMatrix {
         var w = Constants.LEFT_UI_WIDTH;
-        var wDisp = Constants.DISPLAY_WIDTH;
+        var wDisp = Constants.displayWidth;
         var leftEdge = wDisp - w + 1;
         var matrix = new DrawMatrix(leftEdge, 1, null, w - 2, Constants.DISPLAY_HEIGHT - 2);
         if (!baseTime) baseTime = 0;
@@ -49,7 +49,7 @@
                 matrix.addString(2, i * 3 + 2, "ready", null, "green");
             }
             else {
-                matrix.addString(2, i * 3 + 2, (<number>both[i].time).toFixed(1) + "aut");
+                matrix.addString(2, i * 3 + 2, (<number>both[i].time).toFixed(2) + "aut");
             }
         }
 

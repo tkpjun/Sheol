@@ -13,37 +13,38 @@
             this.dungeon = new Array<Dungeon.Level>(new Dungeon.Level(Dungeon.MapType.MINES));
             this.currLevel = 0;
             this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
-            this.manager.changed.attach({ update: () => { this.draw(); } });
-            this.manager.currEntity.attach({
-                update: () => {
-                    function distance(x1, y1, x2, y2) {
-                        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-                    }
-                    var e = this.manager.currEntity.property;
-                    var short = this.manager.characters[0];
-                    this.manager.characters.forEach((c) => {
-                        if (distance(c.x, c.y, e.x, e.y) < distance(short.x, short.y, e.x, e.y)) {
-                            short = c;
-                        }
-                    });
-                    this.camera.centerOn(short.x);
-                    this.draw();
+
+            var update = () => {
+                function distance(x1, y1, x2, y2) {
+                    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
                 }
-            });
+                var e = this.manager.currEntity.property;
+                var short = this.manager.characters[0];
+                this.manager.characters.forEach((c) => {
+                    if (distance(c.x, c.y, e.x, e.y) < distance(short.x, short.y, e.x, e.y)) {
+                        short = c;
+                    }
+                });
+                this.camera.centerOn(short.x);
+                this.draw();
+            }
+            this.manager.currEntity.attach({ update: update });
+            this.manager.changed.attach({ update: update });
+            this.manager.changed.attach({ update: () => { this.draw(); } });
             this.camera = new Camera(Constants.LEFT_UI_WIDTH,
-                this.display.getOptions().width - Constants.LEFT_UI_WIDTH * 2,
+                Constants.displayWidth - Constants.LEFT_UI_WIDTH * 2,
                 0,
-                this.display.getOptions().height - 1,
+                Constants.DISPLAY_HEIGHT - 1,
                 this.display);
-            this.draw();
+            update();
         }
 
         draw() {
             this.manager.engine.lock();
 
             this.display.clear();
-            this.camera.getView(this.manager.level, this.manager.characters).draw(this.display);
-            //this.drawUI();
+            this.camera.updateView(this.manager.level, this.manager.characters);
+            this.camera.view.draw(this.display);
             GameUI.getLeftBar(this.manager.characters).draw(this.display);
             GameUI.getDPad().draw(this.display);
             GameUI.getRightBar(this.manager.level.scheduler,

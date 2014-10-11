@@ -3,7 +3,7 @@
     export class Constants {
 
         static get UPDATE_RATE(): number {
-            return 0.033;
+            return 33;
         }
     }
 }

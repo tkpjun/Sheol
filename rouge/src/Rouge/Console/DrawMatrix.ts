@@ -81,6 +81,8 @@
         draw(display: ROT.Display) {
             for (var i = 0; i < this.matrix.length; i++) {
                 for (var j = 0; j < this.matrix[0].length; j++) {
+                    if (!this.matrix[i][j]) continue;
+
                     display.draw(i + this.xOffset,
                         j + this.yOffset,
                         this.matrix[i][j].symbol,

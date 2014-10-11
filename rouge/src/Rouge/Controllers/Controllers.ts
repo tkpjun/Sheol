@@ -28,7 +28,7 @@
         }
         else if (entity instanceof Entities.Enemy) {
             var enemy = <Entities.Enemy>entity;
-            enemy.nextAction = () => { enemy.stats.ap = 0; enemy.active = false; }
+            enemy.nextAction = () => { enemy.stats.ap = 2; enemy.active = false; }
         }
     }
 }

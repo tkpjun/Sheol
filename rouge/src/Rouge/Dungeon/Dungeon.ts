@@ -12,7 +12,7 @@
 
         switch(type) {
             case MapType.MINES:
-                map = new ROT.Map.Digger(80, 33, {
+                map = new ROT.Map.Digger(100, 33, {
                     dugPercentage: 0.55,
                     roomWidth: [4, 9],
                     roomHeight: [3, 7],

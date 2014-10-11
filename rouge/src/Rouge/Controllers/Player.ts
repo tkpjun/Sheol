@@ -156,7 +156,6 @@
                 _char.x = location.x;
                 _char.y = location.y;
                 _char.stats.ap -= apCost();
-                console.log("AP left: " + _char.stats.ap);
 
                 if (!_char.hasAP()) {
                     _active = false;
