@@ -1,21 +1,32 @@
 ﻿module Rouge.Controllers {
 
-    export class AutoPath {
+    export class Path {
 
         private _nodes: Array<ILocation>;
         private _costs: Array<number>;
         private _astar: ROT.IPath;
+        pointer: ILocation;
 
-        constructor(from: ILocation, to: ILocation, level: Dungeon.Level) {
+        constructor(level: Dungeon.Level, from: ILocation, to?: ILocation) {
             this._nodes = new Array<ILocation>();
-            this._astar = new ROT.Path.AStar(to.x, to.y, (x, y) => {
-                isPassable({ x: x, y: y }, level);
-            }, { topology: 4 });
-            this._astar.compute(from.x, from.y, (x, y) => {
-                this._nodes.push({ x: x, y: y });
-            });
-            this.straightenPath(level);
-            this.calculateCosts();
+            this._costs = new Array<number>();
+
+            if (to) {
+                this._astar = new ROT.Path.AStar(to.x, to.y, (x, y) => {
+                    isPassable({ x: x, y: y }, level);
+                }, { topology: 4 });
+                this._astar.compute(from.x, from.y, (x, y) => {
+                    this._nodes.push({ x: x, y: y });
+                });
+                this.straightenPath(level);
+                this.calculateCosts();
+                this.pointer = to;
+            }
+            else {
+                this._nodes.push(from);
+                this._costs.push(0);
+                this.pointer = from;
+            }
         }
 
         nodes(maxCost: number): Array<ILocation> {
@@ -28,6 +39,41 @@
                 cost += this._costs[i];
             }
             return arr;
+        }
+
+        movePointer(dir: Direction) {
+            switch (dir) {
+                case Direction.NORTHWEST:
+                    this.pointer.y -= 1;
+                    this.pointer.x -= 1;
+                    break;
+                case Direction.NORTH:
+                    this.pointer.y -= 1;
+                    break;
+                case Direction.NORTHEAST:
+                    this.pointer.y -= 1;
+                    this.pointer.x += 1;
+                    break;
+                case Direction.WEST:
+                    this.pointer.x -= 1;
+                    break;
+                case Direction.EAST:
+                    this.pointer.x += 1;
+                    break;
+                case Direction.SOUTHWEST:
+                    this.pointer.y += 1;
+                    this.pointer.x -= 1;
+                    break;
+                case Direction.SOUTH:
+                    this.pointer.y += 1;
+                    break;
+                case Direction.SOUTHEAST:
+                    this.pointer.y += 1;
+                    this.pointer.x += 1;
+                    break;
+            }
+
+            throw ("TODO");
         }
 
         private calculateCosts() {

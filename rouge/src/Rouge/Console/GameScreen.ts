@@ -31,10 +31,10 @@
             this.manager.currEntity.attach({ update: update });
             this.manager.changed.attach({ update: update });
             this.manager.changed.attach({ update: () => { this.draw(); } });
-            this.camera = new Camera(Constants.LEFT_UI_WIDTH,
-                Constants.displayWidth - Constants.LEFT_UI_WIDTH * 2,
+            this.camera = new Camera(Constants.SIDEBAR_WIDTH,
+                Constants.displayWidth - Constants.SIDEBAR_WIDTH * 2,
                 0,
-                Constants.DISPLAY_HEIGHT - 1,
+                Constants.DISPLAY_HEIGHT - Constants.BOTTOM_BAR_HEIGHT,
                 this.display);
             update();
         }
@@ -51,6 +51,7 @@
                 this.manager.currEntity.property,
                 (<Array<IEntity>>this.manager.characters).concat(this.manager.level.entities)
                 ).draw(this.display);
+            GameUI.getBottomBar().draw(this.display);
 
             this.manager.engine.unlock();
         }
@@ -58,7 +59,7 @@
         private drawUI() {
             var p1 = this.manager.characters[0];
             var p2 = this.manager.characters[1];
-            var w = Constants.LEFT_UI_WIDTH;
+            var w = Constants.SIDEBAR_WIDTH;
 
             this.display.drawText(1, 1, p1.name, w);
             this.display.drawText(1, 3, "HP: " + p1.stats.hp + "/" + p1.stats.hpMax, w);

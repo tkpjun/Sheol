@@ -109,9 +109,16 @@ var Rouge;
         var Constants = (function () {
             function Constants() {
             }
-            Object.defineProperty(Constants, "LEFT_UI_WIDTH", {
+            Object.defineProperty(Constants, "SIDEBAR_WIDTH", {
                 get: function () {
                     return 16;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Constants, "BOTTOM_BAR_HEIGHT", {
+                get: function () {
+                    return 2;
                 },
                 enumerable: true,
                 configurable: true
@@ -272,7 +279,7 @@ var Rouge;
 
                     //console.log(this.display.getOptions().width);
                     Console.Constants.displayWidth = _this.display.getOptions().width;
-                    _this.gameScreen.camera.width = Console.Constants.displayWidth - Console.Constants.LEFT_UI_WIDTH * 2;
+                    _this.gameScreen.camera.width = Console.Constants.displayWidth - Console.Constants.SIDEBAR_WIDTH * 2;
                     _this.screen.draw();
                 };
                 window.onresize = resize;
@@ -314,7 +321,7 @@ var Rouge;
                 this.manager.changed.attach({ update: function () {
                         _this.draw();
                     } });
-                this.camera = new Console.Camera(Console.Constants.LEFT_UI_WIDTH, Console.Constants.displayWidth - Console.Constants.LEFT_UI_WIDTH * 2, 0, Console.Constants.DISPLAY_HEIGHT - 1, this.display);
+                this.camera = new Console.Camera(Console.Constants.SIDEBAR_WIDTH, Console.Constants.displayWidth - Console.Constants.SIDEBAR_WIDTH * 2, 0, Console.Constants.DISPLAY_HEIGHT - Console.Constants.BOTTOM_BAR_HEIGHT, this.display);
                 update();
             }
             GameScreen.prototype.draw = function () {
@@ -326,6 +333,7 @@ var Rouge;
                 Console.GameUI.getLeftBar(this.manager.characters).draw(this.display);
                 Console.GameUI.getDPad().draw(this.display);
                 Console.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.property, this.manager.characters.concat(this.manager.level.entities)).draw(this.display);
+                Console.GameUI.getBottomBar().draw(this.display);
 
                 this.manager.engine.unlock();
             };
@@ -333,7 +341,7 @@ var Rouge;
             GameScreen.prototype.drawUI = function () {
                 var p1 = this.manager.characters[0];
                 var p2 = this.manager.characters[1];
-                var w = Console.Constants.LEFT_UI_WIDTH;
+                var w = Console.Constants.SIDEBAR_WIDTH;
 
                 this.display.drawText(1, 1, p1.name, w);
                 this.display.drawText(1, 3, "HP: " + p1.stats.hp + "/" + p1.stats.hpMax, w);
@@ -356,26 +364,31 @@ var Rouge;
             function getLeftBar(characters) {
                 var p1 = characters[0];
                 var p2 = characters[1];
-                var w = Console.Constants.LEFT_UI_WIDTH;
-                var matrix = new Console.DrawMatrix(1, 1, null, w - 2, 9);
+                var w = Console.Constants.SIDEBAR_WIDTH;
+                var matrix = new Console.DrawMatrix(0, 0, null, w, 11);
 
-                matrix.addString(0, 0, p1.name);
-                matrix.addString(0, 2, "HP: " + p1.stats.hp + "/" + p1.stats.hpMax);
-                matrix.addString(0, 3, "AP: " + p1.stats.ap + "/" + p1.stats.apMax);
+                for (var i = 0; i < Console.Constants.SIDEBAR_WIDTH; i++) {
+                    matrix.matrix[i][0] = { symbol: " ", bgColor: "midnightblue" };
+                }
+                matrix.addString(4, 0, "LEVEL:1", null, null, "midnightblue");
 
-                matrix.addString(0, 5, p2.name);
-                matrix.addString(0, 7, "HP: " + p2.stats.hp + "/" + p2.stats.hpMax);
-                matrix.addString(0, 8, "AP: " + p2.stats.ap + "/" + p2.stats.apMax);
+                matrix.addString(1, 2, p1.name);
+                matrix.addString(1, 4, "HP: " + p1.stats.hp + "/" + p1.stats.hpMax);
+                matrix.addString(1, 5, "AP: " + p1.stats.ap + "/" + p1.stats.apMax);
+
+                matrix.addString(1, 7, p2.name);
+                matrix.addString(1, 9, "HP: " + p2.stats.hp + "/" + p2.stats.hpMax);
+                matrix.addString(1, 10, "AP: " + p2.stats.ap + "/" + p2.stats.apMax);
 
                 return matrix;
             }
             GameUI.getLeftBar = getLeftBar;
 
             function getRightBar(scheduler, current, seen, baseTime) {
-                var w = Console.Constants.LEFT_UI_WIDTH;
+                var w = Console.Constants.SIDEBAR_WIDTH;
                 var wDisp = Console.Constants.displayWidth;
-                var leftEdge = wDisp - w + 1;
-                var matrix = new Console.DrawMatrix(leftEdge, 1, null, w - 2, Console.Constants.DISPLAY_HEIGHT - 2);
+                var leftEdge = wDisp - w;
+                var matrix = new Console.DrawMatrix(leftEdge, 0, null, w, Console.Constants.DISPLAY_HEIGHT - 2);
                 if (!baseTime)
                     baseTime = 0;
 
@@ -394,15 +407,21 @@ var Rouge;
                 });
                 both.unshift({ entity: current, time: baseTime });
 
+                for (var i = 0; i < Console.Constants.SIDEBAR_WIDTH; i++) {
+                    matrix.matrix[i][0] = { symbol: " ", bgColor: "midnightblue" };
+                }
+                matrix.addString(5, 0, "QUEUE", null, null, "midnightblue");
                 for (var i = 0; i < both.length; i++) {
-                    matrix.addString(0, i * 3 + 1, both[i].entity.name, Console.Constants.LEFT_UI_WIDTH - 6);
-                    matrix.addString(Console.Constants.LEFT_UI_WIDTH - 5, i * 3, "---");
-                    matrix.addString(Console.Constants.LEFT_UI_WIDTH - 5, i * 3 + 1, "|e|");
-                    matrix.addString(Console.Constants.LEFT_UI_WIDTH - 5, i * 3 + 2, "---");
+                    matrix.addString(1, i * 3 + 2, both[i].entity.name, Console.Constants.SIDEBAR_WIDTH - 6);
+                    matrix.addString(1, i * 3 + 3, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Console.Constants.SIDEBAR_WIDTH - 6);
+                    matrix.addString(Console.Constants.SIDEBAR_WIDTH - 4, i * 3 + 1, "---");
+                    matrix.addString(Console.Constants.SIDEBAR_WIDTH - 4, i * 3 + 2, "|e|");
+                    matrix.addString(Console.Constants.SIDEBAR_WIDTH - 4, i * 3 + 3, "---");
                     if (both[i].time === 0) {
-                        matrix.addString(2, i * 3 + 2, "ready", null, "green");
+                        matrix.addString(3, i * 3 + 1, "ready", null, "green");
                     } else {
-                        matrix.addString(2, i * 3 + 2, both[i].time.toFixed(2) + "aut");
+                        matrix.addString(2, i * 3 + 1, "+     tu");
+                        matrix.addString(3, i * 3 + 1, both[i].time.toFixed(2), null, "red");
                     }
                 }
 
@@ -411,24 +430,36 @@ var Rouge;
             GameUI.getRightBar = getRightBar;
 
             function getDPad() {
-                var w = Console.Constants.LEFT_UI_WIDTH;
+                var w = Console.Constants.SIDEBAR_WIDTH;
                 var hDisp = Console.Constants.DISPLAY_HEIGHT;
                 var hThis = 9;
-                var matrix = new Console.DrawMatrix(1, hDisp - hThis - 2, null, w - 2, hThis);
+                var matrix = new Console.DrawMatrix(1, hDisp - hThis - Console.Constants.BOTTOM_BAR_HEIGHT, null, w - 2, hThis);
 
                 matrix.addString(0, 0, "q--- w--- e---");
-                matrix.addString(0, 1, "|  | |  | |  |");
+                matrix.addString(0, 1, "|NW| | N| |NE |");
                 matrix.addString(0, 2, "---- ---- ----");
-                matrix.addString(0, 3, "a--- s--- d---");
-                matrix.addString(0, 4, "|  | |  | |  |");
+                matrix.addString(0, 3, "a--- f--- d---");
+                matrix.addString(0, 4, "|W | PICK | E|");
                 matrix.addString(0, 5, "---- ---- ----");
                 matrix.addString(0, 6, "z--- x--- c---");
-                matrix.addString(0, 7, "|  | |  | |  |");
+                matrix.addString(0, 7, "|SW| |S | |SE|");
                 matrix.addString(0, 8, "---- ---- ----");
 
                 return matrix;
             }
             GameUI.getDPad = getDPad;
+
+            function getBottomBar() {
+                var matrix = new Console.DrawMatrix(0, Console.Constants.DISPLAY_HEIGHT - Console.Constants.BOTTOM_BAR_HEIGHT, null, Console.Constants.displayWidth, Console.Constants.BOTTOM_BAR_HEIGHT);
+
+                for (var i = 0; i < matrix.matrix.length; i++) {
+                    for (var j = 0; j < matrix.matrix[0].length; j++) {
+                        matrix.matrix[i][j] = { symbol: " ", bgColor: "midnightblue" };
+                    }
+                }
+                return matrix;
+            }
+            GameUI.getBottomBar = getBottomBar;
         })(Console.GameUI || (Console.GameUI = {}));
         var GameUI = Console.GameUI;
     })(Rouge.Console || (Rouge.Console = {}));
@@ -461,94 +492,6 @@ var Rouge;
         return Constants;
     })();
     Rouge.Constants = Constants;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Controllers) {
-        var AutoPath = (function () {
-            function AutoPath(from, to, level) {
-                var _this = this;
-                this._nodes = new Array();
-                this._astar = new ROT.Path.AStar(to.x, to.y, function (x, y) {
-                    Controllers.isPassable({ x: x, y: y }, level);
-                }, { topology: 4 });
-                this._astar.compute(from.x, from.y, function (x, y) {
-                    _this._nodes.push({ x: x, y: y });
-                });
-                this.straightenPath(level);
-                this.calculateCosts();
-            }
-            AutoPath.prototype.nodes = function (maxCost) {
-                var arr = new Array();
-                var cost = 0;
-                for (var i = 0; i < this._nodes.length - 1; i++) {
-                    if (cost > maxCost)
-                        break;
-
-                    arr.push(this._nodes[i]);
-                    cost += this._costs[i];
-                }
-                return arr;
-            };
-
-            AutoPath.prototype.calculateCosts = function () {
-                var arr = this._nodes;
-                this._costs = new Array();
-                this._costs.push(0);
-                for (var i = 0; i < arr.length - 1; i++) {
-                    if (!arr[i + 1])
-                        break;
-
-                    this._costs.push(this.calculateCost(arr[i], arr[i + 1]));
-                    /*
-                    if (Math.abs(arr[i].x - arr[i + 1].x) == 1 &&
-                    Math.abs(arr[i].y - arr[i + 1].y) == 1) {
-                    this.costs.push(3);
-                    }
-                    else this.costs.push(2);
-                    */
-                }
-            };
-
-            AutoPath.prototype.calculateCost = function (n1, n2) {
-                if (Math.abs(n1.x - n2.x) == 1 && Math.abs(n1.y - n2.y) == 1) {
-                    return 3;
-                } else
-                    return 2;
-            };
-
-            AutoPath.prototype.straightenPath = function (level) {
-                var arr = this._nodes;
-                for (var i = 0; i < arr.length - 2; i++) {
-                    if (!arr[i + 2])
-                        break;
-
-                    if (Math.abs(arr[i].x - arr[i + 2].x) == 1 && Math.abs(arr[i].y - arr[i + 2].y) == 1) {
-                        if (Controllers.isPassable(this.getFourth(arr[i], arr[i + 1], arr[i + 2]), level)) {
-                            arr.splice(i + 1);
-                        }
-                    }
-                }
-            };
-
-            AutoPath.prototype.getFourth = function (n1, n2, n3) {
-                var x, y;
-                if (n2.x == n1.x) {
-                    x = n3.x;
-                } else
-                    x = n1.x;
-
-                if (n2.y == n1.y) {
-                    y = n3.y;
-                } else
-                    y = n1.y;
-                return { x: x, y: y };
-            };
-            return AutoPath;
-        })();
-        Controllers.AutoPath = AutoPath;
-    })(Rouge.Controllers || (Rouge.Controllers = {}));
-    var Controllers = Rouge.Controllers;
 })(Rouge || (Rouge = {}));
 var Rouge;
 (function (Rouge) {
@@ -728,23 +671,42 @@ var Rouge;
 var Rouge;
 (function (Rouge) {
     (function (Controllers) {
-        var PathBuilder = (function () {
-            function PathBuilder(from, maxCost) {
-                this.max = maxCost;
+        var Path = (function () {
+            function Path(level, from, to) {
+                var _this = this;
                 this._nodes = new Array();
                 this._costs = new Array();
-                this._nodes.push(from);
-                this._costs.push(0);
-                this.pointer = from;
+
+                if (to) {
+                    this._astar = new ROT.Path.AStar(to.x, to.y, function (x, y) {
+                        Controllers.isPassable({ x: x, y: y }, level);
+                    }, { topology: 4 });
+                    this._astar.compute(from.x, from.y, function (x, y) {
+                        _this._nodes.push({ x: x, y: y });
+                    });
+                    this.straightenPath(level);
+                    this.calculateCosts();
+                    this.pointer = to;
+                } else {
+                    this._nodes.push(from);
+                    this._costs.push(0);
+                    this.pointer = from;
+                }
             }
-            PathBuilder.prototype.calculateCost = function (n1, n2) {
-                if (Math.abs(n1.x - n2.x) == 1 && Math.abs(n1.y - n2.y) == 1) {
-                    return 3;
-                } else
-                    return 2;
+            Path.prototype.nodes = function (maxCost) {
+                var arr = new Array();
+                var cost = 0;
+                for (var i = 0; i < this._nodes.length - 1; i++) {
+                    if (cost > maxCost)
+                        break;
+
+                    arr.push(this._nodes[i]);
+                    cost += this._costs[i];
+                }
+                return arr;
             };
 
-            PathBuilder.prototype.movePointer = function (dir) {
+            Path.prototype.movePointer = function (dir) {
                 switch (dir) {
                     case 4 /* NORTHWEST */:
                         this.pointer.y -= 1;
@@ -778,9 +740,63 @@ var Rouge;
 
                 throw ("TODO");
             };
-            return PathBuilder;
+
+            Path.prototype.calculateCosts = function () {
+                var arr = this._nodes;
+                this._costs = new Array();
+                this._costs.push(0);
+                for (var i = 0; i < arr.length - 1; i++) {
+                    if (!arr[i + 1])
+                        break;
+
+                    this._costs.push(this.calculateCost(arr[i], arr[i + 1]));
+                    /*
+                    if (Math.abs(arr[i].x - arr[i + 1].x) == 1 &&
+                    Math.abs(arr[i].y - arr[i + 1].y) == 1) {
+                    this.costs.push(3);
+                    }
+                    else this.costs.push(2);
+                    */
+                }
+            };
+
+            Path.prototype.calculateCost = function (n1, n2) {
+                if (Math.abs(n1.x - n2.x) == 1 && Math.abs(n1.y - n2.y) == 1) {
+                    return 3;
+                } else
+                    return 2;
+            };
+
+            Path.prototype.straightenPath = function (level) {
+                var arr = this._nodes;
+                for (var i = 0; i < arr.length - 2; i++) {
+                    if (!arr[i + 2])
+                        break;
+
+                    if (Math.abs(arr[i].x - arr[i + 2].x) == 1 && Math.abs(arr[i].y - arr[i + 2].y) == 1) {
+                        if (Controllers.isPassable(this.getFourth(arr[i], arr[i + 1], arr[i + 2]), level)) {
+                            arr.splice(i + 1);
+                        }
+                    }
+                }
+            };
+
+            Path.prototype.getFourth = function (n1, n2, n3) {
+                var x, y;
+                if (n2.x == n1.x) {
+                    x = n3.x;
+                } else
+                    x = n1.x;
+
+                if (n2.y == n1.y) {
+                    y = n3.y;
+                } else
+                    y = n1.y;
+                return { x: x, y: y };
+            };
+            return Path;
         })();
-        Controllers.PathBuilder = PathBuilder;
+        Controllers.Path = Path;
     })(Rouge.Controllers || (Rouge.Controllers = {}));
     var Controllers = Rouge.Controllers;
 })(Rouge || (Rouge = {}));
@@ -971,7 +987,7 @@ var Rouge;
 
             switch (type) {
                 case 0 /* MINES */:
-                    map = new ROT.Map.Digger(100, 33, {
+                    map = new ROT.Map.Digger(200, 32, {
                         dugPercentage: 0.55,
                         roomWidth: [4, 9],
                         roomHeight: [3, 7],

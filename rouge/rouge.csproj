@@ -31,8 +31,7 @@
     <TypeScriptCompile Include="src\Rouge\Console\GameUI.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\MainMenuScreen.ts" />
     <TypeScriptCompile Include="src\Rouge\Constants.ts" />
-    <TypeScriptCompile Include="src\Rouge\Controllers\AutoPath.ts" />
-    <TypeScriptCompile Include="src\Rouge\Controllers\PathBuilder.ts" />
+    <TypeScriptCompile Include="src\Rouge\Controllers\Path.ts" />
     <TypeScriptCompile Include="src\Rouge\Controllers\Player.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\Attack.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\AttackResult.ts" />

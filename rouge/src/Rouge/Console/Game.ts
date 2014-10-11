@@ -25,7 +25,7 @@
                 }
                 //console.log(this.display.getOptions().width);
                 Constants.displayWidth = this.display.getOptions().width;
-                this.gameScreen.camera.width = Constants.displayWidth - Constants.LEFT_UI_WIDTH * 2;
+                this.gameScreen.camera.width = Constants.displayWidth - Constants.SIDEBAR_WIDTH * 2;
                 this.screen.draw();
             }
             window.onresize = resize;

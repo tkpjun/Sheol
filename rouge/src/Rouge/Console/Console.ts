@@ -4,8 +4,11 @@
 
         private static _displayWidth = 92;
 
-        static get LEFT_UI_WIDTH(): number {
-            return 16
+        static get SIDEBAR_WIDTH(): number {
+            return 16;
+        }
+        static get BOTTOM_BAR_HEIGHT(): number {
+            return 2;
         }
         static set displayWidth(val: number) {
             Constants._displayWidth = val;
@@ -14,7 +17,7 @@
             return Constants._displayWidth;
         }
         static get DISPLAY_HEIGHT(): number {
-            return 34
+            return 34;
         }
     }
 
