@@ -14,14 +14,16 @@
             this.screen = this.gameScreen;
 
             var resize = () => {
-                var size = this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight - 5);
+                var size = this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight);
                 this.display.setOptions({ fontSize: size });
-                while (this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) > size) {
+
+                while (this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) >= size) {
                     this.display.setOptions({ width: this.display.getOptions().width + 1 });
                 }
                 while (this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) < size) {
                     this.display.setOptions({ width: this.display.getOptions().width - 1 });
                 }
+
                 Constants.displayWidth = this.display.getOptions().width;
                 this.gameScreen.camera.width = Constants.displayWidth - Constants.SIDEBAR_WIDTH * 2;
                 this.screen.draw();

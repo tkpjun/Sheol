@@ -51,7 +51,9 @@
                 nodes.shift();
             }
             nodes.forEach((node) => {
-                this.matrix[node.x - offsetX][node.y - offsetY].bgColor = color;
+                if (this.matrix[node.x - offsetX]) {
+                    this.matrix[node.x - offsetX][node.y - offsetY].bgColor = color;
+                }
             });
             return this;
         }

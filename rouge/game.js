@@ -217,7 +217,9 @@ var Rouge;
                     nodes.shift();
                 }
                 nodes.forEach(function (node) {
-                    _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = color;
+                    if (_this.matrix[node.x - offsetX]) {
+                        _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = color;
+                    }
                 });
                 return this;
             };
@@ -286,14 +288,16 @@ var Rouge;
                 this.screen = this.gameScreen;
 
                 var resize = function () {
-                    var size = _this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight - 5);
+                    var size = _this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight);
                     _this.display.setOptions({ fontSize: size });
-                    while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) > size) {
+
+                    while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) >= size) {
                         _this.display.setOptions({ width: _this.display.getOptions().width + 1 });
                     }
                     while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) < size) {
                         _this.display.setOptions({ width: _this.display.getOptions().width - 1 });
                     }
+
                     Console.Constants.displayWidth = _this.display.getOptions().width;
                     _this.gameScreen.camera.width = Console.Constants.displayWidth - Console.Constants.SIDEBAR_WIDTH * 2;
                     _this.screen.draw();
