@@ -12,7 +12,7 @@ module Rouge.Entities {
             this.name = name;
             this.skills = new Skillset().setProwess(5).setEvasion(5);
             this.traits = new Array<Trait>();
-            this.stats = new Stats(30, 6, 100, 30);
+            this.stats = new Stats(30, 10, 100, 30);
             this.inventory = new Array<IItem>();
             this.active = true;
         }

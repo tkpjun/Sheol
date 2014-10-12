@@ -9,7 +9,7 @@
         for (var i = 0; i < Constants.SIDEBAR_WIDTH; i++) {
             matrix.matrix[i][0] = { symbol: " ", bgColor: "midnightblue" }
         }
-        matrix.addString(4, 0, "LEVEL:1", null, null, "midnightblue");
+        matrix.addString(4, 0, "LEVEL:1");
 
         matrix.addString(1, 2, p1.name);
         matrix.addString(1, 4, "HP: " + p1.stats.hp + "/" + p1.stats.hpMax);
@@ -48,7 +48,7 @@
         for (var i = 0; i < Constants.SIDEBAR_WIDTH; i++) {
             matrix.matrix[i][0] = { symbol: " ", bgColor: "midnightblue" }
         }
-        matrix.addString(5, 0, "QUEUE", null, null, "midnightblue");
+        matrix.addString(5, 0, "QUEUE");
         for (var i = 0; i < both.length; i++) {
             matrix.addString(1, i * 3 + 2, both[i].entity.name, Constants.SIDEBAR_WIDTH - 6);
             matrix.addString(1, i * 3 + 3, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Constants.SIDEBAR_WIDTH - 6);
@@ -56,11 +56,10 @@
             matrix.addString(Constants.SIDEBAR_WIDTH - 4, i * 3 + 2, "|e|");
             matrix.addString(Constants.SIDEBAR_WIDTH - 4, i * 3 + 3, "---");
             if (both[i].time === 0) {
-                matrix.addString(3, i * 3 + 1, "ready", null, "green");
+                matrix.addString(1, i * 3 + 1, "-- ready --", null, "green");
             }
             else {
-                matrix.addString(2, i * 3 + 1, "+     tu");
-                matrix.addString(3, i * 3 + 1, (<number>both[i].time).toFixed(2), null, "red");               
+                matrix.addString(1, i * 3 + 1, "- +" + (<number>both[i].time).toFixed(2) + "tu -", null, "red");           
             }
         }
 
@@ -74,7 +73,7 @@
         var matrix = new DrawMatrix(1, hDisp - hThis - Constants.BOTTOM_BAR_HEIGHT, null, w - 2, hThis);
 
         matrix.addString(0, 0, "q--- w--- e---");
-        matrix.addString(0, 1, "|NW| | N| |NE |");
+        matrix.addString(0, 1, "|NW| | N| |NE|");
         matrix.addString(0, 2, "---- ---- ----");
         matrix.addString(0, 3, "a--- f--- d---");
         matrix.addString(0, 4, "|W | PICK | E|");
@@ -98,6 +97,19 @@
                 matrix.matrix[i][j] = { symbol: " ", bgColor: "midnightblue" };
             }
         }
+        matrix.addString(1, 0, " CANCEL ", null, null, "royalblue");
+        matrix.addString(11, 0, " ATTACK ", null, null, "royalblue");
+        matrix.addString(21, 0, " RANGED ", null, null, "royalblue");
+        matrix.addString(31, 0, " SKILLS ", null, null, "royalblue");
+
+        matrix.addString(Constants.displayWidth - 42, 0, "CON:");
+        matrix.addString(Constants.displayWidth - 38, 0, " - ", null, null, "royalblue");
+        matrix.addString(Constants.displayWidth - 34, 0, " + ", null, null, "royalblue");
+        matrix.addString(Constants.displayWidth - 30, 0, " v ", null, null, "royalblue");
+        matrix.addString(Constants.displayWidth - 26, 0, " ^ ", null, null, "royalblue");
+        matrix.addString(Constants.displayWidth - 21, 0, "INVENTORY", null, null, "royalblue");
+        matrix.addString(Constants.displayWidth - 10, 0, " OPTIONS ", null, null, "royalblue");
+
         return matrix;
     }
 }

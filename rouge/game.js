@@ -118,7 +118,7 @@ var Rouge;
             });
             Object.defineProperty(Constants, "BOTTOM_BAR_HEIGHT", {
                 get: function () {
-                    return 2;
+                    return 1;
                 },
                 enumerable: true,
                 configurable: true
@@ -192,14 +192,33 @@ var Rouge;
                 if (wrapAt) {
                     limit = wrapAt;
                 }
+                var bgc;
 
                 for (var i = 0; i < str.length; i++) {
                     if (i < limit) {
-                        this.matrix[i + x][y] = { symbol: str[i], color: color, bgColor: bgColor };
+                        if (!bgColor)
+                            bgc = this.matrix[i + x][y].bgColor;
+                        else
+                            bgc = bgColor;
+                        this.matrix[i + x][y] = { symbol: str[i], color: color, bgColor: bgc };
                     } else {
                         //Add wrapping
                     }
                 }
+                return this;
+            };
+
+            DrawMatrix.prototype.addPath = function (path, offsetX, offsetY, maxAP, excludeFirst, color) {
+                var _this = this;
+                var nodes = path.nodes(maxAP);
+                if (!color)
+                    color = "slateblue";
+                if (excludeFirst) {
+                    nodes.shift();
+                }
+                nodes.forEach(function (node) {
+                    _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = color;
+                });
                 return this;
             };
 
@@ -267,20 +286,19 @@ var Rouge;
                 this.screen = this.gameScreen;
 
                 var resize = function () {
-                    var size = _this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight);
+                    var size = _this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight - 5);
                     _this.display.setOptions({ fontSize: size });
-
                     while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) > size) {
                         _this.display.setOptions({ width: _this.display.getOptions().width + 1 });
                     }
                     while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) < size) {
                         _this.display.setOptions({ width: _this.display.getOptions().width - 1 });
                     }
-
-                    //console.log(this.display.getOptions().width);
                     Console.Constants.displayWidth = _this.display.getOptions().width;
                     _this.gameScreen.camera.width = Console.Constants.displayWidth - Console.Constants.SIDEBAR_WIDTH * 2;
                     _this.screen.draw();
+                    console.log((window.innerWidth / window.innerHeight).toFixed(2));
+                    console.log(_this.display.getOptions().width);
                 };
                 window.onresize = resize;
                 resize();
@@ -316,11 +334,8 @@ var Rouge;
                     _this.camera.centerOn(short.x);
                     _this.draw();
                 };
-                this.manager.currEntity.attach({ update: update });
-                this.manager.changed.attach({ update: update });
-                this.manager.changed.attach({ update: function () {
-                        _this.draw();
-                    } });
+                this.manager.currEntity.attach(update);
+                this.manager.changed.attach(update);
                 this.camera = new Console.Camera(Console.Constants.SIDEBAR_WIDTH, Console.Constants.displayWidth - Console.Constants.SIDEBAR_WIDTH * 2, 0, Console.Constants.DISPLAY_HEIGHT - Console.Constants.BOTTOM_BAR_HEIGHT, this.display);
                 update();
             }
@@ -329,7 +344,7 @@ var Rouge;
 
                 this.display.clear();
                 this.camera.updateView(this.manager.level, this.manager.characters);
-                this.camera.view.draw(this.display);
+                this.debugPath(this.camera.view).draw(this.display);
                 Console.GameUI.getLeftBar(this.manager.characters).draw(this.display);
                 Console.GameUI.getDPad().draw(this.display);
                 Console.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.property, this.manager.characters.concat(this.manager.level.entities)).draw(this.display);
@@ -338,18 +353,16 @@ var Rouge;
                 this.manager.engine.unlock();
             };
 
-            GameScreen.prototype.drawUI = function () {
-                var p1 = this.manager.characters[0];
-                var p2 = this.manager.characters[1];
-                var w = Console.Constants.SIDEBAR_WIDTH;
+            GameScreen.prototype.debugPath = function (matrix) {
+                var _this = this;
+                var room1 = this.manager.level.map.getRooms()[0];
+                var room2 = this.manager.level.map.getRooms()[9];
+                var path = new Rouge.Controllers.Path(function (x, y, from) {
+                    return Rouge.Controllers.isPassable({ x: x, y: y }, _this.manager.level, from);
+                }, { x: room1.getCenter()[0], y: room1.getCenter()[1] }, { x: room2.getCenter()[0], y: room2.getCenter()[1] });
 
-                this.display.drawText(1, 1, p1.name, w);
-                this.display.drawText(1, 3, "HP: " + p1.stats.hp + "/" + p1.stats.hpMax, w);
-                this.display.drawText(1, 4, "AP: " + p1.stats.ap + "/" + p1.stats.apMax, w);
-
-                this.display.drawText(1, 8, p2.name, w);
-                this.display.drawText(1, 10, "HP: " + p2.stats.hp + "/" + p2.stats.hpMax, w);
-                this.display.drawText(1, 11, "AP: " + p2.stats.ap + "/" + p2.stats.apMax, w);
+                matrix.addPath(path, this.camera.x, this.camera.y, Number.MAX_VALUE);
+                return matrix;
             };
             return GameScreen;
         })();
@@ -370,7 +383,7 @@ var Rouge;
                 for (var i = 0; i < Console.Constants.SIDEBAR_WIDTH; i++) {
                     matrix.matrix[i][0] = { symbol: " ", bgColor: "midnightblue" };
                 }
-                matrix.addString(4, 0, "LEVEL:1", null, null, "midnightblue");
+                matrix.addString(4, 0, "LEVEL:1");
 
                 matrix.addString(1, 2, p1.name);
                 matrix.addString(1, 4, "HP: " + p1.stats.hp + "/" + p1.stats.hpMax);
@@ -410,7 +423,7 @@ var Rouge;
                 for (var i = 0; i < Console.Constants.SIDEBAR_WIDTH; i++) {
                     matrix.matrix[i][0] = { symbol: " ", bgColor: "midnightblue" };
                 }
-                matrix.addString(5, 0, "QUEUE", null, null, "midnightblue");
+                matrix.addString(5, 0, "QUEUE");
                 for (var i = 0; i < both.length; i++) {
                     matrix.addString(1, i * 3 + 2, both[i].entity.name, Console.Constants.SIDEBAR_WIDTH - 6);
                     matrix.addString(1, i * 3 + 3, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Console.Constants.SIDEBAR_WIDTH - 6);
@@ -418,10 +431,9 @@ var Rouge;
                     matrix.addString(Console.Constants.SIDEBAR_WIDTH - 4, i * 3 + 2, "|e|");
                     matrix.addString(Console.Constants.SIDEBAR_WIDTH - 4, i * 3 + 3, "---");
                     if (both[i].time === 0) {
-                        matrix.addString(3, i * 3 + 1, "ready", null, "green");
+                        matrix.addString(1, i * 3 + 1, "-- ready --", null, "green");
                     } else {
-                        matrix.addString(2, i * 3 + 1, "+     tu");
-                        matrix.addString(3, i * 3 + 1, both[i].time.toFixed(2), null, "red");
+                        matrix.addString(1, i * 3 + 1, "- +" + both[i].time.toFixed(2) + "tu -", null, "red");
                     }
                 }
 
@@ -436,7 +448,7 @@ var Rouge;
                 var matrix = new Console.DrawMatrix(1, hDisp - hThis - Console.Constants.BOTTOM_BAR_HEIGHT, null, w - 2, hThis);
 
                 matrix.addString(0, 0, "q--- w--- e---");
-                matrix.addString(0, 1, "|NW| | N| |NE |");
+                matrix.addString(0, 1, "|NW| | N| |NE|");
                 matrix.addString(0, 2, "---- ---- ----");
                 matrix.addString(0, 3, "a--- f--- d---");
                 matrix.addString(0, 4, "|W | PICK | E|");
@@ -457,6 +469,19 @@ var Rouge;
                         matrix.matrix[i][j] = { symbol: " ", bgColor: "midnightblue" };
                     }
                 }
+                matrix.addString(1, 0, " CANCEL ", null, null, "royalblue");
+                matrix.addString(11, 0, " ATTACK ", null, null, "royalblue");
+                matrix.addString(21, 0, " RANGED ", null, null, "royalblue");
+                matrix.addString(31, 0, " SKILLS ", null, null, "royalblue");
+
+                matrix.addString(Console.Constants.displayWidth - 42, 0, "CON:");
+                matrix.addString(Console.Constants.displayWidth - 38, 0, " - ", null, null, "royalblue");
+                matrix.addString(Console.Constants.displayWidth - 34, 0, " + ", null, null, "royalblue");
+                matrix.addString(Console.Constants.displayWidth - 30, 0, " v ", null, null, "royalblue");
+                matrix.addString(Console.Constants.displayWidth - 26, 0, " ^ ", null, null, "royalblue");
+                matrix.addString(Console.Constants.displayWidth - 21, 0, "INVENTORY", null, null, "royalblue");
+                matrix.addString(Console.Constants.displayWidth - 10, 0, " OPTIONS ", null, null, "royalblue");
+
                 return matrix;
             }
             GameUI.getBottomBar = getBottomBar;
@@ -527,11 +552,26 @@ var Rouge;
         })(Controllers.Direction || (Controllers.Direction = {}));
         var Direction = Controllers.Direction;
 
-        function isPassable(loc, level) {
+        function isPassable(loc, level, from) {
             var cell = level.map[loc.x + "," + loc.y];
+            if (from) {
+                if (diagonal(from, loc)) {
+                    var cell2 = level.map[loc.x + "," + from.y];
+                    var cell3 = level.map[from.x + "," + loc.y];
+                    return cell !== " " && cell2 !== " " && cell3 !== " ";
+                }
+            }
             return cell !== " ";
         }
         Controllers.isPassable = isPassable;
+
+        function diagonal(loc, neighbor) {
+            if (Math.abs(loc.x - neighbor.x) == 1 && Math.abs(loc.y - neighbor.y) == 1) {
+                return true;
+            } else
+                return false;
+        }
+        Controllers.diagonal = diagonal;
 
         function planAction(entity, level) {
             if (entity instanceof Rouge.Entities.PlayerChar) {
@@ -556,11 +596,11 @@ var Rouge;
                 var _this = this;
                 this.level = level;
                 this.currEntity = new Controllers.ObservableProperty(null);
-                this.currEntity.attach({ update: function () {
-                        return _this.update();
-                    } });
+                this.currEntity.attach(function () {
+                    return _this.update();
+                });
                 this.engine = new ROT.Engine(this.level.scheduler);
-                this.changed = new Rouge.Observable();
+                this.changed = new Controllers.Observable();
                 this.characters = new Array();
 
                 this.start();
@@ -628,29 +668,43 @@ var Rouge;
     })(Rouge.Controllers || (Rouge.Controllers = {}));
     var Controllers = Rouge.Controllers;
 })(Rouge || (Rouge = {}));
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
 var Rouge;
 (function (Rouge) {
     (function (Controllers) {
-        var ObservableProperty = (function () {
-            function ObservableProperty(property) {
+        var Observable = (function () {
+            function Observable() {
                 this.observers = new Array();
-                this._property = property;
             }
-            ObservableProperty.prototype.attach = function (observer) {
+            Observable.prototype.attach = function (observer) {
                 this.observers.push(observer);
             };
 
-            ObservableProperty.prototype.detach = function (observer) {
+            Observable.prototype.detach = function (observer) {
                 var index = this.observers.indexOf(observer);
                 this.observers.splice(index, 1);
             };
 
-            ObservableProperty.prototype.notify = function () {
+            Observable.prototype.notify = function () {
                 this.observers.forEach(function (o) {
-                    o.update();
+                    o();
                 });
             };
+            return Observable;
+        })();
+        Controllers.Observable = Observable;
 
+        var ObservableProperty = (function (_super) {
+            __extends(ObservableProperty, _super);
+            function ObservableProperty(property) {
+                _super.call(this);
+                this._property = property;
+            }
             Object.defineProperty(ObservableProperty.prototype, "property", {
                 get: function () {
                     return this._property;
@@ -663,7 +717,7 @@ var Rouge;
                 configurable: true
             });
             return ObservableProperty;
-        })();
+        })(Observable);
         Controllers.ObservableProperty = ObservableProperty;
     })(Rouge.Controllers || (Rouge.Controllers = {}));
     var Controllers = Rouge.Controllers;
@@ -672,19 +726,17 @@ var Rouge;
 (function (Rouge) {
     (function (Controllers) {
         var Path = (function () {
-            function Path(level, from, to) {
+            function Path(passableFn, from, to) {
                 var _this = this;
                 this._nodes = new Array();
                 this._costs = new Array();
 
                 if (to) {
-                    this._astar = new ROT.Path.AStar(to.x, to.y, function (x, y) {
-                        Controllers.isPassable({ x: x, y: y }, level);
-                    }, { topology: 4 });
+                    this._astar = new ROT.Path.AStar(to.x, to.y, passableFn, { topology: 8 });
                     this._astar.compute(from.x, from.y, function (x, y) {
                         _this._nodes.push({ x: x, y: y });
                     });
-                    this.straightenPath(level);
+                    this.fixPath(passableFn);
                     this.calculateCosts();
                     this.pointer = to;
                 } else {
@@ -750,13 +802,6 @@ var Rouge;
                         break;
 
                     this._costs.push(this.calculateCost(arr[i], arr[i + 1]));
-                    /*
-                    if (Math.abs(arr[i].x - arr[i + 1].x) == 1 &&
-                    Math.abs(arr[i].y - arr[i + 1].y) == 1) {
-                    this.costs.push(3);
-                    }
-                    else this.costs.push(2);
-                    */
                 }
             };
 
@@ -767,32 +812,20 @@ var Rouge;
                     return 2;
             };
 
-            Path.prototype.straightenPath = function (level) {
+            Path.prototype.fixPath = function (passableFn) {
                 var arr = this._nodes;
                 for (var i = 0; i < arr.length - 2; i++) {
-                    if (!arr[i + 2])
+                    if (!arr[i + 1])
                         break;
 
-                    if (Math.abs(arr[i].x - arr[i + 2].x) == 1 && Math.abs(arr[i].y - arr[i + 2].y) == 1) {
-                        if (Controllers.isPassable(this.getFourth(arr[i], arr[i + 1], arr[i + 2]), level)) {
-                            arr.splice(i + 1);
+                    if (!passableFn(arr[i + 1].x, arr[i + 1].y, arr[i])) {
+                        if (passableFn(arr[i].x, arr[i + 1].y)) {
+                            this._nodes.splice(i + 1, 0, { x: arr[i].x, y: arr[i + 1].y });
+                        } else {
+                            this._nodes.splice(i + 1, 0, { x: arr[i + 1].x, y: arr[i].y });
                         }
                     }
                 }
-            };
-
-            Path.prototype.getFourth = function (n1, n2, n3) {
-                var x, y;
-                if (n2.x == n1.x) {
-                    x = n3.x;
-                } else
-                    x = n1.x;
-
-                if (n2.y == n1.y) {
-                    y = n3.y;
-                } else
-                    y = n1.y;
-                return { x: x, y: y };
             };
             return Path;
         })();
@@ -987,7 +1020,7 @@ var Rouge;
 
             switch (type) {
                 case 0 /* MINES */:
-                    map = new ROT.Map.Digger(200, 32, {
+                    map = new ROT.Map.Digger(200, 33, {
                         dugPercentage: 0.55,
                         roomWidth: [4, 9],
                         roomHeight: [3, 7],
@@ -1139,12 +1172,6 @@ var Rouge;
     })(Rouge.Entities || (Rouge.Entities = {}));
     var Entities = Rouge.Entities;
 })(Rouge || (Rouge = {}));
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
 var Rouge;
 (function (Rouge) {
     ///<reference path="Entity.ts"/>
@@ -1205,7 +1232,7 @@ var Rouge;
                 this.name = name;
                 this.skills = new Entities.Skillset().setProwess(5).setEvasion(5);
                 this.traits = new Array();
-                this.stats = new Entities.Stats(30, 6, 100, 30);
+                this.stats = new Entities.Stats(30, 10, 100, 30);
                 this.inventory = new Array();
                 this.active = true;
             }
@@ -1392,31 +1419,6 @@ var Rouge;
     })(Rouge.Objects || (Rouge.Objects = {}));
     var Objects = Rouge.Objects;
 })(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    var Observable = (function () {
-        function Observable() {
-            this.observers = new Array();
-        }
-        Observable.prototype.attach = function (observer) {
-            this.observers.push(observer);
-        };
-
-        Observable.prototype.detach = function (observer) {
-            var index = this.observers.indexOf(observer);
-            this.observers.splice(index, 1);
-        };
-
-        Observable.prototype.notify = function () {
-            this.observers.forEach(function (o) {
-                o.update();
-            });
-        };
-        return Observable;
-    })();
-    Rouge.Observable = Observable;
-})(Rouge || (Rouge = {}));
-
 window.onload = function () {
     document.getElementById("content").appendChild(new Rouge.Console.Game().display.getContainer());
     Rouge.Controllers.Player.init();

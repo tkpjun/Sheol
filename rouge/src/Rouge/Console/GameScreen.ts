@@ -28,9 +28,8 @@
                 this.camera.centerOn(short.x);
                 this.draw();
             }
-            this.manager.currEntity.attach({ update: update });
-            this.manager.changed.attach({ update: update });
-            this.manager.changed.attach({ update: () => { this.draw(); } });
+            this.manager.currEntity.attach(update);
+            this.manager.changed.attach(update);
             this.camera = new Camera(Constants.SIDEBAR_WIDTH,
                 Constants.displayWidth - Constants.SIDEBAR_WIDTH * 2,
                 0,
@@ -44,7 +43,7 @@
 
             this.display.clear();
             this.camera.updateView(this.manager.level, this.manager.characters);
-            this.camera.view.draw(this.display);
+            this.debugPath(this.camera.view).draw(this.display);
             GameUI.getLeftBar(this.manager.characters).draw(this.display);
             GameUI.getDPad().draw(this.display);
             GameUI.getRightBar(this.manager.level.scheduler,
@@ -56,18 +55,18 @@
             this.manager.engine.unlock();
         }
 
-        private drawUI() {
-            var p1 = this.manager.characters[0];
-            var p2 = this.manager.characters[1];
-            var w = Constants.SIDEBAR_WIDTH;
+        private debugPath(matrix: DrawMatrix): DrawMatrix {
 
-            this.display.drawText(1, 1, p1.name, w);
-            this.display.drawText(1, 3, "HP: " + p1.stats.hp + "/" + p1.stats.hpMax, w);
-            this.display.drawText(1, 4, "AP: " + p1.stats.ap + "/" + p1.stats.apMax, w);
+            var room1 = (<ROT.Map.Dungeon>this.manager.level.map).getRooms()[0];
+            var room2 = (<ROT.Map.Dungeon>this.manager.level.map).getRooms()[9];
+            var path = new Controllers.Path((x, y, from: Controllers.ILocation) => {
+                    return Controllers.isPassable({ x: x, y: y }, this.manager.level, from);
+                },
+                { x: room1.getCenter()[0], y: room1.getCenter()[1] },
+                { x: room2.getCenter()[0], y: room2.getCenter()[1] });
 
-            this.display.drawText(1, 8, p2.name, w);
-            this.display.drawText(1, 10, "HP: " + p2.stats.hp + "/" + p2.stats.hpMax, w);
-            this.display.drawText(1, 11, "AP: " + p2.stats.ap + "/" + p2.stats.apMax, w);
+            matrix.addPath(path, this.camera.x, this.camera.y, Number.MAX_VALUE);
+            return matrix;
         }
     }
 }

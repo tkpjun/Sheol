@@ -1,28 +1,36 @@
-﻿module Rouge.Controllers {
+﻿
+module Rouge.Controllers {
 
-    export class ObservableProperty<T> implements IObservable {
+    export class Observable implements IObservable {
+        private observers: Array<() => void>;
 
-        private observers: IObserver[];
-        private _property: T;
-
-        constructor(property: T) {
-            this.observers = new Array<IObserver>();
-            this._property = property;
+        constructor() {
+            this.observers = new Array<() => void>();
         }
 
-        attach(observer: IObserver) {
+        attach(observer: () => void) {
             this.observers.push(observer);
         }
 
-        detach(observer: IObserver) {
+        detach(observer: () => void) {
             var index = this.observers.indexOf(observer);
             this.observers.splice(index, 1);
         }
 
         notify() {
             this.observers.forEach((o) => {
-                o.update();
+                o();
             })
+        }
+    }
+
+    export class ObservableProperty<T> extends Observable {
+
+        private _property: T;
+
+        constructor(property: T) {
+            super();
+            this._property = property;
         }
 
         get property(): T {

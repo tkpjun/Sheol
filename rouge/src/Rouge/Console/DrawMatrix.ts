@@ -29,15 +29,30 @@
             if (wrapAt) {
                 limit = wrapAt;
             }
+            var bgc;
 
             for (var i = 0; i < str.length; i++) {
                 if (i < limit) {
-                    this.matrix[i + x][y] = { symbol: str[i], color: color, bgColor: bgColor };
+                    if (!bgColor) bgc = this.matrix[i + x][y].bgColor;
+                    else bgc = bgColor;
+                    this.matrix[i + x][y] = { symbol: str[i], color: color, bgColor: bgc };
                 }
                 else {
                     //Add wrapping
                 }
             }
+            return this;
+        }
+
+        addPath(path: Controllers.Path, offsetX: number, offsetY: number, maxAP: number, excludeFirst?: boolean, color?: string): DrawMatrix {
+            var nodes = path.nodes(maxAP);
+            if (!color) color = "slateblue";
+            if (excludeFirst) {
+                nodes.shift();
+            }
+            nodes.forEach((node) => {
+                this.matrix[node.x - offsetX][node.y - offsetY].bgColor = color;
+            });
             return this;
         }
 

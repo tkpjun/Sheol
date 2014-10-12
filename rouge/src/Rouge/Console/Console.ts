@@ -8,7 +8,7 @@
             return 16;
         }
         static get BOTTOM_BAR_HEIGHT(): number {
-            return 2;
+            return 1;
         }
         static set displayWidth(val: number) {
             Constants._displayWidth = val;

@@ -21,37 +21,10 @@
         name: string;
     }
 
-    export interface IObserver {
-        update();
-    }
-
     export interface IObservable {
-        attach(observer: IObserver);
-        detach(observer: IObserver);
+        attach(observer: () => void);
+        detach(observer: () => void);
         notify();
-    }
-
-    export class Observable implements IObservable {
-        private observers: IObserver[];
-
-        constructor() {
-            this.observers = new Array<IObserver>();
-        }
-
-        attach(observer: IObserver) {
-            this.observers.push(observer);
-        }
-
-        detach(observer: IObserver) {
-            var index = this.observers.indexOf(observer);
-            this.observers.splice(index, 1);
-        }
-
-        notify() {
-            this.observers.forEach((o) => {
-                o.update();
-            })
-        }
     }
 } 
 

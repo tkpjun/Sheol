@@ -11,7 +11,7 @@
         constructor(level: Dungeon.Level) {
             this.level = level;
             this.currEntity = new ObservableProperty(null);
-            this.currEntity.attach({ update: () => this.update() });
+            this.currEntity.attach(() => this.update());
             this.engine = new ROT.Engine(this.level.scheduler);
             this.changed = new Observable();
             this.characters = new Array<Entities.PlayerChar>();
