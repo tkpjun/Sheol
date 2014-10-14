@@ -39,7 +39,7 @@
             this.level.scheduler.add(
                 new Controllers.ChangeProperty(this.currEntity, player2), true, 1.5);
 
-            var enemy = new Entities.Enemy("enemy");
+            var enemy = Entities.getEnemy("debug");
             var room2 = (<ROT.Map.Dungeon>this.level.map).getRooms()[1];
             enemy.x = room2.getCenter()[0];
             enemy.y = room2.getCenter()[1];

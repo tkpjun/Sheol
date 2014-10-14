@@ -78,6 +78,7 @@
                     default:
                         matrix[x - this.x][y - this.y] = {
                             symbol: map[key],
+                            color: "white"
                         };
                         break;
                 }
@@ -92,9 +93,7 @@
 
                 }
                 else {
-                    matrix.matrix[e.x - this.x][e.y - this.y] = {
-                        symbol: "e"
-                    };
+                    matrix.matrix[e.x - this.x][e.y - this.y] = getDrawable(e);
                 }
             })
             characters.forEach((p) => {
@@ -102,9 +101,7 @@
 
                 }
                 else {
-                    matrix.matrix[p.x - this.x][p.y - this.y] = {
-                        symbol: "@"
-                    };
+                    matrix.matrix[p.x - this.x][p.y - this.y] = getDrawable(p);
                 }
             })
 

@@ -31,8 +31,8 @@
         static add(color1: number[], color2: number[]): number[];
         static fromString(str: string): number[];
         static hsl2rgb(color: number[]): number[];
-        static interpolate(color1: number[], color2: number[], factor: number): number[];
-        static interpolateHSL(color1: number, color2: number, factor: number): number[];
+        static interpolate(color1: number[], color2: number[], factor?: number): number[];
+        static interpolateHSL(color1: number, color2: number, factor?: number): number[];
         static multiply(color1: number[], color2: number[]): number[];
         static randomize(color: number[], diff: number[]): number[];
         static rgb2hsl(color: number[]): number;

@@ -43,7 +43,7 @@
 
             this.display.clear();
             this.camera.updateView(this.manager.level, this.manager.characters);
-            this.debugPath(this.camera.view).draw(this.display);
+            this.debugPath(this.camera.view.addOverlay(this.debugBox())).draw(this.display);
             GameUI.getLeftBar(this.manager.characters).draw(this.display);
             GameUI.getDPad().draw(this.display);
             GameUI.getRightBar(this.manager.level.scheduler,
@@ -67,6 +67,20 @@
 
             matrix.addPath(path, this.camera.x, this.camera.y, Number.MAX_VALUE);
             return matrix;
+        }
+
+        private debugBox(): DrawMatrix {
+            var box = new TextBox(Constants.SIDEBAR_WIDTH, 0, 6);
+            box.addLine("Lorem ipsum dolor sit amet,");
+            box.addLine("consectetur adipiscing elit,");
+            box.addLine("sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.");
+            box.addLine("Ut enim ad minim veniam,");
+            box.addLine("quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.");
+            box.addLine("Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.");
+            box.addLine("Excepteur sint occaecat cupidatat non proident,");
+            box.addLine("sunt in culpa qui officia deserunt mollit anim id est laborum.");
+            var it = box.getMatrix(Constants.displayWidth - 2 * Constants.SIDEBAR_WIDTH);
+            return it;
         }
     }
 }

@@ -7,12 +7,18 @@ module Rouge.Entities {
         effects: any;
         active: boolean;
 
-        constructor(name: string) {
+        constructor(name: string, stats: Stats, skills?: Skillset, traits?: Trait[]) {
             super();
             this.name = name;
-            this.skills = new Skillset();
-            this.traits = new Array<Trait>();
-            this.stats = new Stats(300, 6, 100, 10);
+            if (skills)
+                this.skills = skills;
+            else
+                this.skills = new Skillset();
+            if (traits)
+                this.traits = traits;
+            else
+                this.traits = new Array<Trait>();
+            this.stats = stats;               
             this.inventory = new Array<IItem>();
             this.active = true;
         }

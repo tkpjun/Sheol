@@ -1,4 +1,4 @@
-﻿module Rouge.Objects {
+﻿module Rouge.Dungeon {
 
     export class ItemObject implements IObject {
 

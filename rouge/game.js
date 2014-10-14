@@ -68,7 +68,8 @@
                             break;
                         default:
                             matrix[x - this.x][y - this.y] = {
-                                symbol: map[key]
+                                symbol: map[key],
+                                color: "white"
                             };
                             break;
                     }
@@ -81,17 +82,13 @@
                 entities.forEach(function (e) {
                     if (e.x < _this.x || e.y < _this.y || e.x > _this.x + _this.width - 1 || e.y > _this.y + _this.height - 1) {
                     } else {
-                        matrix.matrix[e.x - _this.x][e.y - _this.y] = {
-                            symbol: "e"
-                        };
+                        matrix.matrix[e.x - _this.x][e.y - _this.y] = Console.getDrawable(e);
                     }
                 });
                 characters.forEach(function (p) {
                     if (p.x < _this.x || p.y < _this.y || p.x > _this.x + _this.width - 1 || p.y > _this.y + _this.height - 1) {
                     } else {
-                        matrix.matrix[p.x - _this.x][p.y - _this.y] = {
-                            symbol: "@"
-                        };
+                        matrix.matrix[p.x - _this.x][p.y - _this.y] = Console.getDrawable(p);
                     }
                 });
 
@@ -164,6 +161,15 @@ var Rouge;
             throw ("TODO");
         }
         Console.colorE = colorE;
+
+        function getDrawable(entity) {
+            if (entity instanceof Rouge.Entities.PlayerChar) {
+                return { symbol: "@" };
+            } else {
+                return { symbol: "e" };
+            }
+        }
+        Console.getDrawable = getDrawable;
     })(Rouge.Console || (Rouge.Console = {}));
     var Console = Rouge.Console;
 })(Rouge || (Rouge = {}));
@@ -188,14 +194,14 @@ var Rouge;
                 }
             }
             DrawMatrix.prototype.addString = function (x, y, str, wrapAt, color, bgColor) {
-                var limit = this.matrix.length;
+                var limit = this.matrix.length - 1;
                 if (wrapAt) {
                     limit = wrapAt;
                 }
                 var bgc;
 
                 for (var i = 0; i < str.length; i++) {
-                    if (i < limit) {
+                    if (i + x < limit) {
                         if (!bgColor)
                             bgc = this.matrix[i + x][y].bgColor;
                         else
@@ -217,14 +223,14 @@ var Rouge;
                     nodes.shift();
                 }
                 nodes.forEach(function (node) {
-                    if (_this.matrix[node.x - offsetX]) {
+                    if (_this.matrix[node.x - offsetX] && _this.matrix[node.x - offsetX][node.y - offsetY]) {
                         _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = color;
                     }
                 });
                 return this;
             };
 
-            DrawMatrix.prototype.combine = function (other) {
+            DrawMatrix.prototype.addOverlay = function (other) {
                 var newXOff = Math.min(this.xOffset, other.xOffset);
                 var newYOff = Math.min(this.yOffset, other.yOffset);
 
@@ -252,9 +258,26 @@ var Rouge;
 
                 for (var i = 0; i < other.matrix.length; i++) {
                     for (var j = 0; j < other.matrix[0].length; j++) {
-                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].symbol = other.matrix[i][j].symbol;
-                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = other.matrix[i][j].color;
-                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor = other.matrix[i][j].bgColor;
+                        if (other.matrix[i][j].symbol && other.matrix[i][j].symbol !== " ") {
+                            this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].symbol = other.matrix[i][j].symbol;
+                            this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = other.matrix[i][j].color;
+                        } else {
+                            var c1 = this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color;
+                            var c2 = other.matrix[i][j].bgColor;
+                            if (!c1)
+                                c1 = "black";
+                            if (!c2)
+                                c2 = "black";
+                            this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(c1), ROT.Color.fromString(c2), 0.75)));
+                        }
+                        var bg1 = this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor;
+                        var bg2 = other.matrix[i][j].bgColor;
+                        if (!bg1)
+                            bg1 = "black";
+                        if (!bg2)
+                            bg2 = "black";
+
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg1), ROT.Color.fromString(bg2), 0.75)));
                     }
                 }
 
@@ -348,7 +371,7 @@ var Rouge;
 
                 this.display.clear();
                 this.camera.updateView(this.manager.level, this.manager.characters);
-                this.debugPath(this.camera.view).draw(this.display);
+                this.debugPath(this.camera.view.addOverlay(this.debugBox())).draw(this.display);
                 Console.GameUI.getLeftBar(this.manager.characters).draw(this.display);
                 Console.GameUI.getDPad().draw(this.display);
                 Console.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.property, this.manager.characters.concat(this.manager.level.entities)).draw(this.display);
@@ -367,6 +390,20 @@ var Rouge;
 
                 matrix.addPath(path, this.camera.x, this.camera.y, Number.MAX_VALUE);
                 return matrix;
+            };
+
+            GameScreen.prototype.debugBox = function () {
+                var box = new Console.TextBox(Console.Constants.SIDEBAR_WIDTH, 0, 6);
+                box.addLine("Lorem ipsum dolor sit amet,");
+                box.addLine("consectetur adipiscing elit,");
+                box.addLine("sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.");
+                box.addLine("Ut enim ad minim veniam,");
+                box.addLine("quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.");
+                box.addLine("Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.");
+                box.addLine("Excepteur sint occaecat cupidatat non proident,");
+                box.addLine("sunt in culpa qui officia deserunt mollit anim id est laborum.");
+                var it = box.getMatrix(Console.Constants.displayWidth - 2 * Console.Constants.SIDEBAR_WIDTH);
+                return it;
             };
             return GameScreen;
         })();
@@ -429,15 +466,17 @@ var Rouge;
                 }
                 matrix.addString(5, 0, "QUEUE");
                 for (var i = 0; i < both.length; i++) {
-                    matrix.addString(1, i * 3 + 2, both[i].entity.name, Console.Constants.SIDEBAR_WIDTH - 6);
-                    matrix.addString(1, i * 3 + 3, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Console.Constants.SIDEBAR_WIDTH - 6);
-                    matrix.addString(Console.Constants.SIDEBAR_WIDTH - 4, i * 3 + 1, "---");
-                    matrix.addString(Console.Constants.SIDEBAR_WIDTH - 4, i * 3 + 2, "|e|");
-                    matrix.addString(Console.Constants.SIDEBAR_WIDTH - 4, i * 3 + 3, "---");
+                    var drawable = Console.getDrawable(both[i].entity);
+                    matrix.addString(1, i * 3 + 3, both[i].entity.name, Console.Constants.SIDEBAR_WIDTH - 6);
+                    matrix.addString(1, i * 3 + 4, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Console.Constants.SIDEBAR_WIDTH - 6);
+                    matrix.addString(Console.Constants.SIDEBAR_WIDTH - 4, i * 3 + 2, "---");
+                    matrix.addString(Console.Constants.SIDEBAR_WIDTH - 4, i * 3 + 3, "| |");
+                    matrix.addString(Console.Constants.SIDEBAR_WIDTH - 3, i * 3 + 3, drawable.symbol, null, drawable.color);
+                    matrix.addString(Console.Constants.SIDEBAR_WIDTH - 4, i * 3 + 4, "---");
                     if (both[i].time === 0) {
-                        matrix.addString(1, i * 3 + 1, "-- ready --", null, "green");
+                        matrix.addString(1, i * 3 + 2, "-- ready --", null, "green");
                     } else {
-                        matrix.addString(1, i * 3 + 1, "- +" + both[i].time.toFixed(2) + "tu -", null, "red");
+                        matrix.addString(1, i * 3 + 2, "- +" + both[i].time.toFixed(2) + "tu -", null, "red");
                     }
                 }
 
@@ -449,7 +488,7 @@ var Rouge;
                 var w = Console.Constants.SIDEBAR_WIDTH;
                 var hDisp = Console.Constants.DISPLAY_HEIGHT;
                 var hThis = 9;
-                var matrix = new Console.DrawMatrix(1, hDisp - hThis - Console.Constants.BOTTOM_BAR_HEIGHT, null, w - 2, hThis);
+                var matrix = new Console.DrawMatrix(1, hDisp - hThis - Console.Constants.BOTTOM_BAR_HEIGHT - 1, null, w - 2, hThis);
 
                 matrix.addString(0, 0, "q--- w--- e---");
                 matrix.addString(0, 1, "|NW| | N| |NE|");
@@ -473,18 +512,18 @@ var Rouge;
                         matrix.matrix[i][j] = { symbol: " ", bgColor: "midnightblue" };
                     }
                 }
-                matrix.addString(1, 0, " CANCEL ", null, null, "royalblue");
+                matrix.addString(1, 0, " SWITCH ", null, null, "royalblue");
                 matrix.addString(11, 0, " ATTACK ", null, null, "royalblue");
-                matrix.addString(21, 0, " RANGED ", null, null, "royalblue");
-                matrix.addString(31, 0, " SKILLS ", null, null, "royalblue");
+                matrix.addString(21, 0, " SPECIAL ", null, null, "royalblue");
 
-                matrix.addString(Console.Constants.displayWidth - 42, 0, "CON:");
-                matrix.addString(Console.Constants.displayWidth - 38, 0, " - ", null, null, "royalblue");
-                matrix.addString(Console.Constants.displayWidth - 34, 0, " + ", null, null, "royalblue");
-                matrix.addString(Console.Constants.displayWidth - 30, 0, " v ", null, null, "royalblue");
-                matrix.addString(Console.Constants.displayWidth - 26, 0, " ^ ", null, null, "royalblue");
-                matrix.addString(Console.Constants.displayWidth - 21, 0, "INVENTORY", null, null, "royalblue");
-                matrix.addString(Console.Constants.displayWidth - 10, 0, " OPTIONS ", null, null, "royalblue");
+                //matrix.addString(32, 0, " ?????? ", null, null, "royalblue");
+                matrix.addString(Console.Constants.displayWidth - 41, 0, "CON:");
+                matrix.addString(Console.Constants.displayWidth - 37, 0, " - ", null, null, "royalblue");
+                matrix.addString(Console.Constants.displayWidth - 33, 0, " + ", null, null, "royalblue");
+                matrix.addString(Console.Constants.displayWidth - 29, 0, " v ", null, null, "royalblue");
+                matrix.addString(Console.Constants.displayWidth - 25, 0, " ^ ", null, null, "royalblue");
+                matrix.addString(Console.Constants.displayWidth - 20, 0, "INVENTORY", null, null, "royalblue");
+                matrix.addString(Console.Constants.displayWidth - 9, 0, "  MENU  ", null, null, "royalblue");
 
                 return matrix;
             }
@@ -508,10 +547,68 @@ var Rouge;
 })(Rouge || (Rouge = {}));
 var Rouge;
 (function (Rouge) {
+    (function (Console) {
+        var TextBox = (function () {
+            function TextBox(x, y, height) {
+                this.x = x;
+                this.y = y;
+                this.height = height;
+                this.lines = new Array();
+            }
+            TextBox.prototype.addLine = function (line) {
+                this.lines.push(line);
+                if (this.lines.length > 50) {
+                    this.lines.splice(0, 25);
+                }
+                return this;
+            };
+
+            TextBox.prototype.getMatrix = function (width) {
+                var matrix = new Console.DrawMatrix(this.x, this.y, null, width, this.height);
+                var used = 0;
+                var index = this.lines.length - 1;
+
+                while (used < this.height && index >= 0) {
+                    var nextLine = this.lines[index];
+
+                    if (nextLine.length > width - 2) {
+                        var line1 = nextLine.slice(0, width - 2);
+                        var line2 = nextLine.slice(width - 2).trim();
+                        matrix.addString(1, this.height - used - 1, line2, width - 1);
+                        used += 1;
+                        if (used >= this.height)
+                            break;
+                        else {
+                            matrix.addString(1, this.height - used - 1, line1, width - 1);
+                            used += 1;
+                        }
+                    } else {
+                        matrix.addString(1, this.height - used - 1, nextLine, width - 1);
+                        used += 1;
+                    }
+                    index -= 1;
+                }
+                return matrix;
+            };
+            return TextBox;
+        })();
+        Console.TextBox = TextBox;
+    })(Rouge.Console || (Rouge.Console = {}));
+    var Console = Rouge.Console;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
     var Constants = (function () {
         function Constants() {
         }
         Object.defineProperty(Constants, "UPDATE_RATE", {
+            get: function () {
+                return 33;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Constants, "MAP_HEIGHT", {
             get: function () {
                 return 33;
             },
@@ -627,7 +724,7 @@ var Rouge;
                 this.characters.push(player2);
                 this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player2), true, 1.5);
 
-                var enemy = new Rouge.Entities.Enemy("enemy");
+                var enemy = Rouge.Entities.getEnemy("debug");
                 var room2 = this.level.map.getRooms()[1];
                 enemy.x = room2.getCenter()[0];
                 enemy.y = room2.getCenter()[1];
@@ -1024,7 +1121,7 @@ var Rouge;
 
             switch (type) {
                 case 0 /* MINES */:
-                    map = new ROT.Map.Digger(200, 33, {
+                    map = new ROT.Map.Digger(200, Rouge.Constants.MAP_HEIGHT, {
                         dugPercentage: 0.55,
                         roomWidth: [4, 9],
                         roomHeight: [3, 7],
@@ -1047,6 +1144,47 @@ var Rouge;
             return map;
         }
         Dungeon.createMap = createMap;
+    })(Rouge.Dungeon || (Rouge.Dungeon = {}));
+    var Dungeon = Rouge.Dungeon;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Dungeon) {
+        var ItemObject = (function () {
+            function ItemObject() {
+            }
+            Object.defineProperty(ItemObject.prototype, "x", {
+                get: function () {
+                    return this._x;
+                },
+                set: function (value) {
+                    this._x = value;
+                },
+                enumerable: true,
+                configurable: true
+            });
+
+            Object.defineProperty(ItemObject.prototype, "y", {
+                get: function () {
+                    return this._y;
+                },
+                set: function (value) {
+                    this._y = value;
+                },
+                enumerable: true,
+                configurable: true
+            });
+
+            ItemObject.prototype.isPassable = function () {
+                return true;
+            };
+
+            ItemObject.prototype.use = function () {
+                return this.item;
+            };
+            return ItemObject;
+        })();
+        Dungeon.ItemObject = ItemObject;
     })(Rouge.Dungeon || (Rouge.Dungeon = {}));
     var Dungeon = Rouge.Dungeon;
 })(Rouge || (Rouge = {}));
@@ -1182,12 +1320,18 @@ var Rouge;
     (function (Entities) {
         var Enemy = (function (_super) {
             __extends(Enemy, _super);
-            function Enemy(name) {
+            function Enemy(name, stats, skills, traits) {
                 _super.call(this);
                 this.name = name;
-                this.skills = new Entities.Skillset();
-                this.traits = new Array();
-                this.stats = new Entities.Stats(300, 6, 100, 10);
+                if (skills)
+                    this.skills = skills;
+                else
+                    this.skills = new Entities.Skillset();
+                if (traits)
+                    this.traits = traits;
+                else
+                    this.traits = new Array();
+                this.stats = stats;
                 this.inventory = new Array();
                 this.active = true;
             }
@@ -1222,6 +1366,15 @@ var Rouge;
             Skills[Skills["stealth"] = 6] = "stealth";
         })(Entities.Skills || (Entities.Skills = {}));
         var Skills = Entities.Skills;
+
+        function getEnemy(name) {
+            switch (name) {
+                default:
+                    return new Entities.Enemy(name, new Entities.Stats(300, 6, 100, 10));
+                    break;
+            }
+        }
+        Entities.getEnemy = getEnemy;
     })(Rouge.Entities || (Rouge.Entities = {}));
     var Entities = Rouge.Entities;
 })(Rouge || (Rouge = {}));
@@ -1367,47 +1520,6 @@ var Rouge;
             return Consumable;
         })();
         Objects.Consumable = Consumable;
-    })(Rouge.Objects || (Rouge.Objects = {}));
-    var Objects = Rouge.Objects;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Objects) {
-        var ItemObject = (function () {
-            function ItemObject() {
-            }
-            Object.defineProperty(ItemObject.prototype, "x", {
-                get: function () {
-                    return this._x;
-                },
-                set: function (value) {
-                    this._x = value;
-                },
-                enumerable: true,
-                configurable: true
-            });
-
-            Object.defineProperty(ItemObject.prototype, "y", {
-                get: function () {
-                    return this._y;
-                },
-                set: function (value) {
-                    this._y = value;
-                },
-                enumerable: true,
-                configurable: true
-            });
-
-            ItemObject.prototype.isPassable = function () {
-                return true;
-            };
-
-            ItemObject.prototype.use = function () {
-                return this.item;
-            };
-            return ItemObject;
-        })();
-        Objects.ItemObject = ItemObject;
     })(Rouge.Objects || (Rouge.Objects = {}));
     var Objects = Rouge.Objects;
 })(Rouge || (Rouge = {}));

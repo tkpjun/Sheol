@@ -50,16 +50,18 @@
         }
         matrix.addString(5, 0, "QUEUE");
         for (var i = 0; i < both.length; i++) {
-            matrix.addString(1, i * 3 + 2, both[i].entity.name, Constants.SIDEBAR_WIDTH - 6);
-            matrix.addString(1, i * 3 + 3, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Constants.SIDEBAR_WIDTH - 6);
-            matrix.addString(Constants.SIDEBAR_WIDTH - 4, i * 3 + 1, "---");
-            matrix.addString(Constants.SIDEBAR_WIDTH - 4, i * 3 + 2, "|e|");
-            matrix.addString(Constants.SIDEBAR_WIDTH - 4, i * 3 + 3, "---");
+            var drawable = getDrawable(both[i].entity);
+            matrix.addString(1, i * 3 + 3, both[i].entity.name, Constants.SIDEBAR_WIDTH - 6);
+            matrix.addString(1, i * 3 + 4, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Constants.SIDEBAR_WIDTH - 6);
+            matrix.addString(Constants.SIDEBAR_WIDTH - 4, i * 3 + 2, "---");
+            matrix.addString(Constants.SIDEBAR_WIDTH - 4, i * 3 + 3, "| |");
+            matrix.addString(Constants.SIDEBAR_WIDTH - 3, i * 3 + 3, drawable.symbol, null, drawable.color);
+            matrix.addString(Constants.SIDEBAR_WIDTH - 4, i * 3 + 4, "---");
             if (both[i].time === 0) {
-                matrix.addString(1, i * 3 + 1, "-- ready --", null, "green");
+                matrix.addString(1, i * 3 + 2, "-- ready --", null, "green");
             }
             else {
-                matrix.addString(1, i * 3 + 1, "- +" + (<number>both[i].time).toFixed(2) + "tu -", null, "red");           
+                matrix.addString(1, i * 3 + 2, "- +" + (<number>both[i].time).toFixed(2) + "tu -", null, "red");           
             }
         }
 
@@ -70,7 +72,7 @@
         var w = Constants.SIDEBAR_WIDTH;
         var hDisp = Constants.DISPLAY_HEIGHT;
         var hThis = 9;
-        var matrix = new DrawMatrix(1, hDisp - hThis - Constants.BOTTOM_BAR_HEIGHT, null, w - 2, hThis);
+        var matrix = new DrawMatrix(1, hDisp - hThis - Constants.BOTTOM_BAR_HEIGHT - 1, null, w - 2, hThis);
 
         matrix.addString(0, 0, "q--- w--- e---");
         matrix.addString(0, 1, "|NW| | N| |NE|");
@@ -97,18 +99,18 @@
                 matrix.matrix[i][j] = { symbol: " ", bgColor: "midnightblue" };
             }
         }
-        matrix.addString(1, 0, " CANCEL ", null, null, "royalblue");
+        matrix.addString(1, 0, " SWITCH ", null, null, "royalblue");
         matrix.addString(11, 0, " ATTACK ", null, null, "royalblue");
-        matrix.addString(21, 0, " RANGED ", null, null, "royalblue");
-        matrix.addString(31, 0, " SKILLS ", null, null, "royalblue");
+        matrix.addString(21, 0, " SPECIAL ", null, null, "royalblue");
+        //matrix.addString(32, 0, " ?????? ", null, null, "royalblue");
 
-        matrix.addString(Constants.displayWidth - 42, 0, "CON:");
-        matrix.addString(Constants.displayWidth - 38, 0, " - ", null, null, "royalblue");
-        matrix.addString(Constants.displayWidth - 34, 0, " + ", null, null, "royalblue");
-        matrix.addString(Constants.displayWidth - 30, 0, " v ", null, null, "royalblue");
-        matrix.addString(Constants.displayWidth - 26, 0, " ^ ", null, null, "royalblue");
-        matrix.addString(Constants.displayWidth - 21, 0, "INVENTORY", null, null, "royalblue");
-        matrix.addString(Constants.displayWidth - 10, 0, " OPTIONS ", null, null, "royalblue");
+        matrix.addString(Constants.displayWidth - 41, 0, "CON:");
+        matrix.addString(Constants.displayWidth - 37, 0, " - ", null, null, "royalblue");
+        matrix.addString(Constants.displayWidth - 33, 0, " + ", null, null, "royalblue");
+        matrix.addString(Constants.displayWidth - 29, 0, " v ", null, null, "royalblue");
+        matrix.addString(Constants.displayWidth - 25, 0, " ^ ", null, null, "royalblue");
+        matrix.addString(Constants.displayWidth - 20, 0, "INVENTORY", null, null, "royalblue");
+        matrix.addString(Constants.displayWidth - 9, 0, "  MENU  ", null, null, "royalblue");
 
         return matrix;
     }

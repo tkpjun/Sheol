@@ -25,14 +25,14 @@
         }
 
         addString(x: number, y: number, str: string, wrapAt?: number, color?: string, bgColor?: string): DrawMatrix {
-            var limit = this.matrix.length;
+            var limit = this.matrix.length - 1;
             if (wrapAt) {
                 limit = wrapAt;
             }
             var bgc;
 
             for (var i = 0; i < str.length; i++) {
-                if (i < limit) {
+                if (i + x < limit) {
                     if (!bgColor) bgc = this.matrix[i + x][y].bgColor;
                     else bgc = bgColor;
                     this.matrix[i + x][y] = { symbol: str[i], color: color, bgColor: bgc };
@@ -51,14 +51,14 @@
                 nodes.shift();
             }
             nodes.forEach((node) => {
-                if (this.matrix[node.x - offsetX]) {
+                if (this.matrix[node.x - offsetX] && this.matrix[node.x - offsetX][node.y - offsetY]) {
                     this.matrix[node.x - offsetX][node.y - offsetY].bgColor = color;
                 }
             });
             return this;
         }
 
-        combine(other: DrawMatrix): DrawMatrix {
+        addOverlay(other: DrawMatrix): DrawMatrix {
             var newXOff = Math.min(this.xOffset, other.xOffset);
             var newYOff = Math.min(this.yOffset, other.yOffset);
 
@@ -86,9 +86,25 @@
 
             for (var i = 0; i < other.matrix.length; i++) {
                 for (var j = 0; j < other.matrix[0].length; j++) {
-                    this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].symbol = other.matrix[i][j].symbol;
-                    this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = other.matrix[i][j].color;
-                    this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor = other.matrix[i][j].bgColor;
+                    if (other.matrix[i][j].symbol && other.matrix[i][j].symbol !== " ") {
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].symbol = other.matrix[i][j].symbol;
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = other.matrix[i][j].color;
+                    }
+                    else {
+                        var c1 = this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color;
+                        var c2 = other.matrix[i][j].bgColor;
+                        if (!c1) c1 = "black";
+                        if (!c2) c2 = "black";
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = 
+                        ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(c1), ROT.Color.fromString(c2), 0.75)));
+                    }
+                    var bg1 = this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor
+                    var bg2 = other.matrix[i][j].bgColor;
+                    if (!bg1) bg1 = "black";
+                    if (!bg2) bg2 = "black";
+
+                    this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor =
+                        ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg1), ROT.Color.fromString(bg2), 0.75)));
                 }
             }
 

@@ -42,4 +42,13 @@
     export function colorE(entity): ROT.Color {
         throw ("TODO");
     }
+
+    export function getDrawable(entity: IEntity): IDrawable {
+        if (entity instanceof Entities.PlayerChar) {
+            return { symbol: "@" };
+        }
+        else {
+            return { symbol: "e" };
+        }
+    }
 }
