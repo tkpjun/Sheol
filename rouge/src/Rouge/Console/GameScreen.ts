@@ -10,7 +10,7 @@
 
         constructor(display: ROT.Display) {
             this.display = display;
-            this.dungeon = new Array<Dungeon.Level>(new Dungeon.Level(Dungeon.MapType.MINES));
+            this.dungeon = new Array<Dungeon.Level>(new Dungeon.Level(Dungeon.MapTypes.Mines));
             this.currLevel = 0;
             this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
 
@@ -31,10 +31,10 @@
             this.manager.currEntity.attach(update);
             this.manager.changed.attach(update);
             this.manager.currPath.attach(() => this.draw());
-            this.camera = new Camera(Constants.SIDEBAR_WIDTH,
-                Constants.displayWidth - Constants.SIDEBAR_WIDTH * 2,
+            this.camera = new Camera(Constants.SidebarWidth,
+                Constants.DisplayWidth - Constants.SidebarWidth * 2,
                 0,
-                Constants.DISPLAY_HEIGHT - Constants.BOTTOM_BAR_HEIGHT,
+                Constants.DisplayHeight - Constants.BottomBarHeight,
                 this.display);
             update();
         }
@@ -74,7 +74,7 @@
         }*/
 
         private debugBox(): DrawMatrix {
-            var box = new TextBox(Constants.SIDEBAR_WIDTH, 0, 6);
+            var box = new TextBox(Constants.SidebarWidth, 0, 6);
             box.addLine("Lorem ipsum dolor sit amet,");
             box.addLine("consectetur adipiscing elit,");
             box.addLine("sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.");
@@ -83,7 +83,7 @@
             box.addLine("Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.");
             box.addLine("Excepteur sint occaecat cupidatat non proident,");
             box.addLine("sunt in culpa qui officia deserunt mollit anim id est laborum.");
-            var it = box.getMatrix(Constants.displayWidth - 2 * Constants.SIDEBAR_WIDTH);
+            var it = box.getMatrix(Constants.DisplayWidth - 2 * Constants.SidebarWidth);
             return it;
         }
     }

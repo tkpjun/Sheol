@@ -106,21 +106,21 @@ var Rouge;
         var Constants = (function () {
             function Constants() {
             }
-            Object.defineProperty(Constants, "SIDEBAR_WIDTH", {
+            Object.defineProperty(Constants, "SidebarWidth", {
                 get: function () {
                     return 16;
                 },
                 enumerable: true,
                 configurable: true
             });
-            Object.defineProperty(Constants, "BOTTOM_BAR_HEIGHT", {
+            Object.defineProperty(Constants, "BottomBarHeight", {
                 get: function () {
                     return 1;
                 },
                 enumerable: true,
                 configurable: true
             });
-            Object.defineProperty(Constants, "displayWidth", {
+            Object.defineProperty(Constants, "DisplayWidth", {
                 get: function () {
                     return Constants._displayWidth;
                 },
@@ -130,7 +130,7 @@ var Rouge;
                 enumerable: true,
                 configurable: true
             });
-            Object.defineProperty(Constants, "DISPLAY_HEIGHT", {
+            Object.defineProperty(Constants, "DisplayHeight", {
                 get: function () {
                     return 34;
                 },
@@ -389,7 +389,7 @@ var Rouge;
         var Game = (function () {
             function Game() {
                 var _this = this;
-                this.display = new ROT.Display({ width: Console.Constants.displayWidth, height: Console.Constants.DISPLAY_HEIGHT });
+                this.display = new ROT.Display({ width: Console.Constants.DisplayWidth, height: Console.Constants.DisplayHeight });
                 this.gameScreen = new Console.GameScreen(this.display);
                 this.screen = this.gameScreen;
                 Rouge.Console.Control.init(this.gameScreen);
@@ -405,8 +405,8 @@ var Rouge;
                         _this.display.setOptions({ width: _this.display.getOptions().width - 1 });
                     }
 
-                    Console.Constants.displayWidth = _this.display.getOptions().width;
-                    _this.gameScreen.camera.width = Console.Constants.displayWidth - Console.Constants.SIDEBAR_WIDTH * 2;
+                    Console.Constants.DisplayWidth = _this.display.getOptions().width;
+                    _this.gameScreen.camera.width = Console.Constants.DisplayWidth - Console.Constants.SidebarWidth * 2;
                     _this.screen.draw();
                     console.log((window.innerWidth / window.innerHeight).toFixed(2));
                     console.log(_this.display.getOptions().width);
@@ -427,7 +427,7 @@ var Rouge;
             function GameScreen(display) {
                 var _this = this;
                 this.display = display;
-                this.dungeon = new Array(new Rouge.Dungeon.Level(0 /* MINES */));
+                this.dungeon = new Array(new Rouge.Dungeon.Level(0 /* Mines */));
                 this.currLevel = 0;
                 this.manager = new Rouge.Controllers.EntityManager(this.dungeon[this.currLevel]);
 
@@ -450,7 +450,7 @@ var Rouge;
                 this.manager.currPath.attach(function () {
                     return _this.draw();
                 });
-                this.camera = new Console.Camera(Console.Constants.SIDEBAR_WIDTH, Console.Constants.displayWidth - Console.Constants.SIDEBAR_WIDTH * 2, 0, Console.Constants.DISPLAY_HEIGHT - Console.Constants.BOTTOM_BAR_HEIGHT, this.display);
+                this.camera = new Console.Camera(Console.Constants.SidebarWidth, Console.Constants.DisplayWidth - Console.Constants.SidebarWidth * 2, 0, Console.Constants.DisplayHeight - Console.Constants.BottomBarHeight, this.display);
                 update();
             }
             GameScreen.prototype.draw = function () {
@@ -481,7 +481,7 @@ var Rouge;
             return matrix;
             }*/
             GameScreen.prototype.debugBox = function () {
-                var box = new Console.TextBox(Console.Constants.SIDEBAR_WIDTH, 0, 6);
+                var box = new Console.TextBox(Console.Constants.SidebarWidth, 0, 6);
                 box.addLine("Lorem ipsum dolor sit amet,");
                 box.addLine("consectetur adipiscing elit,");
                 box.addLine("sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.");
@@ -490,7 +490,7 @@ var Rouge;
                 box.addLine("Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.");
                 box.addLine("Excepteur sint occaecat cupidatat non proident,");
                 box.addLine("sunt in culpa qui officia deserunt mollit anim id est laborum.");
-                var it = box.getMatrix(Console.Constants.displayWidth - 2 * Console.Constants.SIDEBAR_WIDTH);
+                var it = box.getMatrix(Console.Constants.DisplayWidth - 2 * Console.Constants.SidebarWidth);
                 return it;
             };
             return GameScreen;
@@ -506,10 +506,10 @@ var Rouge;
             function getLeftBar(characters) {
                 var p1 = characters[0];
                 var p2 = characters[1];
-                var w = Console.Constants.SIDEBAR_WIDTH;
+                var w = Console.Constants.SidebarWidth;
                 var matrix = new Console.DrawMatrix(0, 0, null, w, 11);
 
-                for (var i = 0; i < Console.Constants.SIDEBAR_WIDTH; i++) {
+                for (var i = 0; i < Console.Constants.SidebarWidth; i++) {
                     matrix.matrix[i][0] = { symbol: " ", bgColor: "midnightblue" };
                 }
                 matrix.addString(4, 0, "LEVEL:1");
@@ -527,10 +527,10 @@ var Rouge;
             GameUI.getLeftBar = getLeftBar;
 
             function getRightBar(scheduler, current, seen, baseTime) {
-                var w = Console.Constants.SIDEBAR_WIDTH;
-                var wDisp = Console.Constants.displayWidth;
+                var w = Console.Constants.SidebarWidth;
+                var wDisp = Console.Constants.DisplayWidth;
                 var leftEdge = wDisp - w;
-                var matrix = new Console.DrawMatrix(leftEdge, 0, null, w, Console.Constants.DISPLAY_HEIGHT - 2);
+                var matrix = new Console.DrawMatrix(leftEdge, 0, null, w, Console.Constants.DisplayHeight - 2);
                 if (!baseTime)
                     baseTime = 0;
 
@@ -549,18 +549,18 @@ var Rouge;
                 });
                 both.unshift({ entity: current, time: baseTime });
 
-                for (var i = 0; i < Console.Constants.SIDEBAR_WIDTH; i++) {
+                for (var i = 0; i < Console.Constants.SidebarWidth; i++) {
                     matrix.matrix[i][0] = { symbol: " ", bgColor: "midnightblue" };
                 }
                 matrix.addString(5, 0, "QUEUE");
                 for (var i = 0; i < both.length; i++) {
                     var drawable = Console.getDrawable(both[i].entity);
-                    matrix.addString(1, i * 3 + 3, both[i].entity.name, Console.Constants.SIDEBAR_WIDTH - 6);
-                    matrix.addString(1, i * 3 + 4, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Console.Constants.SIDEBAR_WIDTH - 6);
-                    matrix.addString(Console.Constants.SIDEBAR_WIDTH - 4, i * 3 + 2, "---");
-                    matrix.addString(Console.Constants.SIDEBAR_WIDTH - 4, i * 3 + 3, "| |");
-                    matrix.addString(Console.Constants.SIDEBAR_WIDTH - 3, i * 3 + 3, drawable.symbol, null, drawable.color);
-                    matrix.addString(Console.Constants.SIDEBAR_WIDTH - 4, i * 3 + 4, "---");
+                    matrix.addString(1, i * 3 + 3, both[i].entity.name, Console.Constants.SidebarWidth - 6);
+                    matrix.addString(1, i * 3 + 4, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Console.Constants.SidebarWidth - 6);
+                    matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 2, "---");
+                    matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 3, "| |");
+                    matrix.addString(Console.Constants.SidebarWidth - 3, i * 3 + 3, drawable.symbol, null, drawable.color);
+                    matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 4, "---");
                     if (both[i].time === 0) {
                         matrix.addString(1, i * 3 + 2, "-- ready --", null, "green");
                     } else {
@@ -573,10 +573,10 @@ var Rouge;
             GameUI.getRightBar = getRightBar;
 
             function getDPad() {
-                var w = Console.Constants.SIDEBAR_WIDTH;
-                var hDisp = Console.Constants.DISPLAY_HEIGHT;
+                var w = Console.Constants.SidebarWidth;
+                var hDisp = Console.Constants.DisplayHeight;
                 var hThis = 9;
-                var matrix = new Console.DrawMatrix(1, hDisp - hThis - Console.Constants.BOTTOM_BAR_HEIGHT - 1, null, w - 2, hThis);
+                var matrix = new Console.DrawMatrix(1, hDisp - hThis - Console.Constants.BottomBarHeight - 1, null, w - 2, hThis);
 
                 matrix.addString(0, 0, "q--- w--- e---");
                 matrix.addString(0, 1, "|NW| | N| |NE|");
@@ -593,7 +593,7 @@ var Rouge;
             GameUI.getDPad = getDPad;
 
             function getBottomBar() {
-                var matrix = new Console.DrawMatrix(0, Console.Constants.DISPLAY_HEIGHT - Console.Constants.BOTTOM_BAR_HEIGHT, null, Console.Constants.displayWidth, Console.Constants.BOTTOM_BAR_HEIGHT);
+                var matrix = new Console.DrawMatrix(0, Console.Constants.DisplayHeight - Console.Constants.BottomBarHeight, null, Console.Constants.DisplayWidth, Console.Constants.BottomBarHeight);
 
                 for (var i = 0; i < matrix.matrix.length; i++) {
                     for (var j = 0; j < matrix.matrix[0].length; j++) {
@@ -605,13 +605,13 @@ var Rouge;
                 matrix.addString(21, 0, " SPECIAL ", null, null, "royalblue");
 
                 //matrix.addString(32, 0, " ?????? ", null, null, "royalblue");
-                matrix.addString(Console.Constants.displayWidth - 41, 0, "CON:");
-                matrix.addString(Console.Constants.displayWidth - 37, 0, " - ", null, null, "royalblue");
-                matrix.addString(Console.Constants.displayWidth - 33, 0, " + ", null, null, "royalblue");
-                matrix.addString(Console.Constants.displayWidth - 29, 0, " v ", null, null, "royalblue");
-                matrix.addString(Console.Constants.displayWidth - 25, 0, " ^ ", null, null, "royalblue");
-                matrix.addString(Console.Constants.displayWidth - 20, 0, "INVENTORY", null, null, "royalblue");
-                matrix.addString(Console.Constants.displayWidth - 9, 0, "  MENU  ", null, null, "royalblue");
+                matrix.addString(Console.Constants.DisplayWidth - 41, 0, "CON:");
+                matrix.addString(Console.Constants.DisplayWidth - 37, 0, " - ", null, null, "royalblue");
+                matrix.addString(Console.Constants.DisplayWidth - 33, 0, " + ", null, null, "royalblue");
+                matrix.addString(Console.Constants.DisplayWidth - 29, 0, " v ", null, null, "royalblue");
+                matrix.addString(Console.Constants.DisplayWidth - 25, 0, " ^ ", null, null, "royalblue");
+                matrix.addString(Console.Constants.DisplayWidth - 20, 0, "INVENTORY", null, null, "royalblue");
+                matrix.addString(Console.Constants.DisplayWidth - 9, 0, "  MENU  ", null, null, "royalblue");
 
                 return matrix;
             }
@@ -754,14 +754,14 @@ var Rouge;
 (function (Rouge) {
     (function (Controllers) {
         (function (Direction) {
-            Direction[Direction["NORTH"] = 0] = "NORTH";
-            Direction[Direction["SOUTH"] = 1] = "SOUTH";
-            Direction[Direction["WEST"] = 2] = "WEST";
-            Direction[Direction["EAST"] = 3] = "EAST";
-            Direction[Direction["NORTHWEST"] = 4] = "NORTHWEST";
-            Direction[Direction["NORTHEAST"] = 5] = "NORTHEAST";
-            Direction[Direction["SOUTHWEST"] = 6] = "SOUTHWEST";
-            Direction[Direction["SOUTHEAST"] = 7] = "SOUTHEAST";
+            Direction[Direction["North"] = 0] = "North";
+            Direction[Direction["South"] = 1] = "South";
+            Direction[Direction["West"] = 2] = "West";
+            Direction[Direction["East"] = 3] = "East";
+            Direction[Direction["Northwest"] = 4] = "Northwest";
+            Direction[Direction["Northeast"] = 5] = "Northeast";
+            Direction[Direction["Southwest"] = 6] = "Southwest";
+            Direction[Direction["Southeast"] = 7] = "Southeast";
         })(Controllers.Direction || (Controllers.Direction = {}));
         var Direction = Controllers.Direction;
 
@@ -1186,28 +1186,28 @@ var Rouge;
 
                 switch (key) {
                     case "VK_Q":
-                        alterPath(4 /* NORTHWEST */);
+                        alterPath(4 /* Northwest */);
                         break;
                     case "VK_W":
-                        alterPath(0 /* NORTH */);
+                        alterPath(0 /* North */);
                         break;
                     case "VK_E":
-                        alterPath(5 /* NORTHEAST */);
+                        alterPath(5 /* Northeast */);
                         break;
                     case "VK_A":
-                        alterPath(2 /* WEST */);
+                        alterPath(2 /* West */);
                         break;
                     case "VK_D":
-                        alterPath(3 /* EAST */);
+                        alterPath(3 /* East */);
                         break;
                     case "VK_Z":
-                        alterPath(6 /* SOUTHWEST */);
+                        alterPath(6 /* Southwest */);
                         break;
                     case "VK_X":
-                        alterPath(1 /* SOUTH */);
+                        alterPath(1 /* South */);
                         break;
                     case "VK_C":
-                        alterPath(7 /* SOUTHEAST */);
+                        alterPath(7 /* Southeast */);
                         break;
                     case "VK_SPACE":
                         endTurn();
@@ -1225,28 +1225,28 @@ var Rouge;
                 var oldPath = manager.currPath.property;
                 var location = oldPath.pointer;
                 switch (dir) {
-                    case 4 /* NORTHWEST */:
+                    case 4 /* Northwest */:
                         location = { x: location.x - 1, y: location.y - 1 };
                         break;
-                    case 0 /* NORTH */:
+                    case 0 /* North */:
                         location = { x: location.x, y: location.y - 1 };
                         break;
-                    case 5 /* NORTHEAST */:
+                    case 5 /* Northeast */:
                         location = { x: location.x + 1, y: location.y - 1 };
                         break;
-                    case 2 /* WEST */:
+                    case 2 /* West */:
                         location = { x: location.x - 1, y: location.y };
                         break;
-                    case 3 /* EAST */:
+                    case 3 /* East */:
                         location = { x: location.x + 1, y: location.y };
                         break;
-                    case 6 /* SOUTHWEST */:
+                    case 6 /* Southwest */:
                         location = { x: location.x - 1, y: location.y + 1 };
                         break;
-                    case 1 /* SOUTH */:
+                    case 1 /* South */:
                         location = { x: location.x, y: location.y + 1 };
                         break;
-                    case 7 /* SOUTHEAST */:
+                    case 7 /* Southeast */:
                         location = { x: location.x + 1, y: location.y + 1 };
                         break;
                 }
@@ -1283,19 +1283,24 @@ var Rouge;
 var Rouge;
 (function (Rouge) {
     (function (Dungeon) {
-        (function (MapType) {
-            MapType[MapType["MINES"] = 0] = "MINES";
-            MapType[MapType["CAVE"] = 1] = "CAVE";
-            MapType[MapType["HEART"] = 2] = "HEART";
-            MapType[MapType["TUTORIAL"] = 3] = "TUTORIAL";
-        })(Dungeon.MapType || (Dungeon.MapType = {}));
-        var MapType = Dungeon.MapType;
+        (function (MapTypes) {
+            MapTypes[MapTypes["Mines"] = 0] = "Mines";
+            MapTypes[MapTypes["Cave"] = 1] = "Cave";
+            MapTypes[MapTypes["Heart"] = 2] = "Heart";
+            MapTypes[MapTypes["Tutorial"] = 3] = "Tutorial";
+        })(Dungeon.MapTypes || (Dungeon.MapTypes = {}));
+        var MapTypes = Dungeon.MapTypes;
+
+        (function (ItemTypes) {
+            ItemTypes[ItemTypes["Weapon"] = 0] = "Weapon";
+        })(Dungeon.ItemTypes || (Dungeon.ItemTypes = {}));
+        var ItemTypes = Dungeon.ItemTypes;
 
         function createMap(type) {
             var map;
 
             switch (type) {
-                case 0 /* MINES */:
+                case 0 /* Mines */:
                     map = new ROT.Map.Digger(200, Rouge.Constants.MAP_HEIGHT, {
                         dugPercentage: 0.55,
                         roomWidth: [4, 9],
@@ -1701,9 +1706,195 @@ var Rouge;
 var Rouge;
 (function (Rouge) {
     (function (Objects) {
+        (function (Weapons) {
+            Weapons[Weapons["Dagger"] = 0] = "Dagger";
+            Weapons[Weapons["ShortSword"] = 1] = "ShortSword";
+            Weapons[Weapons["Mace"] = 2] = "Mace";
+            Weapons[Weapons["Battleaxe"] = 3] = "Battleaxe";
+            Weapons[Weapons["Spear"] = 4] = "Spear";
+            Weapons[Weapons["Pike"] = 5] = "Pike";
+            Weapons[Weapons["Mattock"] = 6] = "Mattock";
+            Weapons[Weapons["Maul"] = 7] = "Maul";
+            Weapons[Weapons["Greataxe"] = 8] = "Greataxe";
+            Weapons[Weapons["LongSword"] = 9] = "LongSword";
+            Weapons[Weapons["Halberd"] = 10] = "Halberd";
+            Weapons[Weapons["RoundShield"] = 11] = "RoundShield";
+            Weapons[Weapons["TowerShield"] = 12] = "TowerShield";
+        })(Objects.Weapons || (Objects.Weapons = {}));
+        var Weapons = Objects.Weapons;
+
+        function getWeapon(type) {
+            var weapon;
+            switch (type) {
+                case 0 /* Dagger */:
+                    weapon = new Objects.Weapon().setName("Dagger").setDamage(4, 4).setRange(0, 2).setCost(2).setBonuses(0, 1, 0, 0);
+                    break;
+                case 1 /* ShortSword */:
+                    weapon = new Objects.Weapon().setName("Short sword").setDamage(4, 6).setRange(0, 2).setCost(3);
+                    break;
+                case 2 /* Mace */:
+                    weapon = new Objects.Weapon().setName("Mace").setDamage(2, 8).setRange(2, 3).setCost(3);
+                    break;
+                case 3 /* Battleaxe */:
+                    weapon = new Objects.Weapon().setName("Battle axe").setDamage(3, 7).setRange(2, 3).setCost(3);
+                    break;
+                case 6 /* Mattock */:
+                    weapon = new Objects.Weapon().setName("Mattock").setDamage(1, 14).setRange(2, 3).setCost(3).setBonuses(-2, 0, 0, 0);
+                    break;
+                case 4 /* Spear */:
+                    weapon = new Objects.Weapon().setName("Spear").setDamage(2, 7).setRange(3, 5).setCost(3);
+                    break;
+                case 5 /* Pike */:
+                    weapon = new Objects.Weapon().setName("Pike").setDamage(2, 10).setRange(4, 7).setCost(4).setTwohanded();
+                    break;
+                case 10 /* Halberd */:
+                    weapon = new Objects.Weapon().setName("Halberd").setDamage(2, 11).setRange(3, 5).setCost(4).setTwohanded();
+                    break;
+                case 7 /* Maul */:
+                    weapon = new Objects.Weapon().setName("Maul").setDamage(1, 20).setRange(2, 3).setCost(5).setTwohanded();
+                    break;
+                case 8 /* Greataxe */:
+                    weapon = new Objects.Weapon().setName("Great axe").setDamage(2, 12).setRange(3, 4).setCost(4).setTwohanded();
+                    break;
+                case 9 /* LongSword */:
+                    weapon = new Objects.Weapon().setName("Long sword").setDamage(3, 9).setRange(2, 4).setCost(4).setTwohanded();
+                    break;
+                case 11 /* RoundShield */:
+                    weapon = new Objects.Weapon().setName("Round shield").setDamage(3, 5).setRange(2, 2).setCost(3).setBonuses(0, 4, 1, 2);
+                    break;
+                case 12 /* TowerShield */:
+                    weapon = new Objects.Weapon().setName("Tower shield").setDamage(3, 6).setRange(2, 2).setCost(4).setBonuses(-2, 4, 2, 3);
+                    break;
+            }
+            return weapon;
+        }
+        Objects.getWeapon = getWeapon;
+    })(Rouge.Objects || (Rouge.Objects = {}));
+    var Objects = Rouge.Objects;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Objects) {
         var Weapon = (function () {
             function Weapon() {
+                this._twoHand = false;
+                this._toHit = 0;
+                this._toEvasion = 0;
+                this._toMinArmor = 0;
+                this._toMaxArmor = 0;
             }
+            Object.defineProperty(Weapon.prototype, "name", {
+                get: function () {
+                    return this._name;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Weapon.prototype, "damage", {
+                get: function () {
+                    return this._dmg;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Weapon.prototype, "multiplier", {
+                get: function () {
+                    return this._mul;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Weapon.prototype, "minRange", {
+                get: function () {
+                    return this._minRange;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Weapon.prototype, "maxRange", {
+                get: function () {
+                    return this._maxRange;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Weapon.prototype, "apCost", {
+                get: function () {
+                    return this._apCost;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Weapon.prototype, "twoHanded", {
+                get: function () {
+                    return this._twoHand;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Weapon.prototype, "toHit", {
+                get: function () {
+                    return this._toHit;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Weapon.prototype, "toEvasion", {
+                get: function () {
+                    return this._toEvasion;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Weapon.prototype, "toMinArmor", {
+                get: function () {
+                    return this._toMinArmor;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Weapon.prototype, "toMaxArmor", {
+                get: function () {
+                    return this._toMaxArmor;
+                },
+                enumerable: true,
+                configurable: true
+            });
+
+            Weapon.prototype.setDamage = function (multiplier, damage) {
+                this._mul = multiplier;
+                this._dmg = damage;
+                return this;
+            };
+
+            Weapon.prototype.setName = function (name) {
+                this._name = name;
+                return this;
+            };
+
+            Weapon.prototype.setRange = function (min, max) {
+                this._minRange = min;
+                this._maxRange = max;
+                return this;
+            };
+
+            Weapon.prototype.setCost = function (cost) {
+                this._apCost = cost;
+                return this;
+            };
+
+            Weapon.prototype.setTwohanded = function () {
+                this._twoHand = true;
+                return this;
+            };
+
+            Weapon.prototype.setBonuses = function (hit, evasion, armorMin, armorMax) {
+                this._toHit = hit;
+                this._toEvasion = evasion;
+                this._toMinArmor = armorMin;
+                this.toMaxArmor = armorMax;
+                return this;
+            };
             return Weapon;
         })();
         Objects.Weapon = Weapon;

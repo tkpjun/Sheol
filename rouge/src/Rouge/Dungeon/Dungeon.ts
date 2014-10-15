@@ -1,17 +1,21 @@
 ﻿module Rouge.Dungeon {
 
-    export enum MapType {
-        MINES,
-        CAVE,
-        HEART,
-        TUTORIAL
+    export enum MapTypes {
+        Mines,
+        Cave,
+        Heart,
+        Tutorial
     }
 
-    export function createMap(type: MapType): ROT.IMap {
+    export enum ItemTypes {
+        Weapon
+    }
+
+    export function createMap(type: MapTypes): ROT.IMap {
         var map;
 
         switch(type) {
-            case MapType.MINES:
+            case MapTypes.Mines:
                 map = new ROT.Map.Digger(200, Constants.MAP_HEIGHT, {
                     dugPercentage: 0.55,
                     roomWidth: [4, 9],

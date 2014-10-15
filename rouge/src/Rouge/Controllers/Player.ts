@@ -42,28 +42,28 @@
 
         switch (key) {
             case "VK_Q":
-                alterPath(Direction.NORTHWEST);
+                alterPath(Direction.Northwest);
                 break;
             case "VK_W":
-                alterPath(Direction.NORTH);
+                alterPath(Direction.North);
                 break;
             case "VK_E":
-                alterPath(Direction.NORTHEAST);
+                alterPath(Direction.Northeast);
                 break;
             case "VK_A":
-                alterPath(Direction.WEST);
+                alterPath(Direction.West);
                 break;
             case "VK_D":
-                alterPath(Direction.EAST);
+                alterPath(Direction.East);
                 break;
             case "VK_Z":
-                alterPath(Direction.SOUTHWEST);
+                alterPath(Direction.Southwest);
                 break;
             case "VK_X":
-                alterPath(Direction.SOUTH);
+                alterPath(Direction.South);
                 break;
             case "VK_C":
-                alterPath(Direction.SOUTHEAST);
+                alterPath(Direction.Southeast);
                 break;
             case "VK_SPACE":
                 endTurn();
@@ -81,28 +81,28 @@
         var oldPath = manager.currPath.property;
         var location = oldPath.pointer;
         switch (dir) {
-            case Direction.NORTHWEST:
+            case Direction.Northwest:
                 location = { x: location.x - 1, y: location.y - 1 };
                 break;
-            case Direction.NORTH:
+            case Direction.North:
                 location = { x: location.x, y: location.y - 1 };
                 break;
-            case Direction.NORTHEAST:
+            case Direction.Northeast:
                 location = { x: location.x + 1, y: location.y - 1 };
                 break;
-            case Direction.WEST:
+            case Direction.West:
                 location = { x: location.x - 1, y: location.y };
                 break;
-            case Direction.EAST:
+            case Direction.East:
                 location = { x: location.x + 1, y: location.y };
                 break;
-            case Direction.SOUTHWEST:
+            case Direction.Southwest:
                 location = { x: location.x - 1, y: location.y + 1 };
                 break;
-            case Direction.SOUTH:
+            case Direction.South:
                 location = { x: location.x, y: location.y + 1 };
                 break;
-            case Direction.SOUTHEAST:
+            case Direction.Southeast:
                 location = { x: location.x + 1, y: location.y + 1 };
                 break;
         }

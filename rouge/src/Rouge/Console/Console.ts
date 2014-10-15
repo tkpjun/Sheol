@@ -4,19 +4,19 @@
 
         private static _displayWidth = 92;
 
-        static get SIDEBAR_WIDTH(): number {
+        static get SidebarWidth(): number {
             return 16;
         }
-        static get BOTTOM_BAR_HEIGHT(): number {
+        static get BottomBarHeight(): number {
             return 1;
         }
-        static set displayWidth(val: number) {
+        static set DisplayWidth(val: number) {
             Constants._displayWidth = val;
         }
-        static get displayWidth(): number {
+        static get DisplayWidth(): number {
             return Constants._displayWidth;
         }
-        static get DISPLAY_HEIGHT(): number {
+        static get DisplayHeight(): number {
             return 34;
         }
     }

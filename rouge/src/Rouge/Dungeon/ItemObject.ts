@@ -5,6 +5,7 @@
         private _x: number;
         private _y: number;
         item: IItem;
+        type: ItemTypes;
 
         get x(): number {
             return this._x;

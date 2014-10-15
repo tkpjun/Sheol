@@ -3,10 +3,10 @@
     export function getLeftBar(characters: Array<Entities.PlayerChar>): DrawMatrix {
         var p1 = characters[0];
         var p2 = characters[1];
-        var w = Constants.SIDEBAR_WIDTH; //Limit for text wrapping
+        var w = Constants.SidebarWidth; //Limit for text wrapping
         var matrix = new DrawMatrix(0, 0, null, w, 11);
 
-        for (var i = 0; i < Constants.SIDEBAR_WIDTH; i++) {
+        for (var i = 0; i < Constants.SidebarWidth; i++) {
             matrix.matrix[i][0] = { symbol: " ", bgColor: "midnightblue" }
         }
         matrix.addString(4, 0, "LEVEL:1");
@@ -23,10 +23,10 @@
     }
 
     export function getRightBar(scheduler: ROT.Scheduler.Action, current: Entities.Entity, seen: Array<IEntity>, baseTime?: number): DrawMatrix {
-        var w = Constants.SIDEBAR_WIDTH;
-        var wDisp = Constants.displayWidth;
+        var w = Constants.SidebarWidth;
+        var wDisp = Constants.DisplayWidth;
         var leftEdge = wDisp - w;
-        var matrix = new DrawMatrix(leftEdge, 0, null, w, Constants.DISPLAY_HEIGHT - 2);
+        var matrix = new DrawMatrix(leftEdge, 0, null, w, Constants.DisplayHeight - 2);
         if (!baseTime) baseTime = 0;
 
         var events = scheduler._queue._events;
@@ -45,18 +45,18 @@
         });
         both.unshift({ entity: current, time: baseTime });
 
-        for (var i = 0; i < Constants.SIDEBAR_WIDTH; i++) {
+        for (var i = 0; i < Constants.SidebarWidth; i++) {
             matrix.matrix[i][0] = { symbol: " ", bgColor: "midnightblue" }
         }
         matrix.addString(5, 0, "QUEUE");
         for (var i = 0; i < both.length; i++) {
             var drawable = getDrawable(both[i].entity);
-            matrix.addString(1, i * 3 + 3, both[i].entity.name, Constants.SIDEBAR_WIDTH - 6);
-            matrix.addString(1, i * 3 + 4, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Constants.SIDEBAR_WIDTH - 6);
-            matrix.addString(Constants.SIDEBAR_WIDTH - 4, i * 3 + 2, "---");
-            matrix.addString(Constants.SIDEBAR_WIDTH - 4, i * 3 + 3, "| |");
-            matrix.addString(Constants.SIDEBAR_WIDTH - 3, i * 3 + 3, drawable.symbol, null, drawable.color);
-            matrix.addString(Constants.SIDEBAR_WIDTH - 4, i * 3 + 4, "---");
+            matrix.addString(1, i * 3 + 3, both[i].entity.name, Constants.SidebarWidth - 6);
+            matrix.addString(1, i * 3 + 4, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Constants.SidebarWidth - 6);
+            matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, "---");
+            matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, "| |");
+            matrix.addString(Constants.SidebarWidth - 3, i * 3 + 3, drawable.symbol, null, drawable.color);
+            matrix.addString(Constants.SidebarWidth - 4, i * 3 + 4, "---");
             if (both[i].time === 0) {
                 matrix.addString(1, i * 3 + 2, "-- ready --", null, "green");
             }
@@ -69,10 +69,10 @@
     }
 
     export function getDPad(): DrawMatrix {
-        var w = Constants.SIDEBAR_WIDTH;
-        var hDisp = Constants.DISPLAY_HEIGHT;
+        var w = Constants.SidebarWidth;
+        var hDisp = Constants.DisplayHeight;
         var hThis = 9;
-        var matrix = new DrawMatrix(1, hDisp - hThis - Constants.BOTTOM_BAR_HEIGHT - 1, null, w - 2, hThis);
+        var matrix = new DrawMatrix(1, hDisp - hThis - Constants.BottomBarHeight - 1, null, w - 2, hThis);
 
         matrix.addString(0, 0, "q--- w--- e---");
         matrix.addString(0, 1, "|NW| | N| |NE|");
@@ -89,10 +89,10 @@
 
     export function getBottomBar(): DrawMatrix {
         var matrix = new DrawMatrix(0,
-            Constants.DISPLAY_HEIGHT - Constants.BOTTOM_BAR_HEIGHT,
+            Constants.DisplayHeight - Constants.BottomBarHeight,
             null,
-            Constants.displayWidth,
-            Constants.BOTTOM_BAR_HEIGHT);
+            Constants.DisplayWidth,
+            Constants.BottomBarHeight);
 
         for (var i = 0; i < matrix.matrix.length; i++) {
             for (var j = 0; j < matrix.matrix[0].length; j++) {
@@ -104,13 +104,13 @@
         matrix.addString(21, 0, " SPECIAL ", null, null, "royalblue");
         //matrix.addString(32, 0, " ?????? ", null, null, "royalblue");
 
-        matrix.addString(Constants.displayWidth - 41, 0, "CON:");
-        matrix.addString(Constants.displayWidth - 37, 0, " - ", null, null, "royalblue");
-        matrix.addString(Constants.displayWidth - 33, 0, " + ", null, null, "royalblue");
-        matrix.addString(Constants.displayWidth - 29, 0, " v ", null, null, "royalblue");
-        matrix.addString(Constants.displayWidth - 25, 0, " ^ ", null, null, "royalblue");
-        matrix.addString(Constants.displayWidth - 20, 0, "INVENTORY", null, null, "royalblue");
-        matrix.addString(Constants.displayWidth - 9, 0, "  MENU  ", null, null, "royalblue");
+        matrix.addString(Constants.DisplayWidth - 41, 0, "CON:");
+        matrix.addString(Constants.DisplayWidth - 37, 0, " - ", null, null, "royalblue");
+        matrix.addString(Constants.DisplayWidth - 33, 0, " + ", null, null, "royalblue");
+        matrix.addString(Constants.DisplayWidth - 29, 0, " v ", null, null, "royalblue");
+        matrix.addString(Constants.DisplayWidth - 25, 0, " ^ ", null, null, "royalblue");
+        matrix.addString(Constants.DisplayWidth - 20, 0, "INVENTORY", null, null, "royalblue");
+        matrix.addString(Constants.DisplayWidth - 9, 0, "  MENU  ", null, null, "royalblue");
 
         return matrix;
     }
