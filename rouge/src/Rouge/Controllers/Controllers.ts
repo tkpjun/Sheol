@@ -52,10 +52,10 @@
             return false;
     }
 
-    export function planAction(entity: IEntity, level: Dungeon.Level) {
+    export function planAction(entity: IEntity, manager: EntityManager) {
 
         if (entity instanceof Entities.PlayerChar) {
-            Player.activate(<Entities.PlayerChar>entity, level);
+            Player.activate(<Entities.PlayerChar>entity, manager);
         }
         else if (entity instanceof Entities.Enemy) {
             var enemy = <Entities.Enemy>entity;

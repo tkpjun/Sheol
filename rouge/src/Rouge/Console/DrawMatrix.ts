@@ -46,22 +46,37 @@
             return this;
         }
 
-        addPath(path: Controllers.Path, offsetX: number, offsetY: number, maxAP: number, excludeFirst?: boolean, color?: string): DrawMatrix {
+        addPath(path: Controllers.Path, offsetX: number, offsetY: number, maxAP?: number, excludeFirst?: boolean, color?: string): DrawMatrix {
             if (!path) return this;
 
-            var nodes = path.nodes(maxAP);
+            var nodes = path.nodes();
+            var limited = path.nodes(maxAP);
             if (!color) color = "slateblue";
             if (excludeFirst) {
                 nodes.shift();
             }
             nodes.forEach((node) => {
                 if (this.matrix[node.x - offsetX] && this.matrix[node.x - offsetX][node.y - offsetY]) {
-                    this.matrix[node.x - offsetX][node.y - offsetY].bgColor = color;
+                    var bg = this.matrix[node.x - offsetX][node.y - offsetY].bgColor;
+                    if (!bg) bg = "black"
+                    this.matrix[node.x - offsetX][node.y - offsetY].bgColor =
+                    ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString("purple"), 0.33)));
+                }
+            });
+            limited.forEach((node) => {
+                if (this.matrix[node.x - offsetX] && this.matrix[node.x - offsetX][node.y - offsetY]) {
+                    var bg = this.matrix[node.x - offsetX][node.y - offsetY].bgColor;
+                    if (!bg) bg = "black"
+                    this.matrix[node.x - offsetX][node.y - offsetY].bgColor =
+                        ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString(color), 0.5)));
                 }
             });
             var p = path.pointer;
             if (this.matrix[p.x - offsetX] && this.matrix[p.x - offsetX][p.y - offsetY]) {
-                this.matrix[p.x - offsetX][p.y - offsetY].bgColor = "yellow";
+                var bg = this.matrix[p.x - offsetX][p.y - offsetY].bgColor;
+                if (!bg) bg = "black"
+                this.matrix[p.x - offsetX][p.y - offsetY].bgColor =
+                    ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString("green"), 0.75)));;
             }
             return this;
         }

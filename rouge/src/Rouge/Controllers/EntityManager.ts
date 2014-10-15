@@ -56,7 +56,7 @@
             var entity = this.currEntity.property;
 
             var pollForAction = () => {
-                planAction(entity, this.level);
+                planAction(entity, this);
                 var action = entity.nextAction;
                 if (action) {
                     action();

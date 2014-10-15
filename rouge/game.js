@@ -195,7 +195,7 @@ var Rouge;
                     if (x >= 0 && y >= 0) {
                         //console.log(x + "," + y);
                         if (x >= camera.xOffset && x < camera.xOffset + camera.width && y >= camera.yOffset && y < camera.yOffset + camera.height) {
-                            Rouge.Controllers.Player.updateClick(x - camera.xOffset + camera.x, y - camera.yOffset + camera.y, screen.manager);
+                            Rouge.Controllers.Player.updateClick(x - camera.xOffset + camera.x, y - camera.yOffset + camera.y);
                         }
                     }
                 }, false);
@@ -279,7 +279,8 @@ var Rouge;
                 if (!path)
                     return this;
 
-                var nodes = path.nodes(maxAP);
+                var nodes = path.nodes();
+                var limited = path.nodes(maxAP);
                 if (!color)
                     color = "slateblue";
                 if (excludeFirst) {
@@ -287,12 +288,27 @@ var Rouge;
                 }
                 nodes.forEach(function (node) {
                     if (_this.matrix[node.x - offsetX] && _this.matrix[node.x - offsetX][node.y - offsetY]) {
-                        _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = color;
+                        var bg = _this.matrix[node.x - offsetX][node.y - offsetY].bgColor;
+                        if (!bg)
+                            bg = "black";
+                        _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString("purple"), 0.33)));
+                    }
+                });
+                limited.forEach(function (node) {
+                    if (_this.matrix[node.x - offsetX] && _this.matrix[node.x - offsetX][node.y - offsetY]) {
+                        var bg = _this.matrix[node.x - offsetX][node.y - offsetY].bgColor;
+                        if (!bg)
+                            bg = "black";
+                        _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString(color), 0.5)));
                     }
                 });
                 var p = path.pointer;
                 if (this.matrix[p.x - offsetX] && this.matrix[p.x - offsetX][p.y - offsetY]) {
-                    this.matrix[p.x - offsetX][p.y - offsetY].bgColor = "yellow";
+                    var bg = this.matrix[p.x - offsetX][p.y - offsetY].bgColor;
+                    if (!bg)
+                        bg = "black";
+                    this.matrix[p.x - offsetX][p.y - offsetY].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString("green"), 0.75)));
+                    ;
                 }
                 return this;
             };
@@ -442,7 +458,7 @@ var Rouge;
 
                 this.display.clear();
                 this.camera.updateView(this.manager.level, this.manager.characters);
-                this.camera.view.addPath(this.manager.currPath.property, this.camera.x, this.camera.y, Number.MAX_VALUE).addOverlay(this.debugBox()).draw(this.display);
+                this.camera.view.addPath(this.manager.currPath.property, this.camera.x, this.camera.y, this.manager.currEntity.property.stats.ap).addOverlay(this.debugBox()).draw(this.display);
                 Console.GameUI.getLeftBar(this.manager.characters).draw(this.display);
                 Console.GameUI.getDPad().draw(this.display);
                 Console.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.property, this.manager.characters.concat(this.manager.level.entities)).draw(this.display);
@@ -786,9 +802,9 @@ var Rouge;
         }
         Controllers.diagonal = diagonal;
 
-        function planAction(entity, level) {
+        function planAction(entity, manager) {
             if (entity instanceof Rouge.Entities.PlayerChar) {
-                Controllers.Player.activate(entity, level);
+                Controllers.Player.activate(entity, manager);
             } else if (entity instanceof Rouge.Entities.Enemy) {
                 var enemy = entity;
                 enemy.nextAction = function () {
@@ -853,7 +869,7 @@ var Rouge;
                 var entity = this.currEntity.property;
 
                 var pollForAction = function () {
-                    Controllers.planAction(entity, _this.level);
+                    Controllers.planAction(entity, _this);
                     var action = entity.nextAction;
                     if (action) {
                         action();
@@ -940,10 +956,11 @@ var Rouge;
 (function (Rouge) {
     (function (Controllers) {
         var Path = (function () {
-            function Path(owner, passableFn, from, to) {
+            function Path(passableFn, from, to) {
                 var _this = this;
                 this._nodes = new Array();
                 this._costs = new Array();
+                this.begin = from;
 
                 if (to) {
                     this._astar = new ROT.Path.AStar(to.x, to.y, passableFn, { topology: 4 });
@@ -958,6 +975,11 @@ var Rouge;
                     this._nodes.push(from);
                     this._costs.push(0);
                     this.pointer = from;
+                }
+
+                if (!passableFn(this.pointer.x, this.pointer.y)) {
+                    this._nodes.pop();
+                    this._costs.pop();
                 }
             }
             Path.prototype.cost = function () {
@@ -990,41 +1012,41 @@ var Rouge;
                 return this;
             };
 
-            Path.prototype.movePointer = function (dir) {
-                switch (dir) {
-                    case 4 /* NORTHWEST */:
-                        this.pointer.y -= 1;
-                        this.pointer.x -= 1;
-                        break;
-                    case 0 /* NORTH */:
-                        this.pointer.y -= 1;
-                        break;
-                    case 5 /* NORTHEAST */:
-                        this.pointer.y -= 1;
-                        this.pointer.x += 1;
-                        break;
-                    case 2 /* WEST */:
-                        this.pointer.x -= 1;
-                        break;
-                    case 3 /* EAST */:
-                        this.pointer.x += 1;
-                        break;
-                    case 6 /* SOUTHWEST */:
-                        this.pointer.y += 1;
-                        this.pointer.x -= 1;
-                        break;
-                    case 1 /* SOUTH */:
-                        this.pointer.y += 1;
-                        break;
-                    case 7 /* SOUTHEAST */:
-                        this.pointer.y += 1;
-                        this.pointer.x += 1;
-                        break;
-                }
-
-                throw ("TODO");
-            };
-
+            /*
+            movePointer(dir: Direction) {
+            switch (dir) {
+            case Direction.NORTHWEST:
+            this.pointer.y -= 1;
+            this.pointer.x -= 1;
+            break;
+            case Direction.NORTH:
+            this.pointer.y -= 1;
+            break;
+            case Direction.NORTHEAST:
+            this.pointer.y -= 1;
+            this.pointer.x += 1;
+            break;
+            case Direction.WEST:
+            this.pointer.x -= 1;
+            break;
+            case Direction.EAST:
+            this.pointer.x += 1;
+            break;
+            case Direction.SOUTHWEST:
+            this.pointer.y += 1;
+            this.pointer.x -= 1;
+            break;
+            case Direction.SOUTH:
+            this.pointer.y += 1;
+            break;
+            case Direction.SOUTHEAST:
+            this.pointer.y += 1;
+            this.pointer.x += 1;
+            break;
+            }
+            
+            throw ("TODO");
+            }*/
             Path.prototype.calculateCosts = function () {
                 var arr = this._nodes;
                 this._costs = new Array();
@@ -1124,17 +1146,24 @@ var Rouge;
             var char;
             var lvl;
             var playerTurn = false;
+            var manager;
+            var callback;
 
-            function activate(character, level) {
+            function activate(character, entityManager) {
                 if (!playerTurn) {
                     char = character;
-                    lvl = level;
+                    lvl = entityManager.level;
                     playerTurn = true;
+                    manager = entityManager;
+                    callback = function (x, y, from) {
+                        return Controllers.isPassable({ x: x, y: y }, manager.level, from);
+                    };
+                    manager.currPath.property = new Controllers.Path(callback, { x: char.x, y: char.y });
                 }
             }
             Player.activate = activate;
 
-            function updateClick(x, y, manager) {
+            function updateClick(x, y) {
                 if (!playerTurn)
                     return;
                 if (x < 0 || y < 0)
@@ -1142,20 +1171,11 @@ var Rouge;
 
                 var path = manager.currPath.property;
                 if (path && x == path.pointer.x && y == path.pointer.y) {
-                    char.nextAction = function () {
-                        char.x = path.nodes()[path.nodes().length - 1].x;
-                        char.y = path.nodes()[path.nodes().length - 1].y;
-                        char.stats.ap -= path.cost();
-
-                        if (!char.hasAP()) {
-                            playerTurn = false;
-                        }
-                    };
-                    manager.currPath.property = null;
+                    confirm();
                 } else {
-                    manager.currPath.property = new Controllers.Path(char, function (x, y, from) {
+                    manager.currPath.property = new Controllers.Path(function (x, y, from) {
                         return Controllers.isPassable({ x: x, y: y }, manager.level, from);
-                    }, { x: char.x, y: char.y }, { x: x, y: y }).trim(char.stats.ap);
+                    }, { x: char.x, y: char.y }, { x: x, y: y });
                 }
             }
             Player.updateClick = updateClick;
@@ -1166,31 +1186,34 @@ var Rouge;
 
                 switch (key) {
                     case "VK_Q":
-                        tryMove(4 /* NORTHWEST */);
+                        alterPath(4 /* NORTHWEST */);
                         break;
                     case "VK_W":
-                        tryMove(0 /* NORTH */);
+                        alterPath(0 /* NORTH */);
                         break;
                     case "VK_E":
-                        tryMove(5 /* NORTHEAST */);
+                        alterPath(5 /* NORTHEAST */);
                         break;
                     case "VK_A":
-                        tryMove(2 /* WEST */);
+                        alterPath(2 /* WEST */);
                         break;
                     case "VK_D":
-                        tryMove(3 /* EAST */);
+                        alterPath(3 /* EAST */);
                         break;
                     case "VK_Z":
-                        tryMove(6 /* SOUTHWEST */);
+                        alterPath(6 /* SOUTHWEST */);
                         break;
                     case "VK_X":
-                        tryMove(1 /* SOUTH */);
+                        alterPath(1 /* SOUTH */);
                         break;
                     case "VK_C":
-                        tryMove(7 /* SOUTHEAST */);
+                        alterPath(7 /* SOUTHEAST */);
                         break;
                     case "VK_SPACE":
                         endTurn();
+                        break;
+                    case "VK_F":
+                        confirm();
                         break;
                     default:
                         break;
@@ -1198,80 +1221,58 @@ var Rouge;
             }
             Player.update = update;
 
-            function tryMove(dir) {
-                var location;
+            function alterPath(dir) {
+                var oldPath = manager.currPath.property;
+                var location = oldPath.pointer;
                 switch (dir) {
                     case 4 /* NORTHWEST */:
-                        location = { x: char.x - 1, y: char.y - 1 };
+                        location = { x: location.x - 1, y: location.y - 1 };
                         break;
                     case 0 /* NORTH */:
-                        location = { x: char.x, y: char.y - 1 };
+                        location = { x: location.x, y: location.y - 1 };
                         break;
                     case 5 /* NORTHEAST */:
-                        location = { x: char.x + 1, y: char.y - 1 };
+                        location = { x: location.x + 1, y: location.y - 1 };
                         break;
                     case 2 /* WEST */:
-                        location = { x: char.x - 1, y: char.y };
+                        location = { x: location.x - 1, y: location.y };
                         break;
                     case 3 /* EAST */:
-                        location = { x: char.x + 1, y: char.y };
+                        location = { x: location.x + 1, y: location.y };
                         break;
                     case 6 /* SOUTHWEST */:
-                        location = { x: char.x - 1, y: char.y + 1 };
+                        location = { x: location.x - 1, y: location.y + 1 };
                         break;
                     case 1 /* SOUTH */:
-                        location = { x: char.x, y: char.y + 1 };
+                        location = { x: location.x, y: location.y + 1 };
                         break;
                     case 7 /* SOUTHEAST */:
-                        location = { x: char.x + 1, y: char.y + 1 };
+                        location = { x: location.x + 1, y: location.y + 1 };
                         break;
                 }
-
-                function apCost() {
-                    if (dir === 0 /* NORTH */ || dir === 1 /* SOUTH */ || dir === 2 /* WEST */ || dir === 3 /* EAST */) {
-                        return 2;
-                    } else {
-                        return 3;
-                    }
-                }
-
-                function canPass() {
-                    switch (dir) {
-                        case 4 /* NORTHWEST */:
-                            return Controllers.isPassable(location, lvl) && Controllers.isPassable({ x: location.x + 1, y: location.y }, lvl) && Controllers.isPassable({ x: location.x, y: location.y + 1 }, lvl);
-                            break;
-                        case 5 /* NORTHEAST */:
-                            return Controllers.isPassable(location, lvl) && Controllers.isPassable({ x: location.x - 1, y: location.y }, lvl) && Controllers.isPassable({ x: location.x, y: location.y + 1 }, lvl);
-                            break;
-                        case 6 /* SOUTHWEST */:
-                            return Controllers.isPassable(location, lvl) && Controllers.isPassable({ x: location.x + 1, y: location.y }, lvl) && Controllers.isPassable({ x: location.x, y: location.y - 1 }, lvl);
-                            break;
-                        case 7 /* SOUTHEAST */:
-                            return Controllers.isPassable(location, lvl) && Controllers.isPassable({ x: location.x - 1, y: location.y }, lvl) && Controllers.isPassable({ x: location.x, y: location.y - 1 }, lvl);
-                            break;
-                        default:
-                            return Controllers.isPassable(location, lvl);
-                            break;
-                    }
-                }
-
-                if (canPass() && char.stats.ap >= apCost()) {
-                    char.nextAction = function () {
-                        char.x = location.x;
-                        char.y = location.y;
-                        char.stats.ap -= apCost();
-
-                        if (!char.hasAP()) {
-                            playerTurn = false;
-                        }
-                    };
-                }
+                manager.currPath.property = new Controllers.Path(callback, oldPath.begin, location);
             }
 
             function endTurn() {
                 char.nextAction = function () {
                     char.active = false;
                     playerTurn = false;
+                    manager.currPath.property = null;
+                };
+            }
+
+            function confirm() {
+                var path = manager.currPath.property;
+                char.nextAction = function () {
+                    var limited = path.trim(char.stats.ap);
+                    char.x = limited.nodes()[path.nodes().length - 1].x;
+                    char.y = limited.nodes()[path.nodes().length - 1].y;
+                    char.stats.ap -= limited.cost();
+                    manager.currPath.property = new Controllers.Path(callback, { x: char.x, y: char.y });
+
+                    if (!char.hasAP()) {
+                        playerTurn = false;
+                    }
                 };
             }
         })(Controllers.Player || (Controllers.Player = {}));

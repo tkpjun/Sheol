@@ -19,7 +19,7 @@
                 //console.log(x + "," + y);
                 if (x >= camera.xOffset && x < camera.xOffset + camera.width &&
                     y >= camera.yOffset && y < camera.yOffset + camera.height) {
-                    Controllers.Player.updateClick(x - camera.xOffset + camera.x, y - camera.yOffset + camera.y, screen.manager);
+                    Controllers.Player.updateClick(x - camera.xOffset + camera.x, y - camera.yOffset + camera.y);
                 }
             }
         }, false);

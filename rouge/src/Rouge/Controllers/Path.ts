@@ -7,10 +7,12 @@
         private _astar: ROT.IPath;
         owner: IEntity;
         pointer: ILocation;
+        begin: ILocation;
 
-        constructor(owner: IEntity, passableFn: (x: number, y: number, from?: ILocation) => boolean, from: ILocation, to?: ILocation) {
+        constructor(passableFn: (x: number, y: number, from?: ILocation) => boolean, from: ILocation, to?: ILocation) {
             this._nodes = new Array<ILocation>();
             this._costs = new Array<number>();
+            this.begin = from;
 
             if (to) {
                 this._astar = new ROT.Path.AStar(to.x, to.y, passableFn, { topology: 4 });
@@ -25,6 +27,11 @@
                 this._nodes.push(from);
                 this._costs.push(0);
                 this.pointer = from;
+            }
+
+            if (!passableFn(this.pointer.x, this.pointer.y)) {
+                this._nodes.pop();
+                this._costs.pop();
             }
         }
 
@@ -55,6 +62,7 @@
             return this;
         }
 
+        /*
         movePointer(dir: Direction) {
             switch (dir) {
                 case Direction.NORTHWEST:
@@ -88,7 +96,7 @@
             }
 
             throw ("TODO");
-        }
+        }*/
 
         private calculateCosts() {
             var arr = this._nodes;

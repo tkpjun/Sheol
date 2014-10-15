@@ -45,7 +45,7 @@
             this.display.clear();
             this.camera.updateView(this.manager.level, this.manager.characters);
             this.camera.view.
-                addPath(this.manager.currPath.property, this.camera.x, this.camera.y, Number.MAX_VALUE).
+                addPath(this.manager.currPath.property, this.camera.x, this.camera.y, this.manager.currEntity.property.stats.ap).
                 addOverlay(this.debugBox()).
                 draw(this.display);
             GameUI.getLeftBar(this.manager.characters).draw(this.display);
