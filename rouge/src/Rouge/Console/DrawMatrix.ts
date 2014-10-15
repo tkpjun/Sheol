@@ -25,7 +25,9 @@
         }
 
         addString(x: number, y: number, str: string, wrapAt?: number, color?: string, bgColor?: string): DrawMatrix {
-            var limit = this.matrix.length - 1;
+            if (!str) return this;
+
+            var limit = this.matrix.length;
             if (wrapAt) {
                 limit = wrapAt;
             }
@@ -45,6 +47,8 @@
         }
 
         addPath(path: Controllers.Path, offsetX: number, offsetY: number, maxAP: number, excludeFirst?: boolean, color?: string): DrawMatrix {
+            if (!path) return this;
+
             var nodes = path.nodes(maxAP);
             if (!color) color = "slateblue";
             if (excludeFirst) {
@@ -55,6 +59,10 @@
                     this.matrix[node.x - offsetX][node.y - offsetY].bgColor = color;
                 }
             });
+            var p = path.pointer;
+            if (this.matrix[p.x - offsetX] && this.matrix[p.x - offsetX][p.y - offsetY]) {
+                this.matrix[p.x - offsetX][p.y - offsetY].bgColor = "yellow";
+            }
             return this;
         }
 

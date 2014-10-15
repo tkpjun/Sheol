@@ -30,6 +30,7 @@
             }
             this.manager.currEntity.attach(update);
             this.manager.changed.attach(update);
+            this.manager.currPath.attach(() => this.draw());
             this.camera = new Camera(Constants.SIDEBAR_WIDTH,
                 Constants.displayWidth - Constants.SIDEBAR_WIDTH * 2,
                 0,
@@ -43,7 +44,10 @@
 
             this.display.clear();
             this.camera.updateView(this.manager.level, this.manager.characters);
-            this.debugPath(this.camera.view.addOverlay(this.debugBox())).draw(this.display);
+            this.camera.view.
+                addPath(this.manager.currPath.property, this.camera.x, this.camera.y, Number.MAX_VALUE).
+                addOverlay(this.debugBox()).
+                draw(this.display);
             GameUI.getLeftBar(this.manager.characters).draw(this.display);
             GameUI.getDPad().draw(this.display);
             GameUI.getRightBar(this.manager.level.scheduler,
@@ -55,7 +59,7 @@
             this.manager.engine.unlock();
         }
 
-        private debugPath(matrix: DrawMatrix): DrawMatrix {
+        /*private debugPath(matrix: DrawMatrix): DrawMatrix {
 
             var room1 = (<ROT.Map.Dungeon>this.manager.level.map).getRooms()[0];
             var room2 = (<ROT.Map.Dungeon>this.manager.level.map).getRooms()[9];
@@ -67,7 +71,7 @@
 
             matrix.addPath(path, this.camera.x, this.camera.y, Number.MAX_VALUE);
             return matrix;
-        }
+        }*/
 
         private debugBox(): DrawMatrix {
             var box = new TextBox(Constants.SIDEBAR_WIDTH, 0, 6);

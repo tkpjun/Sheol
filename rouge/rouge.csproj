@@ -26,6 +26,7 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="src\Rouge\Console\Camera.ts" />
+    <TypeScriptCompile Include="src\Rouge\Console\Control.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\DrawMatrix.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\GameScreen.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\GameUI.ts" />

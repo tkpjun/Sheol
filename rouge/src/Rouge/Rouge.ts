@@ -30,5 +30,4 @@
 
 window.onload = () => {
     document.getElementById("content").appendChild(new Rouge.Console.Game().display.getContainer());
-    Rouge.Controllers.Player.init();
 };

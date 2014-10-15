@@ -4,6 +4,7 @@
 
         level: Dungeon.Level;
         currEntity: ObservableProperty<Entities.Entity>;
+        currPath: ObservableProperty<Path>;
         characters: Entities.PlayerChar[];
         engine: ROT.Engine;
         changed: IObservable;
@@ -12,6 +13,7 @@
             this.level = level;
             this.currEntity = new ObservableProperty(null);
             this.currEntity.attach(() => this.update());
+            this.currPath = new ObservableProperty(null);
             this.engine = new ROT.Engine(this.level.scheduler);
             this.changed = new Observable();
             this.characters = new Array<Entities.PlayerChar>();

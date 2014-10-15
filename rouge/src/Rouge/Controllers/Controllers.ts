@@ -19,18 +19,33 @@
     export function isPassable(loc: ILocation, level: Dungeon.Level, from?: ILocation): boolean {
         var cell = level.map[loc.x + "," + loc.y];
         if (from) {
-            if (diagonal(from, loc)) {
+            if (diagonalNbors(from, loc)) {
                 var cell2 = level.map[loc.x + "," + from.y];
                 var cell3 = level.map[from.x + "," + loc.y];
+                //console.log(loc.x + "," + loc.y + ": " + cell + " ; " +loc.x + "," + from.y + ": " + cell2 + " ; " + from.x + "," + loc.y + ": " + cell2);
+                //console.log(cell != " " && cell2 != " " && cell3 != " ");
                 return cell !== " " && cell2 !== " " && cell3 !== " ";
             }
-        }       
-        return cell !== " ";
+        }
+        var entitiesOK = true;
+        level.entities.forEach((e) => {
+            if (loc.x == e.x && loc.y == e.y)
+                entitiesOK = false;
+        });
+        return cell !== " " && entitiesOK;
     }
 
-    export function diagonal(loc: ILocation, neighbor: ILocation): boolean {
+    export function diagonalNbors(loc: ILocation, neighbor: ILocation): boolean {
         if (Math.abs(loc.x - neighbor.x) == 1 &&
             Math.abs(loc.y - neighbor.y) == 1) {
+            return true;
+        }
+        else
+            return false;
+    }
+
+    export function diagonal(loc: ILocation, other: ILocation): boolean {
+        if (Math.abs(loc.x - other.x) == Math.abs(loc.y - other.y)) {
             return true;
         }
         else

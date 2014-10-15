@@ -7,11 +7,12 @@
         gameScreen: GameScreen;
         menuScreen: MainMenuScreen;      
 
-        constructor() { 
-
+        constructor() {
+            
             this.display = new ROT.Display({ width: Constants.displayWidth, height: Constants.DISPLAY_HEIGHT });
             this.gameScreen = new GameScreen(this.display);
             this.screen = this.gameScreen;
+            Rouge.Console.Control.init(this.gameScreen);
 
             var resize = () => {
                 var size = this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight);

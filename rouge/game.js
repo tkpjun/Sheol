@@ -176,6 +176,63 @@ var Rouge;
 var Rouge;
 (function (Rouge) {
     (function (Console) {
+        (function (Control) {
+            var lastDownTarget;
+
+            function init(screen) {
+                var display = screen.display;
+                var canvas = display.getContainer();
+                var camera = screen.camera;
+
+                document.addEventListener("mousedown", function (event) {
+                    lastDownTarget = event.target;
+                    if (lastDownTarget != canvas)
+                        return;
+
+                    var pos = display.eventToPosition(event);
+                    var x = pos[0];
+                    var y = pos[1];
+                    if (x >= 0 && y >= 0) {
+                        //console.log(x + "," + y);
+                        if (x >= camera.xOffset && x < camera.xOffset + camera.width && y >= camera.yOffset && y < camera.yOffset + camera.height) {
+                            Rouge.Controllers.Player.updateClick(x - camera.xOffset + camera.x, y - camera.yOffset + camera.y, screen.manager);
+                        }
+                    }
+                }, false);
+
+                document.addEventListener("keydown", function (event) {
+                    if (lastDownTarget != canvas)
+                        return;
+
+                    var code = event.keyCode;
+                    var vk;
+                    for (var name in ROT) {
+                        if (ROT[name] == code && name.indexOf("VK_") == 0) {
+                            vk = name;
+                            break;
+                        }
+                    }
+                    Rouge.Controllers.Player.update(vk);
+                }, false);
+                /*document.addEventListener("keypress", (event) => {
+                if (lastDownTarget != canvas) return;
+                
+                var code = event.charCode;
+                var ch = String.fromCharCode(code);
+                
+                //console.log("Keypress: char is " + ch);
+                }, false);*/
+            }
+            Control.init = init;
+            ;
+        })(Console.Control || (Console.Control = {}));
+        var Control = Console.Control;
+    })(Rouge.Console || (Rouge.Console = {}));
+    var Console = Rouge.Console;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Console) {
         var DrawMatrix = (function () {
             function DrawMatrix(xOffset, yOffset, matrix, width, height, bgColor) {
                 this.xOffset = xOffset;
@@ -194,7 +251,10 @@ var Rouge;
                 }
             }
             DrawMatrix.prototype.addString = function (x, y, str, wrapAt, color, bgColor) {
-                var limit = this.matrix.length - 1;
+                if (!str)
+                    return this;
+
+                var limit = this.matrix.length;
                 if (wrapAt) {
                     limit = wrapAt;
                 }
@@ -216,6 +276,9 @@ var Rouge;
 
             DrawMatrix.prototype.addPath = function (path, offsetX, offsetY, maxAP, excludeFirst, color) {
                 var _this = this;
+                if (!path)
+                    return this;
+
                 var nodes = path.nodes(maxAP);
                 if (!color)
                     color = "slateblue";
@@ -227,6 +290,10 @@ var Rouge;
                         _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = color;
                     }
                 });
+                var p = path.pointer;
+                if (this.matrix[p.x - offsetX] && this.matrix[p.x - offsetX][p.y - offsetY]) {
+                    this.matrix[p.x - offsetX][p.y - offsetY].bgColor = "yellow";
+                }
                 return this;
             };
 
@@ -309,6 +376,7 @@ var Rouge;
                 this.display = new ROT.Display({ width: Console.Constants.displayWidth, height: Console.Constants.DISPLAY_HEIGHT });
                 this.gameScreen = new Console.GameScreen(this.display);
                 this.screen = this.gameScreen;
+                Rouge.Console.Control.init(this.gameScreen);
 
                 var resize = function () {
                     var size = _this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight);
@@ -363,6 +431,9 @@ var Rouge;
                 };
                 this.manager.currEntity.attach(update);
                 this.manager.changed.attach(update);
+                this.manager.currPath.attach(function () {
+                    return _this.draw();
+                });
                 this.camera = new Console.Camera(Console.Constants.SIDEBAR_WIDTH, Console.Constants.displayWidth - Console.Constants.SIDEBAR_WIDTH * 2, 0, Console.Constants.DISPLAY_HEIGHT - Console.Constants.BOTTOM_BAR_HEIGHT, this.display);
                 update();
             }
@@ -371,7 +442,7 @@ var Rouge;
 
                 this.display.clear();
                 this.camera.updateView(this.manager.level, this.manager.characters);
-                this.debugPath(this.camera.view.addOverlay(this.debugBox())).draw(this.display);
+                this.camera.view.addPath(this.manager.currPath.property, this.camera.x, this.camera.y, Number.MAX_VALUE).addOverlay(this.debugBox()).draw(this.display);
                 Console.GameUI.getLeftBar(this.manager.characters).draw(this.display);
                 Console.GameUI.getDPad().draw(this.display);
                 Console.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.property, this.manager.characters.concat(this.manager.level.entities)).draw(this.display);
@@ -380,18 +451,19 @@ var Rouge;
                 this.manager.engine.unlock();
             };
 
-            GameScreen.prototype.debugPath = function (matrix) {
-                var _this = this;
-                var room1 = this.manager.level.map.getRooms()[0];
-                var room2 = this.manager.level.map.getRooms()[9];
-                var path = new Rouge.Controllers.Path(function (x, y, from) {
-                    return Rouge.Controllers.isPassable({ x: x, y: y }, _this.manager.level, from);
-                }, { x: room1.getCenter()[0], y: room1.getCenter()[1] }, { x: room2.getCenter()[0], y: room2.getCenter()[1] });
-
-                matrix.addPath(path, this.camera.x, this.camera.y, Number.MAX_VALUE);
-                return matrix;
-            };
-
+            /*private debugPath(matrix: DrawMatrix): DrawMatrix {
+            
+            var room1 = (<ROT.Map.Dungeon>this.manager.level.map).getRooms()[0];
+            var room2 = (<ROT.Map.Dungeon>this.manager.level.map).getRooms()[9];
+            var path = new Controllers.Path((x, y, from: Controllers.ILocation) => {
+            return Controllers.isPassable({ x: x, y: y }, this.manager.level, from);
+            },
+            { x: room1.getCenter()[0], y: room1.getCenter()[1] },
+            { x: room2.getCenter()[0], y: room2.getCenter()[1] });
+            
+            matrix.addPath(path, this.camera.x, this.camera.y, Number.MAX_VALUE);
+            return matrix;
+            }*/
             GameScreen.prototype.debugBox = function () {
                 var box = new Console.TextBox(Console.Constants.SIDEBAR_WIDTH, 0, 6);
                 box.addLine("Lorem ipsum dolor sit amet,");
@@ -572,14 +644,14 @@ var Rouge;
                     var nextLine = this.lines[index];
 
                     if (nextLine.length > width - 2) {
-                        var line1 = nextLine.slice(0, width - 2);
-                        var line2 = nextLine.slice(width - 2).trim();
-                        matrix.addString(1, this.height - used - 1, line2, width - 1);
+                        var split = this.breakIntoLines(nextLine, width - 2);
+
+                        matrix.addString(1, this.height - used - 1, split[1], width - 1);
                         used += 1;
                         if (used >= this.height)
                             break;
                         else {
-                            matrix.addString(1, this.height - used - 1, line1, width - 1);
+                            matrix.addString(1, this.height - used - 1, split[0], width - 1);
                             used += 1;
                         }
                     } else {
@@ -589,6 +661,30 @@ var Rouge;
                     index -= 1;
                 }
                 return matrix;
+            };
+
+            TextBox.prototype.breakIntoLines = function (str, limit) {
+                var arr = new Array();
+
+                var words = str.split(" ");
+                var i = 1;
+                var next = words[i];
+                var lt = words[0].length;
+                arr[0] = words[0];
+                while (next && lt + next.length + 1 < limit) {
+                    lt += next.length + 1;
+                    arr[0] += " " + next;
+                    i += 1;
+                    next = words[i];
+                }
+                arr[1] = words[i];
+                i += 1;
+                while (i < words.length) {
+                    arr[1] += " " + words[i];
+                    i += 1;
+                }
+
+                return arr;
             };
             return TextBox;
         })();
@@ -656,18 +752,34 @@ var Rouge;
         function isPassable(loc, level, from) {
             var cell = level.map[loc.x + "," + loc.y];
             if (from) {
-                if (diagonal(from, loc)) {
+                if (diagonalNbors(from, loc)) {
                     var cell2 = level.map[loc.x + "," + from.y];
                     var cell3 = level.map[from.x + "," + loc.y];
+
+                    //console.log(loc.x + "," + loc.y + ": " + cell + " ; " +loc.x + "," + from.y + ": " + cell2 + " ; " + from.x + "," + loc.y + ": " + cell2);
+                    //console.log(cell != " " && cell2 != " " && cell3 != " ");
                     return cell !== " " && cell2 !== " " && cell3 !== " ";
                 }
             }
-            return cell !== " ";
+            var entitiesOK = true;
+            level.entities.forEach(function (e) {
+                if (loc.x == e.x && loc.y == e.y)
+                    entitiesOK = false;
+            });
+            return cell !== " " && entitiesOK;
         }
         Controllers.isPassable = isPassable;
 
-        function diagonal(loc, neighbor) {
+        function diagonalNbors(loc, neighbor) {
             if (Math.abs(loc.x - neighbor.x) == 1 && Math.abs(loc.y - neighbor.y) == 1) {
+                return true;
+            } else
+                return false;
+        }
+        Controllers.diagonalNbors = diagonalNbors;
+
+        function diagonal(loc, other) {
+            if (Math.abs(loc.x - other.x) == Math.abs(loc.y - other.y)) {
                 return true;
             } else
                 return false;
@@ -700,6 +812,7 @@ var Rouge;
                 this.currEntity.attach(function () {
                     return _this.update();
                 });
+                this.currPath = new Controllers.ObservableProperty(null);
                 this.engine = new ROT.Engine(this.level.scheduler);
                 this.changed = new Controllers.Observable();
                 this.characters = new Array();
@@ -827,17 +940,18 @@ var Rouge;
 (function (Rouge) {
     (function (Controllers) {
         var Path = (function () {
-            function Path(passableFn, from, to) {
+            function Path(owner, passableFn, from, to) {
                 var _this = this;
                 this._nodes = new Array();
                 this._costs = new Array();
 
                 if (to) {
-                    this._astar = new ROT.Path.AStar(to.x, to.y, passableFn, { topology: 8 });
+                    this._astar = new ROT.Path.AStar(to.x, to.y, passableFn, { topology: 4 });
                     this._astar.compute(from.x, from.y, function (x, y) {
                         _this._nodes.push({ x: x, y: y });
                     });
-                    this.fixPath(passableFn);
+
+                    //this.fixPath(passableFn);
                     this.calculateCosts();
                     this.pointer = to;
                 } else {
@@ -846,17 +960,34 @@ var Rouge;
                     this.pointer = from;
                 }
             }
-            Path.prototype.nodes = function (maxCost) {
-                var arr = new Array();
-                var cost = 0;
-                for (var i = 0; i < this._nodes.length - 1; i++) {
-                    if (cost > maxCost)
-                        break;
+            Path.prototype.cost = function () {
+                return this._costs.reduce(function (x, y) {
+                    return x + y;
+                });
+            };
 
-                    arr.push(this._nodes[i]);
-                    cost += this._costs[i];
-                }
-                return arr;
+            Path.prototype.nodes = function (maxCost) {
+                if (maxCost) {
+                    var arr = new Array();
+                    var cost = 0;
+                    for (var i = 0; i < this._nodes.length; i++) {
+                        if (cost + this._costs[i] > maxCost)
+                            break;
+
+                        arr.push(this._nodes[i]);
+                        cost += this._costs[i];
+                    }
+                    return arr;
+                } else
+                    return this._nodes;
+            };
+
+            Path.prototype.trim = function (maxCost) {
+                this._nodes = this.nodes(maxCost);
+                this._costs.length = this._nodes.length;
+                this.pointer.x = this._nodes[this._nodes.length - 1].x;
+                this.pointer.y = this._nodes[this._nodes.length - 1].y;
+                return this;
             };
 
             Path.prototype.movePointer = function (dir) {
@@ -907,7 +1038,7 @@ var Rouge;
             };
 
             Path.prototype.calculateCost = function (n1, n2) {
-                if (Math.abs(n1.x - n2.x) == 1 && Math.abs(n1.y - n2.y) == 1) {
+                if (Controllers.diagonalNbors(n1, n2)) {
                     return 3;
                 } else
                     return 2;
@@ -927,6 +1058,58 @@ var Rouge;
                         }
                     }
                 }
+                /*
+                for (var i = 0; i < arr.length - 3; i++) {
+                if (!arr[i + 2]) break;
+                
+                if (diagonalNbors(arr[i], arr[i+2])) {
+                var x, y;
+                if (arr[i + 1].x == arr[i].x)
+                x = arr[i + 2].x;
+                else
+                x = arr[i].x;
+                if (arr[i + 1].y == arr[i].y)
+                y = arr[i + 2].y;
+                else
+                y = arr[i].y;
+                if (passableFn(x, y)) {
+                this._nodes.splice(i + 1);
+                i -= 1;
+                }
+                }
+                }
+                //assumes the preceding for loop has run
+                for (var i = 0; i < arr.length - 4; i++) {
+                if (!arr[i + 3]) break;
+                if (diagonal(arr[i], arr[i + 3]) && Math.abs(arr[i].x - arr[i+3].x) == 2) {
+                var x, y;
+                x = (arr[i + 3].x + arr[i].x) / 2;
+                y = (arr[i + 3].y + arr[i].y) / 2;
+                if (passableFn(x, y, { x: arr[i].x, y: arr[i].y }) && passableFn(arr[i + 3].x, arr[i + 3].y, { x: x, y: y })) {
+                this._nodes.splice(i + 1, 2, { x: x, y: y });
+                }
+                }
+                
+                if (!arr[i + 4]) break;
+                if (diagonal(arr[i], arr[i + 4]) && Math.abs(arr[i].x - arr[i + 4].x) == 3) {
+                var x1, y1, x2, y2;
+                if (arr[i + 4].x > arr[i].x)
+                x1 = arr[i].x + 1;
+                else
+                x1 = arr[i].x - 1;
+                if (arr[i + 4].y > arr[i].y)
+                y1 = arr[i].y + 1;
+                else
+                y1 = arr[i].y - 1;
+                x2 = (arr[i + 4].x + x1) / 2;
+                y2 = (arr[i + 4].y + y1) / 2;
+                if (passableFn(x1, y1, { x: arr[i].x, y: arr[i].y }) &&
+                passableFn(y1, y2, { x: x1, y: y1 }) &&
+                passableFn(arr[i + 4].x, arr[i + 4].y, { x: x2, y: y2 })) {
+                this._nodes.splice(i + 1, 3, { x: x1, y: y1 }, { x: x2, y: y2 });
+                }
+                }
+                }*/
             };
             return Path;
         })();
@@ -938,58 +1121,48 @@ var Rouge;
 (function (Rouge) {
     (function (Controllers) {
         (function (Player) {
-            var _canvas;
-            var _lastDownTarget;
-            var _char;
-            var _level;
-            var _active = false;
+            var char;
+            var lvl;
+            var playerTurn = false;
 
-            function init() {
-                _canvas = document.getElementsByTagName("canvas")[0];
-
-                document.addEventListener("mousedown", function (event) {
-                    _lastDownTarget = event.target;
-                }, false);
-
-                document.addEventListener("keydown", function (event) {
-                    if (_lastDownTarget != _canvas)
-                        return;
-
-                    var code = event.keyCode;
-                    var vk;
-                    for (var name in ROT) {
-                        if (ROT[name] == code && name.indexOf("VK_") == 0) {
-                            vk = name;
-                            break;
-                        }
-                    }
-                    update(vk);
-                }, false);
-                /*document.addEventListener("keypress", (event) => {
-                if (lastDownTarget != canvas) return;
-                
-                var code = event.charCode;
-                var ch = String.fromCharCode(code);
-                
-                //console.log("Keypress: char is " + ch);
-                }, false);*/
-            }
-            Player.init = init;
-            ;
-
-            function activate(char, level) {
-                if (!_active) {
-                    _char = char;
-                    _level = level;
-                    _active = true;
+            function activate(character, level) {
+                if (!playerTurn) {
+                    char = character;
+                    lvl = level;
+                    playerTurn = true;
                 }
             }
             Player.activate = activate;
 
-            function update(key) {
-                if (!_active) {
+            function updateClick(x, y, manager) {
+                if (!playerTurn)
                     return;
+                if (x < 0 || y < 0)
+                    throw (char.x + "," + char.y + " to " + x + "," + y);
+
+                var path = manager.currPath.property;
+                if (path && x == path.pointer.x && y == path.pointer.y) {
+                    char.nextAction = function () {
+                        char.x = path.nodes()[path.nodes().length - 1].x;
+                        char.y = path.nodes()[path.nodes().length - 1].y;
+                        char.stats.ap -= path.cost();
+
+                        if (!char.hasAP()) {
+                            playerTurn = false;
+                        }
+                    };
+                    manager.currPath.property = null;
+                } else {
+                    manager.currPath.property = new Controllers.Path(char, function (x, y, from) {
+                        return Controllers.isPassable({ x: x, y: y }, manager.level, from);
+                    }, { x: char.x, y: char.y }, { x: x, y: y }).trim(char.stats.ap);
                 }
+            }
+            Player.updateClick = updateClick;
+
+            function update(key) {
+                if (!playerTurn)
+                    return;
 
                 switch (key) {
                     case "VK_Q":
@@ -1023,33 +1196,34 @@ var Rouge;
                         break;
                 }
             }
+            Player.update = update;
 
             function tryMove(dir) {
                 var location;
                 switch (dir) {
                     case 4 /* NORTHWEST */:
-                        location = { x: _char.x - 1, y: _char.y - 1 };
+                        location = { x: char.x - 1, y: char.y - 1 };
                         break;
                     case 0 /* NORTH */:
-                        location = { x: _char.x, y: _char.y - 1 };
+                        location = { x: char.x, y: char.y - 1 };
                         break;
                     case 5 /* NORTHEAST */:
-                        location = { x: _char.x + 1, y: _char.y - 1 };
+                        location = { x: char.x + 1, y: char.y - 1 };
                         break;
                     case 2 /* WEST */:
-                        location = { x: _char.x - 1, y: _char.y };
+                        location = { x: char.x - 1, y: char.y };
                         break;
                     case 3 /* EAST */:
-                        location = { x: _char.x + 1, y: _char.y };
+                        location = { x: char.x + 1, y: char.y };
                         break;
                     case 6 /* SOUTHWEST */:
-                        location = { x: _char.x - 1, y: _char.y + 1 };
+                        location = { x: char.x - 1, y: char.y + 1 };
                         break;
                     case 1 /* SOUTH */:
-                        location = { x: _char.x, y: _char.y + 1 };
+                        location = { x: char.x, y: char.y + 1 };
                         break;
                     case 7 /* SOUTHEAST */:
-                        location = { x: _char.x + 1, y: _char.y + 1 };
+                        location = { x: char.x + 1, y: char.y + 1 };
                         break;
                 }
 
@@ -1064,40 +1238,40 @@ var Rouge;
                 function canPass() {
                     switch (dir) {
                         case 4 /* NORTHWEST */:
-                            return Controllers.isPassable(location, _level) && Controllers.isPassable({ x: location.x + 1, y: location.y }, _level) && Controllers.isPassable({ x: location.x, y: location.y + 1 }, _level);
+                            return Controllers.isPassable(location, lvl) && Controllers.isPassable({ x: location.x + 1, y: location.y }, lvl) && Controllers.isPassable({ x: location.x, y: location.y + 1 }, lvl);
                             break;
                         case 5 /* NORTHEAST */:
-                            return Controllers.isPassable(location, _level) && Controllers.isPassable({ x: location.x - 1, y: location.y }, _level) && Controllers.isPassable({ x: location.x, y: location.y + 1 }, _level);
+                            return Controllers.isPassable(location, lvl) && Controllers.isPassable({ x: location.x - 1, y: location.y }, lvl) && Controllers.isPassable({ x: location.x, y: location.y + 1 }, lvl);
                             break;
                         case 6 /* SOUTHWEST */:
-                            return Controllers.isPassable(location, _level) && Controllers.isPassable({ x: location.x + 1, y: location.y }, _level) && Controllers.isPassable({ x: location.x, y: location.y - 1 }, _level);
+                            return Controllers.isPassable(location, lvl) && Controllers.isPassable({ x: location.x + 1, y: location.y }, lvl) && Controllers.isPassable({ x: location.x, y: location.y - 1 }, lvl);
                             break;
                         case 7 /* SOUTHEAST */:
-                            return Controllers.isPassable(location, _level) && Controllers.isPassable({ x: location.x - 1, y: location.y }, _level) && Controllers.isPassable({ x: location.x, y: location.y - 1 }, _level);
+                            return Controllers.isPassable(location, lvl) && Controllers.isPassable({ x: location.x - 1, y: location.y }, lvl) && Controllers.isPassable({ x: location.x, y: location.y - 1 }, lvl);
                             break;
                         default:
-                            return Controllers.isPassable(location, _level);
+                            return Controllers.isPassable(location, lvl);
                             break;
                     }
                 }
 
-                if (canPass() && _char.stats.ap >= apCost()) {
-                    _char.nextAction = function () {
-                        _char.x = location.x;
-                        _char.y = location.y;
-                        _char.stats.ap -= apCost();
+                if (canPass() && char.stats.ap >= apCost()) {
+                    char.nextAction = function () {
+                        char.x = location.x;
+                        char.y = location.y;
+                        char.stats.ap -= apCost();
 
-                        if (!_char.hasAP()) {
-                            _active = false;
+                        if (!char.hasAP()) {
+                            playerTurn = false;
                         }
                     };
                 }
             }
 
             function endTurn() {
-                _char.nextAction = function () {
-                    _char.active = false;
-                    _active = false;
+                char.nextAction = function () {
+                    char.active = false;
+                    playerTurn = false;
                 };
             }
         })(Controllers.Player || (Controllers.Player = {}));
@@ -1537,6 +1711,5 @@ var Rouge;
 })(Rouge || (Rouge = {}));
 window.onload = function () {
     document.getElementById("content").appendChild(new Rouge.Console.Game().display.getContainer());
-    Rouge.Controllers.Player.init();
 };
 //# sourceMappingURL=game.js.map
