@@ -49,8 +49,8 @@
         addPath(path: Controllers.Path, offsetX: number, offsetY: number, maxAP?: number, excludeFirst?: boolean, color?: string): DrawMatrix {
             if (!path) return this;
 
-            var nodes = path.nodes();
-            var limited = path.nodes(maxAP);
+            var nodes = path._nodes;
+            var limited = path.limitedNodes();
             if (!color) color = "slateblue";
             if (excludeFirst) {
                 nodes.shift();

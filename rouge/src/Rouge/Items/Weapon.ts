@@ -1,4 +1,4 @@
-﻿module Rouge.Objects {
+﻿module Rouge.Items {
 
     export class Weapon implements IItem {
 
@@ -60,5 +60,7 @@
             this.toMaxArmor = armorMax;
             return this;
         }
+
+        static None = new Weapon();
     }
 }

@@ -3,7 +3,7 @@
     export class Entity implements IEntity {
 
         name: string;
-        stats: Stats;
+        stats: Statset;
         skills: Skillset;
         traits: Trait[];
         inventory: IItem[];
@@ -45,7 +45,7 @@
             return false;
         }
 
-        didntEnd(): boolean {
+        hasTurn(): boolean {
             return false;
         }
 

@@ -33,11 +33,14 @@
     <TypeScriptCompile Include="src\Rouge\Console\MainMenuScreen.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\TextBox.ts" />
     <TypeScriptCompile Include="src\Rouge\Constants.ts" />
+    <TypeScriptCompile Include="src\Rouge\Controllers\AstarPath.ts" />
     <TypeScriptCompile Include="src\Rouge\Controllers\Path.ts" />
     <TypeScriptCompile Include="src\Rouge\Controllers\Player.ts" />
+    <TypeScriptCompile Include="src\Rouge\Controllers\StraightPath.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\Attack.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\AttackResult.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\Entities.ts" />
+    <TypeScriptCompile Include="src\Rouge\Entities\Equipment.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\Skill.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\Skillset.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\Trait.ts" />
@@ -49,16 +52,16 @@
     <TypeScriptCompile Include="src\Rouge\Dungeon\Dungeon.ts" />
     <TypeScriptCompile Include="src\Rouge\Dungeon\Level.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\Enemy.ts" />
-    <TypeScriptCompile Include="src\Rouge\Entities\Stats.ts" />
+    <TypeScriptCompile Include="src\Rouge\Entities\Statset.ts" />
     <TypeScriptCompile Include="phaser.d.ts" />
     <TypeScriptCompile Include="rot.d.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\Entity.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\PlayerChar.ts" />
-    <TypeScriptCompile Include="src\Rouge\Objects\ArmorPiece.ts" />
-    <TypeScriptCompile Include="src\Rouge\Objects\Consumable.ts" />
+    <TypeScriptCompile Include="src\Rouge\Items\ArmorPiece.ts" />
+    <TypeScriptCompile Include="src\Rouge\Items\Consumable.ts" />
     <TypeScriptCompile Include="src\Rouge\Dungeon\ItemObject.ts" />
-    <TypeScriptCompile Include="src\Rouge\Objects\Objects.ts" />
-    <TypeScriptCompile Include="src\Rouge\Objects\Weapon.ts" />
+    <TypeScriptCompile Include="src\Rouge\Items\Items.ts" />
+    <TypeScriptCompile Include="src\Rouge\Items\Weapon.ts" />
     <TypeScriptCompile Include="src\Rouge\Rouge.ts" />
     <TypeScriptCompile Include="src\Rouge\Controllers\ObservableProperty.ts" />
   </ItemGroup>

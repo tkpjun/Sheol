@@ -1,10 +1,13 @@
-﻿module Rouge.Objects {
+﻿module Rouge.Items {
 
     export enum Weapons {
+        None,
         Dagger,
         ShortSword,
+        Broadsword,
         Mace,
-        Battleaxe,
+        HandAxe,
+        BattleAxe,
         Spear,
         Pike,
         Mattock,
@@ -13,7 +16,7 @@
         LongSword,
         Halberd,
         RoundShield,
-        TowerShield
+        TowerShield,
     }
 
     export function getWeapon(type: Weapons): Weapon {
@@ -34,17 +37,31 @@
                     setRange(0, 2).
                     setCost(3)
                 break;
+            case Weapons.Broadsword:
+                weapon = new Weapon().
+                    setName("Broadsword").
+                    setDamage(3, 7).
+                    setRange(2, 3).
+                    setCost(3)
+                break;
             case Weapons.Mace:
                 weapon = new Weapon().
                     setName("Mace").
-                    setDamage(2, 8).
+                    setDamage(1, 15).
                     setRange(2, 3).
                     setCost(3);
                 break;
-            case Weapons.Battleaxe:
+            case Weapons.HandAxe:
+                weapon = new Weapon().
+                    setName("Hand axe").
+                    setDamage(3, 7).
+                    setRange(0, 2).
+                    setCost(3)
+                break;
+            case Weapons.BattleAxe:
                 weapon = new Weapon().
                     setName("Battle axe").
-                    setDamage(3, 7).
+                    setDamage(2, 8).
                     setRange(2, 3).
                     setCost(3);
                 break;
@@ -82,7 +99,7 @@
             case Weapons.Maul:
                 weapon = new Weapon().
                     setName("Maul").
-                    setDamage(1, 20).
+                    setDamage(1, 25).
                     setRange(2, 3).
                     setCost(5).
                     setTwohanded();
@@ -118,6 +135,9 @@
                     setRange(2, 2).
                     setCost(4).
                     setBonuses(-2, 4, 2, 3)
+                break;
+            default:
+                weapon = Weapon.None;
                 break;
         }
         return weapon;

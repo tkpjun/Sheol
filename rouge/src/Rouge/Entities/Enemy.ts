@@ -7,7 +7,7 @@ module Rouge.Entities {
         effects: any;
         active: boolean;
 
-        constructor(name: string, stats: Stats, skills?: Skillset, traits?: Trait[]) {
+        constructor(name: string, stats: Statset, skills?: Skillset, traits?: Trait[]) {
             super();
             this.name = name;
             if (skills)

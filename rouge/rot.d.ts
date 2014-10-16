@@ -5,8 +5,8 @@
     }
 
     interface IMap {
-        width: number;
-        height: number;
+        _width: number;
+        _height: number;
         create(callback: (x: number, y: number, value: number) => void): void;
         create();
     }
@@ -153,8 +153,8 @@ declare module ROT.Map {
     }
 
     export class Dungeon implements IMap {
-        width: number;
-        height: number;
+        _width: number;
+        _height: number;
         constructor();
         constructor(width: number, height: number);
         create();

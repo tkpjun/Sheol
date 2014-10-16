@@ -3,31 +3,32 @@ module Rouge.Entities {
 
     export class PlayerChar extends Entity {
 
-        equipment: any;
+        equipment: Equipment;
         effects: any;
-        active: boolean;
+        _hasTurn: boolean;
 
         constructor(name: string) {
             super();
             this.name = name;
             this.skills = new Skillset().setProwess(5).setEvasion(5);
             this.traits = new Array<Trait>();
-            this.stats = new Stats(30, 10, 100, 30);
+            this.stats = new Statset(30, 10, 100, 30);
             this.inventory = new Array<IItem>();
-            this.active = true;
+            this._hasTurn = true;
+            this.equipment = new Equipment();
         }
 
         hasAP(): boolean {
             return this.stats.ap > 0;
         }
 
-        didntEnd(): boolean {
-            return this.active;
+        hasTurn(): boolean {
+            return this._hasTurn;
         }
 
         newTurn() {
             this.stats.ap = this.stats.apMax;
-            this.active = true;
+            this._hasTurn = true;
         }
     }
 } 

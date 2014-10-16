@@ -1,6 +1,6 @@
 ﻿module Rouge.Entities {
 
-    export class Stats {
+    export class Statset {
 
         hp: number;
         hpMax: number;
@@ -22,17 +22,17 @@
             this.exp = 0;
         }
 
-        setHP(val: number): Stats {
+        setHP(val: number): Statset {
             this.hp = val;
             return this;
         }
 
-        setAP(val: number): Stats {
+        setAP(val: number): Statset {
             this.ap = val;
             return this;
         }
 
-        setEndurance(val: number): Stats {
+        setEndurance(val: number): Statset {
             this.endurance = val;
             return this;
         }

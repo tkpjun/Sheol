@@ -28,6 +28,7 @@
         private start() {
             var room = (<ROT.Map.Dungeon>this.level.map).getRooms()[0];
             var player1 = new Entities.PlayerChar("char1");
+            player1.equipment.equipWeapon(Items.getWeapon(Items.Weapons.Mace), Entities.WeaponSlots.Right);
             player1.x = room.getCenter()[0];
             player1.y = room.getCenter()[1];
             this.characters.push(player1);
@@ -35,6 +36,7 @@
                 new Controllers.ChangeProperty(this.currEntity, player1), true, 1);
 
             var player2 = new Entities.PlayerChar("char2");
+            player2.equipment.equipWeapon(Items.getWeapon(Items.Weapons.ShortSword), Entities.WeaponSlots.Right);
             player2.x = room.getCenter()[0] + 1;
             player2.y = room.getCenter()[1];
             this.characters.push(player2);
@@ -64,7 +66,7 @@
                     this.changed.notify();
                 }
 
-                if (entity.hasAP() && entity.didntEnd()) {
+                if (entity.hasAP() && entity.hasTurn()) {
                     setTimeout(pollForAction, Constants.UPDATE_RATE);
                 }
                 else {

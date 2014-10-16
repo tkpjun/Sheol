@@ -1,6 +1,8 @@
 ﻿module Rouge.Console.Control {
 
     var lastDownTarget;
+    var lastMouseX = 0;
+    var lastMouseY = 0;
 
     export function init(screen: GameScreen) {
 
@@ -15,11 +17,31 @@
             var pos = display.eventToPosition(event);
             var x = pos[0];
             var y = pos[1];
-            if (x >= 0 && y >= 0) {
+            if (x >= 0 && y >= 1) {
                 //console.log(x + "," + y);
                 if (x >= camera.xOffset && x < camera.xOffset + camera.width &&
                     y >= camera.yOffset && y < camera.yOffset + camera.height) {
                     Controllers.Player.updateClick(x - camera.xOffset + camera.x, y - camera.yOffset + camera.y);
+                }
+            }
+        }, false);
+
+        document.addEventListener("mousemove", (event) => {
+            if (lastDownTarget != canvas) return;
+            if (Math.abs(event.x - lastMouseX) < 5 &&
+                Math.abs(event.y - lastMouseY) < 8) return;
+
+            //console.log(event.x +","+ event.y)
+            lastMouseX = event.x;
+            lastMouseY = event.y;
+
+            var pos = display.eventToPosition(event);
+            var x = pos[0];
+            var y = pos[1];
+            if (x >= 0 && y >= 1) {
+                if (x >= camera.xOffset && x < camera.xOffset + camera.width &&
+                    y >= camera.yOffset && y < camera.yOffset + camera.height) {
+                    Controllers.Player.updateHover(x - camera.xOffset + camera.x, y - camera.yOffset + camera.y);
                 }
             }
         }, false);
