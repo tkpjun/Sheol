@@ -7,8 +7,6 @@ module Rouge.Controllers {
 
         constructor(passableFn: (x: number, y: number) => boolean, from: ILocation, to?: ILocation, lengthInAP?: number) {
             super();
-            this._nodes = new Array<ILocation>();
-            this._costs = new Array<number>();
             this._lengthInAP = lengthInAP;
             this.begin = from;
 

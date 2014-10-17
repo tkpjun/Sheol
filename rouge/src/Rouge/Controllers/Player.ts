@@ -35,20 +35,38 @@
 
         var path = manager.currPath.property;
         if (path && x == path.pointer.x && y == path.pointer.y) {
-            confirm();            
+            confirm();
+        }  
+        else if (state == States.Move) {
+            var oldPath = manager.currPath.property;
+            var newPath = new AstarPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.stats.ap);
+            if (!oldPath || newPath.pointer.x != oldPath.pointer.x || newPath.pointer.y != oldPath.pointer.y) {
+                manager.currPath.property = newPath;
+            }
         }
-        else if(state == States.Move) {
-            manager.currPath.property = new AstarPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.stats.ap);
-        }       
+        else if (state == States.Melee || state == States.Ranged) {
+            var oPath = manager.currPath.property;
+            var nPath = new StraightPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.equipment.rightWeapon.maxRange);
+            if (!oPath || nPath.pointer.x != oPath.pointer.x || nPath.pointer.y != oPath.pointer.y) {
+                manager.currPath.property = nPath;
+            }
+        }
     }
 
-    export function updateHover(x: number, y: number) {
-        if (state != States.Melee && state != States.Ranged) return;
-
-        var oldPath = manager.currPath.property;
-        var newPath = new StraightPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.equipment.rightWeapon.maxRange);
-        if (!oldPath || newPath.pointer.x != oldPath.pointer.x || newPath.pointer.y != oldPath.pointer.y) {
-            manager.currPath.property = newPath;
+    export function updateMousemove(x: number, y: number) {
+        if (state == States.Move) {
+            var oldPath = manager.currPath.property;
+            var newPath = new AstarPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.stats.ap);
+            if (!oldPath || newPath.pointer.x != oldPath.pointer.x || newPath.pointer.y != oldPath.pointer.y) {
+                manager.currPath.property = newPath;
+            }
+        }
+        else if (state == States.Melee || state == States.Ranged) {
+            var oPath = manager.currPath.property;
+            var nPath = new StraightPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.equipment.rightWeapon.maxRange);
+            if (!oPath || nPath.pointer.x != oPath.pointer.x || nPath.pointer.y != oPath.pointer.y) {
+                manager.currPath.property = nPath;
+            }
         }
     }
 

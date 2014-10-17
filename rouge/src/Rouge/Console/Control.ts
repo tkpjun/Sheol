@@ -3,6 +3,7 @@
     var lastDownTarget;
     var lastMouseX = 0;
     var lastMouseY = 0;
+    var mouseDown = false;
 
     export function init(screen: GameScreen) {
 
@@ -11,6 +12,7 @@
         var camera = screen.camera;
 
         document.addEventListener("mousedown", (event) => {
+            mouseDown = true;
             lastDownTarget = event.target;
             if (lastDownTarget != canvas) return;
 
@@ -26,8 +28,13 @@
             }
         }, false);
 
+        document.addEventListener("mouseup", (event) => {
+            mouseDown = false;
+        }, false);
+
         document.addEventListener("mousemove", (event) => {
             if (lastDownTarget != canvas) return;
+            if (!mouseDown) return;
             if (Math.abs(event.x - lastMouseX) < 5 &&
                 Math.abs(event.y - lastMouseY) < 8) return;
 
@@ -41,7 +48,7 @@
             if (x >= 0 && y >= 1) {
                 if (x >= camera.xOffset && x < camera.xOffset + camera.width &&
                     y >= camera.yOffset && y < camera.yOffset + camera.height) {
-                    Controllers.Player.updateHover(x - camera.xOffset + camera.x, y - camera.yOffset + camera.y);
+                    Controllers.Player.updateMousemove(x - camera.xOffset + camera.x, y - camera.yOffset + camera.y);
                 }
             }
         }, false);

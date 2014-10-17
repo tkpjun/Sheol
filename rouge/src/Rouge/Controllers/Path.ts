@@ -5,10 +5,14 @@
         _nodes: Array<ILocation>;
         _costs: Array<number>;
         _lengthInAP: number;
-        owner: IEntity;
         pointer: ILocation;
         begin: ILocation;
 
+        constructor() {
+            this._nodes = new Array<ILocation>();
+            this._costs = new Array<number>();
+            this._costs.push(0);
+        }
 
         cost(): number {
             return this._costs.reduce((x, y) => x+y);
@@ -32,8 +36,16 @@
         trim(): Path {
             this._nodes = this.limitedNodes();
             this._costs.length = this._nodes.length;
-            this.pointer.x = this._nodes[this._nodes.length - 1].x;
-            this.pointer.y = this._nodes[this._nodes.length - 1].y;
+            if (this._nodes.length > 0) {
+                this.pointer.x = this._nodes[this._nodes.length - 1].x;
+                this.pointer.y = this._nodes[this._nodes.length - 1].y;
+            }
+            else {
+                this._nodes[0] = this.begin;
+                this._costs[0] = 0;
+                this.pointer.x = this.begin.x;
+                this.pointer.y = this.begin.y;
+            }
             return this;
         }
 

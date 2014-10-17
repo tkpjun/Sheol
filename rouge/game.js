@@ -180,6 +180,7 @@ var Rouge;
             var lastDownTarget;
             var lastMouseX = 0;
             var lastMouseY = 0;
+            var mouseDown = false;
 
             function init(screen) {
                 var display = screen.display;
@@ -187,6 +188,7 @@ var Rouge;
                 var camera = screen.camera;
 
                 document.addEventListener("mousedown", function (event) {
+                    mouseDown = true;
                     lastDownTarget = event.target;
                     if (lastDownTarget != canvas)
                         return;
@@ -202,8 +204,14 @@ var Rouge;
                     }
                 }, false);
 
+                document.addEventListener("mouseup", function (event) {
+                    mouseDown = false;
+                }, false);
+
                 document.addEventListener("mousemove", function (event) {
                     if (lastDownTarget != canvas)
+                        return;
+                    if (!mouseDown)
                         return;
                     if (Math.abs(event.x - lastMouseX) < 5 && Math.abs(event.y - lastMouseY) < 8)
                         return;
@@ -217,7 +225,7 @@ var Rouge;
                     var y = pos[1];
                     if (x >= 0 && y >= 1) {
                         if (x >= camera.xOffset && x < camera.xOffset + camera.width && y >= camera.yOffset && y < camera.yOffset + camera.height) {
-                            Rouge.Controllers.Player.updateHover(x - camera.xOffset + camera.x, y - camera.yOffset + camera.y);
+                            Rouge.Controllers.Player.updateMousemove(x - camera.xOffset + camera.x, y - camera.yOffset + camera.y);
                         }
                     }
                 }, false);
@@ -527,6 +535,9 @@ var Rouge;
 (function (Rouge) {
     (function (Console) {
         (function (GameUI) {
+            var color1 = "midnightblue";
+            var color2 = "royalblue";
+
             function getLeftBar(characters) {
                 var p1 = characters[0];
                 var p2 = characters[1];
@@ -534,7 +545,7 @@ var Rouge;
                 var matrix = new Console.DrawMatrix(0, 0, null, w, 11);
 
                 for (var i = 0; i < Console.Constants.SidebarWidth; i++) {
-                    matrix.matrix[i][0] = { symbol: " ", bgColor: "midnightblue" };
+                    matrix.matrix[i][0] = { symbol: " ", bgColor: color1 };
                 }
                 matrix.addString(4, 0, "LEVEL:1");
 
@@ -574,7 +585,7 @@ var Rouge;
                 both.unshift({ entity: current, time: baseTime });
 
                 for (var i = 0; i < Console.Constants.SidebarWidth; i++) {
-                    matrix.matrix[i][0] = { symbol: " ", bgColor: "midnightblue" };
+                    matrix.matrix[i][0] = { symbol: " ", bgColor: color1 };
                 }
                 matrix.addString(5, 0, "QUEUE");
                 for (var i = 0; i < both.length; i++) {
@@ -585,11 +596,11 @@ var Rouge;
                     //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, "---");
                     //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, "| |");
                     if (i % 2 == 0) {
-                        matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 2, (i + 1) + "  ", null, null, "royalblue");
-                        matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, "royalblue");
+                        matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 2, (i + 1) + "  ", null, null, color2);
+                        matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color2);
                     } else {
-                        matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 2, (i + 1) + "  ", null, null, "midnightblue");
-                        matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, "midnightblue");
+                        matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 2, (i + 1) + "  ", null, null, color1);
+                        matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color1);
                     }
 
                     //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 4, "---");
@@ -628,24 +639,24 @@ var Rouge;
                 matrix.addString(1, 6, "----+----+----");
                 matrix.addString(1, 7, "    |    |    ");
                 matrix.addString(1, 8, "    |    |    ");
-                matrix.addString(1, 1, "q   ", null, null, "midnightblue");
-                matrix.addString(1, 2, " NW ", null, null, "midnightblue");
-                matrix.addString(6, 1, "w   ", null, null, "royalblue");
-                matrix.addString(6, 2, "  N ", null, null, "royalblue");
-                matrix.addString(11, 1, "e   ", null, null, "midnightblue");
-                matrix.addString(11, 2, " NE ", null, null, "midnightblue");
-                matrix.addString(1, 4, "a   ", null, null, "royalblue");
-                matrix.addString(1, 5, " W  ", null, null, "royalblue");
-                matrix.addString(6, 4, "f   ", null, null, "midnightblue");
-                matrix.addString(6, 5, "PICK", null, null, "midnightblue");
-                matrix.addString(11, 4, "d   ", null, null, "royalblue");
-                matrix.addString(11, 5, "  E ", null, null, "royalblue");
-                matrix.addString(1, 7, "z   ", null, null, "midnightblue");
-                matrix.addString(1, 8, " SW ", null, null, "midnightblue");
-                matrix.addString(6, 7, "x   ", null, null, "royalblue");
-                matrix.addString(6, 8, " S  ", null, null, "royalblue");
-                matrix.addString(11, 7, "c   ", null, null, "midnightblue");
-                matrix.addString(11, 8, " SE ", null, null, "midnightblue");
+                matrix.addString(1, 1, "q   ", null, null, color1);
+                matrix.addString(1, 2, " NW ", null, null, color1);
+                matrix.addString(6, 1, "w   ", null, null, color2);
+                matrix.addString(6, 2, "  N ", null, null, color2);
+                matrix.addString(11, 1, "e   ", null, null, color1);
+                matrix.addString(11, 2, " NE ", null, null, color1);
+                matrix.addString(1, 4, "a   ", null, null, color2);
+                matrix.addString(1, 5, " W  ", null, null, color2);
+                matrix.addString(6, 4, "f   ", null, null, color1);
+                matrix.addString(6, 5, "PICK", null, null, color1);
+                matrix.addString(11, 4, "d   ", null, null, color2);
+                matrix.addString(11, 5, "  E ", null, null, color2);
+                matrix.addString(1, 7, "z   ", null, null, color1);
+                matrix.addString(1, 8, " SW ", null, null, color1);
+                matrix.addString(6, 7, "x   ", null, null, color2);
+                matrix.addString(6, 8, " S  ", null, null, color2);
+                matrix.addString(11, 7, "c   ", null, null, color1);
+                matrix.addString(11, 8, " SE ", null, null, color1);
 
                 return matrix;
             }
@@ -656,21 +667,21 @@ var Rouge;
 
                 for (var i = 0; i < matrix.matrix.length; i++) {
                     for (var j = 0; j < matrix.matrix[0].length; j++) {
-                        matrix.matrix[i][j] = { symbol: " ", bgColor: "midnightblue" };
+                        matrix.matrix[i][j] = { symbol: " ", bgColor: color1 };
                     }
                 }
-                matrix.addString(1, 0, " SWITCH ", null, null, "royalblue");
-                matrix.addString(11, 0, " ATTACK ", null, null, "royalblue");
-                matrix.addString(21, 0, " SPECIAL ", null, null, "royalblue");
+                matrix.addString(1, 0, " SWITCH ", null, null, color2);
+                matrix.addString(11, 0, " ATTACK ", null, null, color2);
+                matrix.addString(21, 0, " SPECIAL ", null, null, color2);
 
-                //matrix.addString(32, 0, " ?????? ", null, null, "royalblue");
+                //matrix.addString(32, 0, " ?????? ", null, null, color2);
                 matrix.addString(Console.Constants.DisplayWidth - 41, 0, "CON:");
-                matrix.addString(Console.Constants.DisplayWidth - 37, 0, " - ", null, null, "royalblue");
-                matrix.addString(Console.Constants.DisplayWidth - 33, 0, " + ", null, null, "royalblue");
-                matrix.addString(Console.Constants.DisplayWidth - 29, 0, " v ", null, null, "royalblue");
-                matrix.addString(Console.Constants.DisplayWidth - 25, 0, " ^ ", null, null, "royalblue");
-                matrix.addString(Console.Constants.DisplayWidth - 20, 0, "INVENTORY", null, null, "royalblue");
-                matrix.addString(Console.Constants.DisplayWidth - 9, 0, "  MENU  ", null, null, "royalblue");
+                matrix.addString(Console.Constants.DisplayWidth - 37, 0, " - ", null, null, color2);
+                matrix.addString(Console.Constants.DisplayWidth - 33, 0, " + ", null, null, color2);
+                matrix.addString(Console.Constants.DisplayWidth - 29, 0, " v ", null, null, color2);
+                matrix.addString(Console.Constants.DisplayWidth - 25, 0, " ^ ", null, null, color2);
+                matrix.addString(Console.Constants.DisplayWidth - 20, 0, "INVENTORY", null, null, color2);
+                matrix.addString(Console.Constants.DisplayWidth - 9, 0, "  MENU  ", null, null, color2);
 
                 return matrix;
             }
@@ -795,6 +806,9 @@ var Rouge;
     (function (Controllers) {
         var Path = (function () {
             function Path() {
+                this._nodes = new Array();
+                this._costs = new Array();
+                this._costs.push(0);
             }
             Path.prototype.cost = function () {
                 return this._costs.reduce(function (x, y) {
@@ -821,8 +835,15 @@ var Rouge;
             Path.prototype.trim = function () {
                 this._nodes = this.limitedNodes();
                 this._costs.length = this._nodes.length;
-                this.pointer.x = this._nodes[this._nodes.length - 1].x;
-                this.pointer.y = this._nodes[this._nodes.length - 1].y;
+                if (this._nodes.length > 0) {
+                    this.pointer.x = this._nodes[this._nodes.length - 1].x;
+                    this.pointer.y = this._nodes[this._nodes.length - 1].y;
+                } else {
+                    this._nodes[0] = this.begin;
+                    this._costs[0] = 0;
+                    this.pointer.x = this.begin.x;
+                    this.pointer.y = this.begin.y;
+                }
                 return this;
             };
 
@@ -865,8 +886,6 @@ var Rouge;
             function AstarPath(passableFn, from, to, lengthInAP) {
                 var _this = this;
                 _super.call(this);
-                this._nodes = new Array();
-                this._costs = new Array();
                 this._lengthInAP = lengthInAP;
                 this.begin = from;
 
@@ -930,21 +949,20 @@ var Rouge;
         })(Controllers.Direction || (Controllers.Direction = {}));
         var Direction = Controllers.Direction;
 
-        function isPassable(loc, level) {
+        function isPassable(loc, level, from) {
             if (loc.x < 1 || loc.y < 1 || loc.x > level.map._width - 2 || loc.y > level.map._height - 2)
                 return false;
 
             var cell = level.map[loc.x + "," + loc.y];
 
-            /*
             if (from) {
-            if (diagonalNbors(from, loc)) {
-            var cell2 = level.map[loc.x + "," + from.y];
-            var cell3 = level.map[from.x + "," + loc.y];
-            return cell !== " " && cell2 !== " " && cell3 !== " ";
+                if (diagonalNbors(from, loc)) {
+                    var cell2 = level.map[loc.x + "," + from.y];
+                    var cell3 = level.map[from.x + "," + loc.y];
+                    return cell !== " " && cell2 !== " " && cell3 !== " ";
+                }
             }
-            }
-            */
+
             var entitiesOK = true;
             level.entities.forEach(function (e) {
                 if (loc.x == e.x && loc.y == e.y)
@@ -1161,22 +1179,37 @@ var Rouge;
                 if (path && x == path.pointer.x && y == path.pointer.y) {
                     confirm();
                 } else if (state == 0 /* Move */) {
-                    manager.currPath.property = new Controllers.AstarPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.stats.ap);
+                    var oldPath = manager.currPath.property;
+                    var newPath = new Controllers.AstarPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.stats.ap);
+                    if (!oldPath || newPath.pointer.x != oldPath.pointer.x || newPath.pointer.y != oldPath.pointer.y) {
+                        manager.currPath.property = newPath;
+                    }
+                } else if (state == 1 /* Melee */ || state == 2 /* Ranged */) {
+                    var oPath = manager.currPath.property;
+                    var nPath = new Controllers.StraightPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.equipment.rightWeapon.maxRange);
+                    if (!oPath || nPath.pointer.x != oPath.pointer.x || nPath.pointer.y != oPath.pointer.y) {
+                        manager.currPath.property = nPath;
+                    }
                 }
             }
             Player.updateClick = updateClick;
 
-            function updateHover(x, y) {
-                if (state != 1 /* Melee */ && state != 2 /* Ranged */)
-                    return;
-
-                var oldPath = manager.currPath.property;
-                var newPath = new Controllers.StraightPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.equipment.rightWeapon.maxRange);
-                if (!oldPath || newPath.pointer.x != oldPath.pointer.x || newPath.pointer.y != oldPath.pointer.y) {
-                    manager.currPath.property = newPath;
+            function updateMousemove(x, y) {
+                if (state == 0 /* Move */) {
+                    var oldPath = manager.currPath.property;
+                    var newPath = new Controllers.AstarPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.stats.ap);
+                    if (!oldPath || newPath.pointer.x != oldPath.pointer.x || newPath.pointer.y != oldPath.pointer.y) {
+                        manager.currPath.property = newPath;
+                    }
+                } else if (state == 1 /* Melee */ || state == 2 /* Ranged */) {
+                    var oPath = manager.currPath.property;
+                    var nPath = new Controllers.StraightPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.equipment.rightWeapon.maxRange);
+                    if (!oPath || nPath.pointer.x != oPath.pointer.x || nPath.pointer.y != oPath.pointer.y) {
+                        manager.currPath.property = nPath;
+                    }
                 }
             }
-            Player.updateHover = updateHover;
+            Player.updateMousemove = updateMousemove;
 
             function update(key) {
                 if (state == 3 /* Inactive */)
@@ -1331,8 +1364,6 @@ var Rouge;
             __extends(StraightPath, _super);
             function StraightPath(passableFn, from, to, lengthInAP) {
                 _super.call(this);
-                this._nodes = new Array();
-                this._costs = new Array();
                 this._lengthInAP = lengthInAP;
                 this.begin = from;
 

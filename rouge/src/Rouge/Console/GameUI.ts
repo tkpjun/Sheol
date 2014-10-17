@@ -1,5 +1,8 @@
 ﻿module Rouge.Console.GameUI {
 
+    var color1 = "midnightblue";
+    var color2 = "royalblue";
+
     export function getLeftBar(characters: Array<Entities.PlayerChar>): DrawMatrix {
         var p1 = characters[0];
         var p2 = characters[1];
@@ -7,7 +10,7 @@
         var matrix = new DrawMatrix(0, 0, null, w, 11);
 
         for (var i = 0; i < Constants.SidebarWidth; i++) {
-            matrix.matrix[i][0] = { symbol: " ", bgColor: "midnightblue" }
+            matrix.matrix[i][0] = { symbol: " ", bgColor: color1 }
         }
         matrix.addString(4, 0, "LEVEL:1");
 
@@ -46,7 +49,7 @@
         both.unshift({ entity: current, time: baseTime });
 
         for (var i = 0; i < Constants.SidebarWidth; i++) {
-            matrix.matrix[i][0] = { symbol: " ", bgColor: "midnightblue" }
+            matrix.matrix[i][0] = { symbol: " ", bgColor: color1 }
         }
         matrix.addString(5, 0, "QUEUE");
         for (var i = 0; i < both.length; i++) {
@@ -56,12 +59,12 @@
             //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, "---");
             //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, "| |");
             if (i % 2 == 0) {
-                matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, (i + 1) + "  ", null, null, "royalblue");
-                matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, "royalblue");
+                matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, (i + 1) + "  ", null, null, color2);
+                matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color2);
             }
             else {
-                matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, (i + 1) + "  ", null, null, "midnightblue");
-                matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, "midnightblue");
+                matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, (i + 1) + "  ", null, null, color1);
+                matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color1);
             }
             //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 4, "---");
             if (both[i].time === 0) {
@@ -98,24 +101,24 @@
         matrix.addString(1, 6, "----+----+----");
         matrix.addString(1, 7, "    |    |    ");
         matrix.addString(1, 8, "    |    |    ");
-        matrix.addString(1, 1, "q   ", null, null, "midnightblue");
-        matrix.addString(1, 2, " NW ", null, null, "midnightblue");
-        matrix.addString(6, 1, "w   ", null, null, "royalblue");
-        matrix.addString(6, 2, "  N ", null, null, "royalblue");
-        matrix.addString(11, 1, "e   ", null, null, "midnightblue");
-        matrix.addString(11, 2, " NE ", null, null, "midnightblue");        
-        matrix.addString(1, 4, "a   ", null, null, "royalblue");
-        matrix.addString(1, 5, " W  ", null, null, "royalblue");
-        matrix.addString(6, 4, "f   ", null, null, "midnightblue");
-        matrix.addString(6, 5, "PICK", null, null, "midnightblue");
-        matrix.addString(11, 4, "d   ", null, null, "royalblue");
-        matrix.addString(11, 5, "  E ", null, null, "royalblue");
-        matrix.addString(1, 7, "z   ", null, null, "midnightblue");
-        matrix.addString(1, 8, " SW ", null, null, "midnightblue");
-        matrix.addString(6, 7, "x   ", null, null, "royalblue");
-        matrix.addString(6, 8, " S  ", null, null, "royalblue");
-        matrix.addString(11, 7, "c   ", null, null, "midnightblue");
-        matrix.addString(11, 8, " SE ", null, null, "midnightblue");
+        matrix.addString(1, 1, "q   ", null, null, color1);
+        matrix.addString(1, 2, " NW ", null, null, color1);
+        matrix.addString(6, 1, "w   ", null, null, color2);
+        matrix.addString(6, 2, "  N ", null, null, color2);
+        matrix.addString(11, 1, "e   ", null, null, color1);
+        matrix.addString(11, 2, " NE ", null, null, color1);        
+        matrix.addString(1, 4, "a   ", null, null, color2);
+        matrix.addString(1, 5, " W  ", null, null, color2);
+        matrix.addString(6, 4, "f   ", null, null, color1);
+        matrix.addString(6, 5, "PICK", null, null, color1);
+        matrix.addString(11, 4, "d   ", null, null, color2);
+        matrix.addString(11, 5, "  E ", null, null, color2);
+        matrix.addString(1, 7, "z   ", null, null, color1);
+        matrix.addString(1, 8, " SW ", null, null, color1);
+        matrix.addString(6, 7, "x   ", null, null, color2);
+        matrix.addString(6, 8, " S  ", null, null, color2);
+        matrix.addString(11, 7, "c   ", null, null, color1);
+        matrix.addString(11, 8, " SE ", null, null, color1);
 
         return matrix;
     }
@@ -129,21 +132,21 @@
 
         for (var i = 0; i < matrix.matrix.length; i++) {
             for (var j = 0; j < matrix.matrix[0].length; j++) {
-                matrix.matrix[i][j] = { symbol: " ", bgColor: "midnightblue" };
+                matrix.matrix[i][j] = { symbol: " ", bgColor: color1 };
             }
         }
-        matrix.addString(1, 0, " SWITCH ", null, null, "royalblue");
-        matrix.addString(11, 0, " ATTACK ", null, null, "royalblue");
-        matrix.addString(21, 0, " SPECIAL ", null, null, "royalblue");
-        //matrix.addString(32, 0, " ?????? ", null, null, "royalblue");
+        matrix.addString(1, 0, " SWITCH ", null, null, color2);
+        matrix.addString(11, 0, " ATTACK ", null, null, color2);
+        matrix.addString(21, 0, " SPECIAL ", null, null, color2);
+        //matrix.addString(32, 0, " ?????? ", null, null, color2);
 
         matrix.addString(Constants.DisplayWidth - 41, 0, "CON:");
-        matrix.addString(Constants.DisplayWidth - 37, 0, " - ", null, null, "royalblue");
-        matrix.addString(Constants.DisplayWidth - 33, 0, " + ", null, null, "royalblue");
-        matrix.addString(Constants.DisplayWidth - 29, 0, " v ", null, null, "royalblue");
-        matrix.addString(Constants.DisplayWidth - 25, 0, " ^ ", null, null, "royalblue");
-        matrix.addString(Constants.DisplayWidth - 20, 0, "INVENTORY", null, null, "royalblue");
-        matrix.addString(Constants.DisplayWidth - 9, 0, "  MENU  ", null, null, "royalblue");
+        matrix.addString(Constants.DisplayWidth - 37, 0, " - ", null, null, color2);
+        matrix.addString(Constants.DisplayWidth - 33, 0, " + ", null, null, color2);
+        matrix.addString(Constants.DisplayWidth - 29, 0, " v ", null, null, color2);
+        matrix.addString(Constants.DisplayWidth - 25, 0, " ^ ", null, null, color2);
+        matrix.addString(Constants.DisplayWidth - 20, 0, "INVENTORY", null, null, color2);
+        matrix.addString(Constants.DisplayWidth - 9, 0, "  MENU  ", null, null, color2);
 
         return matrix;
     }
