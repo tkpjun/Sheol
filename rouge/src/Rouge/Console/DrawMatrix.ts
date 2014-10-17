@@ -75,8 +75,10 @@
             if (this.matrix[p.x - offsetX] && this.matrix[p.x - offsetX][p.y - offsetY]) {
                 var bg = this.matrix[p.x - offsetX][p.y - offsetY].bgColor;
                 if (!bg) bg = "black"
-                this.matrix[p.x - offsetX][p.y - offsetY].bgColor =
-                    ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString("green"), 0.75)));;
+                if (limited[limited.length - 1] && p.x == limited[limited.length - 1].x && p.y == limited[limited.length - 1].y)
+                    this.matrix[p.x - offsetX][p.y - offsetY].bgColor = color;
+                else
+                    this.matrix[p.x - offsetX][p.y - offsetY].bgColor = "purple";
             }
             return this;
         }

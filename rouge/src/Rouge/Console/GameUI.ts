@@ -51,17 +51,24 @@
         matrix.addString(5, 0, "QUEUE");
         for (var i = 0; i < both.length; i++) {
             var drawable = getDrawable(both[i].entity);
-            matrix.addString(1, i * 3 + 3, both[i].entity.name, Constants.SidebarWidth - 6);
-            matrix.addString(1, i * 3 + 4, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Constants.SidebarWidth - 6);
-            matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, "---");
-            matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, "| |");
-            matrix.addString(Constants.SidebarWidth - 3, i * 3 + 3, drawable.symbol, null, drawable.color);
-            matrix.addString(Constants.SidebarWidth - 4, i * 3 + 4, "---");
-            if (both[i].time === 0) {
-                matrix.addString(1, i * 3 + 2, "-- ready --", null, "green");
+            matrix.addString(1, i * 3 + 2, both[i].entity.name, Constants.SidebarWidth - 4);
+            matrix.addString(1, i * 3 + 3, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Constants.SidebarWidth - 4);
+            //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, "---");
+            //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, "| |");
+            if (i % 2 == 0) {
+                matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, (i + 1) + "  ", null, null, "royalblue");
+                matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, "royalblue");
             }
             else {
-                matrix.addString(1, i * 3 + 2, "- +" + (<number>both[i].time).toFixed(2) + "tu -", null, "red");           
+                matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, (i + 1) + "  ", null, null, "midnightblue");
+                matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, "midnightblue");
+            }
+            //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 4, "---");
+            if (both[i].time === 0) {
+                matrix.addString(0, i * 3 + 1, "---  ready  ---", null, "green");
+            }
+            else {
+                matrix.addString(0, i * 3 + 1, "--- +" + (<number>both[i].time).toFixed(2) + "tu ---", null, "red");           
             }
         }
 
@@ -71,9 +78,9 @@
     export function getDPad(): DrawMatrix {
         var w = Constants.SidebarWidth;
         var hDisp = Constants.DisplayHeight;
-        var hThis = 9;
-        var matrix = new DrawMatrix(1, hDisp - hThis - Constants.BottomBarHeight - 1, null, w - 2, hThis);
-
+        var hThis = 10;
+        var matrix = new DrawMatrix(0, hDisp - hThis - Constants.BottomBarHeight, null, w, hThis);
+        /*
         matrix.addString(0, 0, "q--- w--- e---");
         matrix.addString(0, 1, "|NW| | N| |NE|");
         matrix.addString(0, 2, "---- ---- ----");
@@ -82,7 +89,33 @@
         matrix.addString(0, 5, "---- ---- ----");
         matrix.addString(0, 6, "z--- x--- c---");
         matrix.addString(0, 7, "|SW| |S | |SE|");
-        matrix.addString(0, 8, "---- ---- ----");
+        matrix.addString(0, 8, "---- ---- ----");*/
+        matrix.addString(1, 1, "    |    |    ");
+        matrix.addString(1, 2, "    |    |    ");
+        matrix.addString(1, 3, "----+----+----");
+        matrix.addString(1, 4, "    |    |    ");
+        matrix.addString(1, 5, "    |    |    ");
+        matrix.addString(1, 6, "----+----+----");
+        matrix.addString(1, 7, "    |    |    ");
+        matrix.addString(1, 8, "    |    |    ");
+        matrix.addString(1, 1, "q   ", null, null, "midnightblue");
+        matrix.addString(1, 2, " NW ", null, null, "midnightblue");
+        matrix.addString(6, 1, "w   ", null, null, "royalblue");
+        matrix.addString(6, 2, "  N ", null, null, "royalblue");
+        matrix.addString(11, 1, "e   ", null, null, "midnightblue");
+        matrix.addString(11, 2, " NE ", null, null, "midnightblue");        
+        matrix.addString(1, 4, "a   ", null, null, "royalblue");
+        matrix.addString(1, 5, " W  ", null, null, "royalblue");
+        matrix.addString(6, 4, "f   ", null, null, "midnightblue");
+        matrix.addString(6, 5, "PICK", null, null, "midnightblue");
+        matrix.addString(11, 4, "d   ", null, null, "royalblue");
+        matrix.addString(11, 5, "  E ", null, null, "royalblue");
+        matrix.addString(1, 7, "z   ", null, null, "midnightblue");
+        matrix.addString(1, 8, " SW ", null, null, "midnightblue");
+        matrix.addString(6, 7, "x   ", null, null, "royalblue");
+        matrix.addString(6, 8, " S  ", null, null, "royalblue");
+        matrix.addString(11, 7, "c   ", null, null, "midnightblue");
+        matrix.addString(11, 8, " SE ", null, null, "midnightblue");
 
         return matrix;
     }

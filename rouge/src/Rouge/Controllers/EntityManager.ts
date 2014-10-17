@@ -36,7 +36,7 @@
                 new Controllers.ChangeProperty(this.currEntity, player1), true, 1);
 
             var player2 = new Entities.PlayerChar("char2");
-            player2.equipment.equipWeapon(Items.getWeapon(Items.Weapons.ShortSword), Entities.WeaponSlots.Right);
+            player2.equipment.equipWeapon(Items.getWeapon(Items.Weapons.Spear), Entities.WeaponSlots.Right);
             player2.x = room.getCenter()[0] + 1;
             player2.y = room.getCenter()[1];
             this.characters.push(player2);

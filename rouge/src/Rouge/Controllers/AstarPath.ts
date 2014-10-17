@@ -5,7 +5,7 @@ module Rouge.Controllers {
 
         _astar: ROT.IPath;
 
-        constructor(passableFn: (x: number, y: number, from?: ILocation) => boolean, from: ILocation, to?: ILocation, lengthInAP?: number) {
+        constructor(passableFn: (x: number, y: number) => boolean, from: ILocation, to?: ILocation, lengthInAP?: number) {
             super();
             this._nodes = new Array<ILocation>();
             this._costs = new Array<number>();
@@ -32,7 +32,7 @@ module Rouge.Controllers {
                 this._costs.pop();
             }
         }
-
+        /*
         private fixPath(passableFn: (x: number, y: number, from?: ILocation) => {}) {
             var arr = this._nodes;
             for (var i = 0; i < arr.length - 2; i++) {
@@ -47,7 +47,7 @@ module Rouge.Controllers {
                     }
                 }
             }
-            /*
+            
             for (var i = 0; i < arr.length - 3; i++) {
                 if (!arr[i + 2]) break;
 
@@ -98,7 +98,7 @@ module Rouge.Controllers {
                         this._nodes.splice(i + 1, 3, { x: x1, y: y1 }, { x: x2, y: y2 });
                     }
                 }
-            }*/
-        }
+            }
+        } */
     }
 } 

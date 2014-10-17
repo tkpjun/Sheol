@@ -19,8 +19,12 @@
             lvl = entityManager.level;
             state = States.Move;
             manager = entityManager;
+            /*
             callback = (x, y, from: Controllers.ILocation) => {
                 return Controllers.isPassable({ x: x, y: y }, manager.level, from);
+            }*/
+            callback = (x, y) => {
+                return Controllers.isPassable({ x: x, y: y }, manager.level);
             }
             manager.currPath.property = new AstarPath(callback, { x: char.x, y: char.y });
         }

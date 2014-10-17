@@ -329,8 +329,10 @@ var Rouge;
                     var bg = this.matrix[p.x - offsetX][p.y - offsetY].bgColor;
                     if (!bg)
                         bg = "black";
-                    this.matrix[p.x - offsetX][p.y - offsetY].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString("green"), 0.75)));
-                    ;
+                    if (limited[limited.length - 1] && p.x == limited[limited.length - 1].x && p.y == limited[limited.length - 1].y)
+                        this.matrix[p.x - offsetX][p.y - offsetY].bgColor = color;
+                    else
+                        this.matrix[p.x - offsetX][p.y - offsetY].bgColor = "purple";
                 }
                 return this;
             };
@@ -577,16 +579,24 @@ var Rouge;
                 matrix.addString(5, 0, "QUEUE");
                 for (var i = 0; i < both.length; i++) {
                     var drawable = Console.getDrawable(both[i].entity);
-                    matrix.addString(1, i * 3 + 3, both[i].entity.name, Console.Constants.SidebarWidth - 6);
-                    matrix.addString(1, i * 3 + 4, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Console.Constants.SidebarWidth - 6);
-                    matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 2, "---");
-                    matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 3, "| |");
-                    matrix.addString(Console.Constants.SidebarWidth - 3, i * 3 + 3, drawable.symbol, null, drawable.color);
-                    matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 4, "---");
-                    if (both[i].time === 0) {
-                        matrix.addString(1, i * 3 + 2, "-- ready --", null, "green");
+                    matrix.addString(1, i * 3 + 2, both[i].entity.name, Console.Constants.SidebarWidth - 4);
+                    matrix.addString(1, i * 3 + 3, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Console.Constants.SidebarWidth - 4);
+
+                    //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, "---");
+                    //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, "| |");
+                    if (i % 2 == 0) {
+                        matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 2, (i + 1) + "  ", null, null, "royalblue");
+                        matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, "royalblue");
                     } else {
-                        matrix.addString(1, i * 3 + 2, "- +" + both[i].time.toFixed(2) + "tu -", null, "red");
+                        matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 2, (i + 1) + "  ", null, null, "midnightblue");
+                        matrix.addString(Console.Constants.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, "midnightblue");
+                    }
+
+                    //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 4, "---");
+                    if (both[i].time === 0) {
+                        matrix.addString(0, i * 3 + 1, "---  ready  ---", null, "green");
+                    } else {
+                        matrix.addString(0, i * 3 + 1, "--- +" + both[i].time.toFixed(2) + "tu ---", null, "red");
                     }
                 }
 
@@ -597,9 +607,10 @@ var Rouge;
             function getDPad() {
                 var w = Console.Constants.SidebarWidth;
                 var hDisp = Console.Constants.DisplayHeight;
-                var hThis = 9;
-                var matrix = new Console.DrawMatrix(1, hDisp - hThis - Console.Constants.BottomBarHeight - 1, null, w - 2, hThis);
+                var hThis = 10;
+                var matrix = new Console.DrawMatrix(0, hDisp - hThis - Console.Constants.BottomBarHeight, null, w, hThis);
 
+                /*
                 matrix.addString(0, 0, "q--- w--- e---");
                 matrix.addString(0, 1, "|NW| | N| |NE|");
                 matrix.addString(0, 2, "---- ---- ----");
@@ -608,7 +619,33 @@ var Rouge;
                 matrix.addString(0, 5, "---- ---- ----");
                 matrix.addString(0, 6, "z--- x--- c---");
                 matrix.addString(0, 7, "|SW| |S | |SE|");
-                matrix.addString(0, 8, "---- ---- ----");
+                matrix.addString(0, 8, "---- ---- ----");*/
+                matrix.addString(1, 1, "    |    |    ");
+                matrix.addString(1, 2, "    |    |    ");
+                matrix.addString(1, 3, "----+----+----");
+                matrix.addString(1, 4, "    |    |    ");
+                matrix.addString(1, 5, "    |    |    ");
+                matrix.addString(1, 6, "----+----+----");
+                matrix.addString(1, 7, "    |    |    ");
+                matrix.addString(1, 8, "    |    |    ");
+                matrix.addString(1, 1, "q   ", null, null, "midnightblue");
+                matrix.addString(1, 2, " NW ", null, null, "midnightblue");
+                matrix.addString(6, 1, "w   ", null, null, "royalblue");
+                matrix.addString(6, 2, "  N ", null, null, "royalblue");
+                matrix.addString(11, 1, "e   ", null, null, "midnightblue");
+                matrix.addString(11, 2, " NE ", null, null, "midnightblue");
+                matrix.addString(1, 4, "a   ", null, null, "royalblue");
+                matrix.addString(1, 5, " W  ", null, null, "royalblue");
+                matrix.addString(6, 4, "f   ", null, null, "midnightblue");
+                matrix.addString(6, 5, "PICK", null, null, "midnightblue");
+                matrix.addString(11, 4, "d   ", null, null, "royalblue");
+                matrix.addString(11, 5, "  E ", null, null, "royalblue");
+                matrix.addString(1, 7, "z   ", null, null, "midnightblue");
+                matrix.addString(1, 8, " SW ", null, null, "midnightblue");
+                matrix.addString(6, 7, "x   ", null, null, "royalblue");
+                matrix.addString(6, 8, " S  ", null, null, "royalblue");
+                matrix.addString(11, 7, "c   ", null, null, "midnightblue");
+                matrix.addString(11, 8, " SE ", null, null, "midnightblue");
 
                 return matrix;
             }
@@ -853,73 +890,6 @@ var Rouge;
                     this._costs.pop();
                 }
             }
-            AstarPath.prototype.fixPath = function (passableFn) {
-                var arr = this._nodes;
-                for (var i = 0; i < arr.length - 2; i++) {
-                    if (!arr[i + 1])
-                        break;
-
-                    if (!passableFn(arr[i + 1].x, arr[i + 1].y, arr[i])) {
-                        if (passableFn(arr[i].x, arr[i + 1].y)) {
-                            this._nodes.splice(i + 1, 0, { x: arr[i].x, y: arr[i + 1].y });
-                        } else {
-                            this._nodes.splice(i + 1, 0, { x: arr[i + 1].x, y: arr[i].y });
-                        }
-                    }
-                }
-                /*
-                for (var i = 0; i < arr.length - 3; i++) {
-                if (!arr[i + 2]) break;
-                
-                if (diagonalNbors(arr[i], arr[i+2])) {
-                var x, y;
-                if (arr[i + 1].x == arr[i].x)
-                x = arr[i + 2].x;
-                else
-                x = arr[i].x;
-                if (arr[i + 1].y == arr[i].y)
-                y = arr[i + 2].y;
-                else
-                y = arr[i].y;
-                if (passableFn(x, y)) {
-                this._nodes.splice(i + 1);
-                i -= 1;
-                }
-                }
-                }
-                //assumes the preceding for loop has run
-                for (var i = 0; i < arr.length - 4; i++) {
-                if (!arr[i + 3]) break;
-                if (diagonal(arr[i], arr[i + 3]) && Math.abs(arr[i].x - arr[i+3].x) == 2) {
-                var x, y;
-                x = (arr[i + 3].x + arr[i].x) / 2;
-                y = (arr[i + 3].y + arr[i].y) / 2;
-                if (passableFn(x, y, { x: arr[i].x, y: arr[i].y }) && passableFn(arr[i + 3].x, arr[i + 3].y, { x: x, y: y })) {
-                this._nodes.splice(i + 1, 2, { x: x, y: y });
-                }
-                }
-                
-                if (!arr[i + 4]) break;
-                if (diagonal(arr[i], arr[i + 4]) && Math.abs(arr[i].x - arr[i + 4].x) == 3) {
-                var x1, y1, x2, y2;
-                if (arr[i + 4].x > arr[i].x)
-                x1 = arr[i].x + 1;
-                else
-                x1 = arr[i].x - 1;
-                if (arr[i + 4].y > arr[i].y)
-                y1 = arr[i].y + 1;
-                else
-                y1 = arr[i].y - 1;
-                x2 = (arr[i + 4].x + x1) / 2;
-                y2 = (arr[i + 4].y + y1) / 2;
-                if (passableFn(x1, y1, { x: arr[i].x, y: arr[i].y }) &&
-                passableFn(y1, y2, { x: x1, y: y1 }) &&
-                passableFn(arr[i + 4].x, arr[i + 4].y, { x: x2, y: y2 })) {
-                this._nodes.splice(i + 1, 3, { x: x1, y: y1 }, { x: x2, y: y2 });
-                }
-                }
-                }*/
-            };
             return AstarPath;
         })(Controllers.Path);
         Controllers.AstarPath = AstarPath;
@@ -960,21 +930,21 @@ var Rouge;
         })(Controllers.Direction || (Controllers.Direction = {}));
         var Direction = Controllers.Direction;
 
-        function isPassable(loc, level, from) {
+        function isPassable(loc, level) {
             if (loc.x < 1 || loc.y < 1 || loc.x > level.map._width - 2 || loc.y > level.map._height - 2)
                 return false;
 
             var cell = level.map[loc.x + "," + loc.y];
-            if (from) {
-                if (diagonalNbors(from, loc)) {
-                    var cell2 = level.map[loc.x + "," + from.y];
-                    var cell3 = level.map[from.x + "," + loc.y];
 
-                    //console.log(loc.x + "," + loc.y + ": " + cell + " ; " +loc.x + "," + from.y + ": " + cell2 + " ; " + from.x + "," + loc.y + ": " + cell2);
-                    //console.log(cell != " " && cell2 != " " && cell3 != " ");
-                    return cell !== " " && cell2 !== " " && cell3 !== " ";
-                }
+            /*
+            if (from) {
+            if (diagonalNbors(from, loc)) {
+            var cell2 = level.map[loc.x + "," + from.y];
+            var cell3 = level.map[from.x + "," + loc.y];
+            return cell !== " " && cell2 !== " " && cell3 !== " ";
             }
+            }
+            */
             var entitiesOK = true;
             level.entities.forEach(function (e) {
                 if (loc.x == e.x && loc.y == e.y)
@@ -1047,7 +1017,7 @@ var Rouge;
                 this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player1), true, 1);
 
                 var player2 = new Rouge.Entities.PlayerChar("char2");
-                player2.equipment.equipWeapon(Rouge.Items.getWeapon(2 /* ShortSword */), 1 /* Right */);
+                player2.equipment.equipWeapon(Rouge.Items.getWeapon(7 /* Spear */), 1 /* Right */);
                 player2.x = room.getCenter()[0] + 1;
                 player2.y = room.getCenter()[1];
                 this.characters.push(player2);
@@ -1170,8 +1140,13 @@ var Rouge;
                     lvl = entityManager.level;
                     state = 0 /* Move */;
                     manager = entityManager;
-                    callback = function (x, y, from) {
-                        return Controllers.isPassable({ x: x, y: y }, manager.level, from);
+
+                    /*
+                    callback = (x, y, from: Controllers.ILocation) => {
+                    return Controllers.isPassable({ x: x, y: y }, manager.level, from);
+                    }*/
+                    callback = function (x, y) {
+                        return Controllers.isPassable({ x: x, y: y }, manager.level);
                     };
                     manager.currPath.property = new Controllers.AstarPath(callback, { x: char.x, y: char.y });
                 }
@@ -1373,25 +1348,26 @@ var Rouge;
             }
             StraightPath.prototype.createPath = function (passableFn, from, to) {
                 var _this = this;
-                //throw ("BROKEN IMPLEMENTATION");
                 var last = from;
                 this._nodes.push(last);
                 var k = (to.y - from.y) / (to.x - from.x);
+
+                //console.log(k);
+                var addition = Math.min(1, Math.abs(1 / k));
                 var fn = function (x) {
                     return Math.round(k * (x - to.x) + to.y);
                 };
                 var addNext = function () {
                     var next;
-                    if (isNaN(k)) {
-                        if (to.y > from.y)
-                            next = { x: last.x, y: last.y + 1 };
-                        else
-                            next = { x: last.x, y: last.y - 1 };
-                    } else {
+                    if (k == Infinity)
+                        next = { x: last.x, y: last.y + 1 };
+                    else if (k == -Infinity)
+                        next = { x: last.x, y: last.y - 1 };
+                    else {
                         if (to.x > from.x) {
-                            next = { x: last.x + 0.1, y: fn(last.x + 0.1) };
+                            next = { x: last.x + addition, y: fn(last.x + addition) };
                         } else {
-                            next = { x: last.x - 0.1, y: fn(last.x - 0.1) };
+                            next = { x: last.x - addition, y: fn(last.x - addition) };
                         }
                     }
 
@@ -1401,7 +1377,16 @@ var Rouge;
                     last = next;
                 };
                 var condition = function () {
-                    if (to.x > from.x) {
+                    if (!passableFn(_this._nodes[_this._nodes.length - 1].x, _this._nodes[_this._nodes.length - 1].y))
+                        return false;
+
+                    if (k == Infinity) {
+                        if (Math.round(last.y) >= to.y)
+                            return false;
+                    } else if (k == -Infinity) {
+                        if (Math.round(last.y) <= to.y)
+                            return false;
+                    } else if (to.x > from.x) {
                         if (Math.round(last.x) >= to.x)
                             return false;
                     } else {
@@ -1413,19 +1398,6 @@ var Rouge;
                 while (condition()) {
                     addNext();
                 }
-                /*
-                for (var x = from.x; x <= to.x; x++) {
-                var loc = { x: x, y: fn(x) }
-                if (passableFn(loc.x, loc.y, last)) {
-                this._nodes.push(loc);
-                }
-                else {
-                break;
-                }
-                last = loc;
-                }*/
-                //console.log(this._nodes[0])
-                //console.log(this._nodes[this._nodes.length - 1]);
             };
             return StraightPath;
         })(Controllers.Path);
