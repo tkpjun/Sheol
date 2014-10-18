@@ -8,17 +8,15 @@
         yOffset: number;
         width: number;
         height: number;
-        display: ROT.Display;
         private _view: DrawMatrix;
 
-        constructor(xOffset: number, width: number, yOffset: number, height: number, display: ROT.Display) {
+        constructor(xOffset: number, width: number, yOffset: number, height: number) {
             this.width = width;
             this.height = height;
             this.xOffset = xOffset;
             this.yOffset = yOffset;
             this.x = 0;
             this.y = 0;
-            this.display = display;
         }
 
         get view() {

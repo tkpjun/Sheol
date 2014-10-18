@@ -8,7 +8,7 @@
         constructor(which: ObservableProperty<T>, to: T) {
             this.target = to;
             this.func = () => { 
-                which.property = to;
+                which.unwrap = to;
             }
         }
 

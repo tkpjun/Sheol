@@ -1,5 +1,5 @@
 ﻿
-module Rouge.Controllers {
+module Rouge {
 
     export class Observable implements IObservable {
         private observers: Array<() => void>;
@@ -28,15 +28,14 @@ module Rouge.Controllers {
 
         private _property: T;
 
-        constructor(property: T) {
+        constructor() {
             super();
-            this._property = property;
         }
 
-        get property(): T {
+        get unwrap(): T {
             return this._property;
         }
-        set property(property: T) {
+        set unwrap(property: T) {
             this._property = property;
             this.notify();
         }

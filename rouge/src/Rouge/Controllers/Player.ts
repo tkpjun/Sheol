@@ -26,46 +26,46 @@
             callback = (x, y) => {
                 return Controllers.isPassable({ x: x, y: y }, manager.level);
             }
-            manager.currPath.property = new AstarPath(callback, { x: char.x, y: char.y });
+            manager.currPath.unwrap = new AstarPath(callback, { x: char.x, y: char.y });
         }
     }
 
     export function updateClick(x: number, y: number) {
         if (state == States.Inactive) return;
 
-        var path = manager.currPath.property;
+        var path = manager.currPath.unwrap;
         if (path && x == path.pointer.x && y == path.pointer.y) {
             confirm();
         }  
         else if (state == States.Move) {
-            var oldPath = manager.currPath.property;
+            var oldPath = manager.currPath.unwrap;
             var newPath = new AstarPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.stats.ap);
             if (!oldPath || newPath.pointer.x != oldPath.pointer.x || newPath.pointer.y != oldPath.pointer.y) {
-                manager.currPath.property = newPath;
+                manager.currPath.unwrap = newPath;
             }
         }
         else if (state == States.Melee || state == States.Ranged) {
-            var oPath = manager.currPath.property;
+            var oPath = manager.currPath.unwrap;
             var nPath = new StraightPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.equipment.rightWeapon.maxRange);
             if (!oPath || nPath.pointer.x != oPath.pointer.x || nPath.pointer.y != oPath.pointer.y) {
-                manager.currPath.property = nPath;
+                manager.currPath.unwrap = nPath;
             }
         }
     }
 
     export function updateMousemove(x: number, y: number) {
         if (state == States.Move) {
-            var oldPath = manager.currPath.property;
+            var oldPath = manager.currPath.unwrap;
             var newPath = new AstarPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.stats.ap);
             if (!oldPath || newPath.pointer.x != oldPath.pointer.x || newPath.pointer.y != oldPath.pointer.y) {
-                manager.currPath.property = newPath;
+                manager.currPath.unwrap = newPath;
             }
         }
         else if (state == States.Melee || state == States.Ranged) {
-            var oPath = manager.currPath.property;
+            var oPath = manager.currPath.unwrap;
             var nPath = new StraightPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.equipment.rightWeapon.maxRange);
             if (!oPath || nPath.pointer.x != oPath.pointer.x || nPath.pointer.y != oPath.pointer.y) {
-                manager.currPath.property = nPath;
+                manager.currPath.unwrap = nPath;
             }
         }
     }
@@ -106,12 +106,12 @@
                 break;
             case "VK_1":
                 state = States.Move;
-                manager.currPath.property = null;
+                manager.currPath.unwrap = null;
                 console.log("char: " + state);
                 break;
             case "VK_2":
                 state = States.Melee;
-                manager.currPath.property = null;
+                manager.currPath.unwrap = null;
                 console.log("char: " + state);
                 break;
             default:
@@ -121,7 +121,7 @@
     }
 
     function alterPath(dir: Direction) {
-        var oldPath = manager.currPath.property;
+        var oldPath = manager.currPath.unwrap;
         var location = oldPath.pointer;
         switch (dir) {
             case Direction.Northwest:
@@ -155,9 +155,9 @@
         if (location.y > lvl.map._height - 1) location.y = lvl.map._height - 1;
 
         if (state == States.Move)
-            manager.currPath.property = new AstarPath(callback, oldPath.begin, location, char.stats.ap);
+            manager.currPath.unwrap = new AstarPath(callback, oldPath.begin, location, char.stats.ap);
         else if (state == States.Melee)
-            manager.currPath.property = new StraightPath(callback, oldPath.begin, location, char.equipment.rightWeapon.maxRange);
+            manager.currPath.unwrap = new StraightPath(callback, oldPath.begin, location, char.equipment.rightWeapon.maxRange);
         else
             throw ("Unimplemented state!");
     }
@@ -166,12 +166,12 @@
         char.nextAction = () => {
             char._hasTurn = false;
             state = States.Inactive;
-            manager.currPath.property = null;
+            manager.currPath.unwrap = null;
         }
     }
 
     function confirm() {
-        var path = manager.currPath.property;
+        var path = manager.currPath.unwrap;
         switch (state){
             case States.Move:
                 char.nextAction = () => {
@@ -179,7 +179,7 @@
                     char.x = limited._nodes[path.limitedNodes().length - 1].x;
                     char.y = limited._nodes[path.limitedNodes().length - 1].y;
                     char.stats.ap -= limited.cost();
-                    manager.currPath.property = new AstarPath(callback, { x: char.x, y: char.y });
+                    manager.currPath.unwrap = new AstarPath(callback, { x: char.x, y: char.y });
 
                     if (!char.hasAP()) {
                         state = States.Inactive;
@@ -193,7 +193,7 @@
                     throw ("TODO: attack enemy");
 
                     char.stats.ap -= char.equipment.rightWeapon.apCost;
-                    manager.currPath.property = new StraightPath(callback,
+                    manager.currPath.unwrap = new StraightPath(callback,
                         { x: char.x, y: char.y },
                         { x: path._nodes[path._nodes.length - 1].x, y: path._nodes[path._nodes.length - 1].y });
 

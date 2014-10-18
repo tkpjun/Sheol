@@ -2,23 +2,23 @@
 
     export class GameScreen {
 
-        display: ROT.Display;
         dungeon: Dungeon.Level[];
         currLevel: number;
         manager: Controllers.EntityManager;
         camera: Camera;
+        nextFrame: ObservableProperty<DrawMatrix>;
 
-        constructor(display: ROT.Display) {
-            this.display = display;
+        constructor() {
             this.dungeon = new Array<Dungeon.Level>(new Dungeon.Level(Dungeon.MapTypes.Mines));
             this.currLevel = 0;
             this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
+            this.nextFrame = new ObservableProperty<DrawMatrix>();
 
             var update = () => {
                 function distance(x1, y1, x2, y2) {
                     return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
                 }
-                var e = this.manager.currEntity.property;
+                var e = this.manager.currEntity.unwrap;
                 var short = this.manager.characters[0];
                 this.manager.characters.forEach((c) => {
                     if (distance(c.x, c.y, e.x, e.y) < distance(short.x, short.y, e.x, e.y)) {
@@ -26,55 +26,39 @@
                     }
                 });
                 this.camera.centerOn(short.x);
-                this.draw();
+                this.advanceFrame();
             }
             this.manager.currEntity.attach(update);
             this.manager.changed.attach(update);
-            this.manager.currPath.attach(() => this.draw());
-            this.camera = new Camera(Constants.SidebarWidth,
-                Constants.DisplayWidth - Constants.SidebarWidth * 2,
+            this.manager.currPath.attach(() => this.advanceFrame());
+            this.camera = new Camera(Const.SidebarWidth,
+                Const.DisplayWidth - Const.SidebarWidth * 2,
                 0,
-                Constants.DisplayHeight - Constants.BottomBarHeight,
-                this.display);
+                Const.DisplayHeight - Const.BottomBarHeight);
             update();
         }
 
-        draw() {
+        advanceFrame() {
             this.manager.engine.lock();
 
-            this.display.clear();
             this.camera.updateView(this.manager.level, this.manager.characters);
-            this.camera.view.
-                addPath(this.manager.currPath.property, this.camera.x, this.camera.y, this.manager.currEntity.property.stats.ap).
+            var matrix = new DrawMatrix(0, 0, null, Const.DisplayWidth, Const.DisplayHeight).
+                addOverlay(this.camera.view.
+                    addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap)).
                 addOverlay(this.debugBox()).
-                draw(this.display);
-            GameUI.getLeftBar(this.manager.characters).draw(this.display);
-            GameUI.getDPad().draw(this.display);
-            GameUI.getRightBar(this.manager.level.scheduler,
-                this.manager.currEntity.property,
-                (<Array<IEntity>>this.manager.characters).concat(this.manager.level.entities)
-                ).draw(this.display);
-            GameUI.getBottomBar().draw(this.display);
+                addOverlay(GameUI.getLeftBar(this.manager.characters)).
+                addOverlay(GameUI.getDPad()).addOverlay(GameUI.getRightBar(this.manager.level.scheduler,
+                    this.manager.currEntity.unwrap,
+                    (<Array<IEntity>>this.manager.characters).concat(this.manager.level.entities)
+                    )).
+                addOverlay(GameUI.getBottomBar())
+            this.nextFrame.unwrap = matrix;        
 
             this.manager.engine.unlock();
         }
 
-        /*private debugPath(matrix: DrawMatrix): DrawMatrix {
-
-            var room1 = (<ROT.Map.Dungeon>this.manager.level.map).getRooms()[0];
-            var room2 = (<ROT.Map.Dungeon>this.manager.level.map).getRooms()[9];
-            var path = new Controllers.Path((x, y, from: Controllers.ILocation) => {
-                    return Controllers.isPassable({ x: x, y: y }, this.manager.level, from);
-                },
-                { x: room1.getCenter()[0], y: room1.getCenter()[1] },
-                { x: room2.getCenter()[0], y: room2.getCenter()[1] });
-
-            matrix.addPath(path, this.camera.x, this.camera.y, Number.MAX_VALUE);
-            return matrix;
-        }*/
-
         private debugBox(): DrawMatrix {
-            var box = new TextBox(Constants.SidebarWidth, 0, 6);
+            var box = new TextBox(Const.SidebarWidth, 0, 6);
             box.addLine("Lorem ipsum dolor sit amet,");
             box.addLine("consectetur adipiscing elit,");
             box.addLine("sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.");
@@ -83,8 +67,22 @@
             box.addLine("Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.");
             box.addLine("Excepteur sint occaecat cupidatat non proident,");
             box.addLine("sunt in culpa qui officia deserunt mollit anim id est laborum.");
-            var it = box.getMatrix(Constants.DisplayWidth - 2 * Constants.SidebarWidth);
+            var it = box.getMatrix(Const.DisplayWidth - 2 * Const.SidebarWidth);
             return it;
+        }
+
+        acceptMousedown(tileX: number, tileY: number) {
+            Controllers.Player.updateClick(tileX - this.camera.xOffset + this.camera.x,
+                tileY - this.camera.yOffset + this.camera.y);
+        }
+
+        acceptMousemove(tileX: number, tileY: number) {
+            Controllers.Player.updateMousemove(tileX - this.camera.xOffset + this.camera.x,
+                tileY - this.camera.yOffset + this.camera.y);
+        }
+
+        acceptKeydown(keyCode: string) {
+            Controllers.Player.update(keyCode);
         }
     }
 }

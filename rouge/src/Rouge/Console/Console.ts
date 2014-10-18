@@ -1,6 +1,6 @@
 ﻿module Rouge.Console {
 
-    export class Constants {
+    export class Const {
 
         private static _displayWidth = 92;
 
@@ -11,13 +11,25 @@
             return 1;
         }
         static set DisplayWidth(val: number) {
-            Constants._displayWidth = val;
+            Const._displayWidth = val;
         }
         static get DisplayWidth(): number {
-            return Constants._displayWidth;
+            return Const._displayWidth;
         }
         static get DisplayHeight(): number {
             return 34;
+        }
+        static get CamXOffset(): number {
+            return Const.SidebarWidth;
+        }
+        static get CamYOffset(): number {
+            return 0;
+        }
+        static get CamWidth(): number {
+            return Const.DisplayWidth - Const.SidebarWidth * 2;
+        }
+        static get CamHeight(): number {
+            return Const.DisplayHeight - Const.BottomBarHeight;
         }
     }
 

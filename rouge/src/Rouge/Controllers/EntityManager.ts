@@ -11,9 +11,9 @@
 
         constructor(level: Dungeon.Level) {
             this.level = level;
-            this.currEntity = new ObservableProperty(null);
+            this.currEntity = new ObservableProperty<Entities.Entity>();
             this.currEntity.attach(() => this.update());
-            this.currPath = new ObservableProperty(null);
+            this.currPath = new ObservableProperty<Path>();
             this.engine = new ROT.Engine(this.level.scheduler);
             this.changed = new Observable();
             this.characters = new Array<Entities.PlayerChar>();
@@ -55,7 +55,7 @@
 
         update() {
             this.engine.lock();
-            var entity = this.currEntity.property;
+            var entity = this.currEntity.unwrap;
 
             var pollForAction = () => {
                 planAction(entity, this);
@@ -67,7 +67,7 @@
                 }
 
                 if (entity.hasAP() && entity.hasTurn()) {
-                    setTimeout(pollForAction, Constants.UPDATE_RATE);
+                    setTimeout(pollForAction, Const.UPDATE_RATE);
                 }
                 else {
                     this.level.scheduler.setDuration(Math.max(0.5, 1 - (entity.stats.ap / entity.stats.apMax)));
@@ -75,7 +75,7 @@
                     this.changed.notify();
 
                     var unlock = () => { this.engine.unlock() };
-                    setTimeout(unlock, Constants.UPDATE_RATE * 4);
+                    setTimeout(unlock, Const.UPDATE_RATE * 4);
                 }
             }
             pollForAction();           

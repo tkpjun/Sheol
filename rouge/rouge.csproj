@@ -26,13 +26,12 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="src\Rouge\Console\Camera.ts" />
-    <TypeScriptCompile Include="src\Rouge\Console\Control.ts" />
+    <TypeScriptCompile Include="src\Rouge\Console\Core\Control.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\DrawMatrix.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\GameScreen.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\GameUI.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\MainMenuScreen.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\TextBox.ts" />
-    <TypeScriptCompile Include="src\Rouge\Constants.ts" />
     <TypeScriptCompile Include="src\Rouge\Controllers\AstarPath.ts" />
     <TypeScriptCompile Include="src\Rouge\Controllers\Path.ts" />
     <TypeScriptCompile Include="src\Rouge\Controllers\Player.ts" />
@@ -45,7 +44,7 @@
     <TypeScriptCompile Include="src\Rouge\Entities\Skillset.ts" />
     <TypeScriptCompile Include="src\Rouge\Entities\Trait.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\Console.ts" />
-    <TypeScriptCompile Include="src\Rouge\Console\Game.ts" />
+    <TypeScriptCompile Include="src\Rouge\Console\Core\Game.ts" />
     <TypeScriptCompile Include="src\Rouge\Controllers\ChangeProperty.ts" />
     <TypeScriptCompile Include="src\Rouge\Controllers\Controllers.ts" />
     <TypeScriptCompile Include="src\Rouge\Controllers\EntityManager.ts" />
@@ -63,7 +62,7 @@
     <TypeScriptCompile Include="src\Rouge\Items\Items.ts" />
     <TypeScriptCompile Include="src\Rouge\Items\Weapon.ts" />
     <TypeScriptCompile Include="src\Rouge\Rouge.ts" />
-    <TypeScriptCompile Include="src\Rouge\Controllers\ObservableProperty.ts" />
+    <TypeScriptCompile Include="src\Rouge\ObservableProperty.ts" />
   </ItemGroup>
   <ItemGroup>
     <None Include="web.Debug.config">

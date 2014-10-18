@@ -1,15 +1,14 @@
-﻿module Rouge.Console.Control {
+﻿module Rouge.Console.Core.Control {
 
     var lastDownTarget;
     var lastMouseX = 0;
     var lastMouseY = 0;
     var mouseDown = false;
 
-    export function init(screen: GameScreen) {
+    export function init(game: Game) {
 
-        var display = screen.display;
+        var display = game.display;
         var canvas = display.getContainer();
-        var camera = screen.camera;
 
         document.addEventListener("mousedown", (event) => {
             mouseDown = true;
@@ -21,9 +20,9 @@
             var y = pos[1];
             if (x >= 0 && y >= 1) {
                 //console.log(x + "," + y);
-                if (x >= camera.xOffset && x < camera.xOffset + camera.width &&
-                    y >= camera.yOffset && y < camera.yOffset + camera.height) {
-                    Controllers.Player.updateClick(x - camera.xOffset + camera.x, y - camera.yOffset + camera.y);
+                if (x >= Const.CamXOffset && x < Const.CamXOffset + Const.CamWidth &&
+                    y >= Const.CamYOffset && y < Const.CamYOffset + Const.CamHeight) {
+                    game.gameScreen.acceptMousedown(x, y);
                 }
             }
         }, false);
@@ -46,9 +45,9 @@
             var x = pos[0];
             var y = pos[1];
             if (x >= 0 && y >= 1) {
-                if (x >= camera.xOffset && x < camera.xOffset + camera.width &&
-                    y >= camera.yOffset && y < camera.yOffset + camera.height) {
-                    Controllers.Player.updateMousemove(x - camera.xOffset + camera.x, y - camera.yOffset + camera.y);
+                if (x >= Const.CamXOffset && x < Const.CamXOffset + Const.CamWidth &&
+                    y >= Const.CamYOffset && y < Const.CamYOffset + Const.CamHeight) {
+                    game.gameScreen.acceptMousemove(x, y);
                 }
             }
         }, false);
@@ -64,7 +63,7 @@
                     break;
                 }
             }
-            Controllers.Player.update(vk);
+            game.gameScreen.acceptKeydown(vk);
         }, false);
 
         /*document.addEventListener("keypress", (event) => {

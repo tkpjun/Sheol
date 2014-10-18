@@ -1,5 +1,15 @@
 ﻿module Rouge {
 
+    export class Const {
+
+        static get UPDATE_RATE(): number {
+            return 33;
+        }
+        static get MAP_HEIGHT(): number {
+            return 33;
+        }
+    }
+
     export interface IEntity{
         name: string;
         x: number;
@@ -26,8 +36,4 @@
         detach(observer: () => void);
         notify();
     }
-} 
-
-window.onload = () => {
-    document.getElementById("content").appendChild(new Rouge.Console.Game().display.getContainer());
-};
+}
