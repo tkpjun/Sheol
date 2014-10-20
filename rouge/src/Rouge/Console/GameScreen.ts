@@ -21,17 +21,12 @@
             this.console = new TextBox(Const.SidebarWidth, 0, 7);
 
             var update = () => {
-                function distance(x1, y1, x2, y2) {
-                    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-                }
-                var e = this.manager.currEntity.unwrap;
-                var short = this.manager.characters[0];
-                this.manager.characters.forEach((c) => {
-                    if (distance(c.x, c.y, e.x, e.y) < distance(short.x, short.y, e.x, e.y)) {
-                        short = c;
-                    }
-                });
-                this.camera.centerOn(short.x);
+                var middle = this.manager.characters.map((c) => { 
+                    return c.x
+                }).reduce((x1, x2) => {
+                    return x1 + x2
+                }) / this.manager.characters.length;
+                this.camera.centerOn(middle);
                 this.advanceFrame();
             }
             this.manager.currEntity.attach(update);
@@ -40,9 +35,9 @@
             this.manager.lastAttack.attach(() => {
                 var res = this.manager.lastAttack.unwrap;
                 this.console.addLine(res.attacker.name + " hit " + res.defender.name + " for " +
-                    res.finalDmg + "! Hit: " + (res.hitRoll - res.attacker.skills.prowess.value) +
+                    res.finalDmg + " damage! - Hit roll: " + (res.hitRoll - res.attacker.skills.prowess.value) +
                     "+" + res.attacker.skills.prowess.value + " vs " + (res.evadeRoll - res.defender.skills.evasion.value) +
-                    "+" + res.defender.skills.evasion.value + ". Armor: " + res.armorRolls.toString() + ".");
+                    "+" + res.defender.skills.evasion.value + " - Armor rolls: " + res.armorRolls.toString() + " -");
             });
             update();
         }
@@ -51,16 +46,19 @@
             this.manager.engine.lock();
 
             this.camera.updateView(this.manager.level, this.manager.characters);
-            var matrix = new DrawMatrix(0, 0, null, Const.DisplayWidth, Const.DisplayHeight).
-                addOverlay(this.camera.view.
-                    addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap)).
-                addOverlay(this.console.getMatrix(this.camera.width)).
-                addOverlay(GameUI.getLeftBar(this.manager.characters)).
-                addOverlay(GameUI.getDPad()).addOverlay(GameUI.getRightBar(this.manager.level.scheduler,
+            var matrix = new DrawMatrix(0, 0, null, Const.DisplayWidth, Const.DisplayHeight)
+                .addOverlay(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap))
+                .addOverlay(this.console.getMatrix(this.camera.width))
+                .addOverlay(GameUI.getLeftBar(this.manager.characters))
+                .addOverlay(GameUI.getDPad())
+                .addOverlay(GameUI.getRightBar(
+                    this.manager.level.scheduler,
                     this.manager.currEntity.unwrap,
-                    (<Array<IEntity>>this.manager.characters).concat(this.manager.level.entities)
-                    )).
-                addOverlay(GameUI.getBottomBar())
+                    (<Array<IEntity>>this.manager.characters).concat(this.manager.level.entities.filter((e) => {
+                            return this.camera.sees(e.x, e.y);
+                        }))
+                    ))
+                .addOverlay(GameUI.getBottomBar())
             this.nextFrame.unwrap = matrix;        
 
             this.manager.engine.unlock();

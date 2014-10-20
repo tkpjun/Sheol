@@ -36,6 +36,10 @@
                 this._view = this.addEntities(map, level.entities, players);
             };
 
+            Camera.prototype.sees = function (x, y) {
+                return x >= this.x && y >= this.y && x < this.x + this.width && y < this.y + this.height;
+            };
+
             Camera.prototype.getMapView = function (map) {
                 var matrix = new Array();
                 for (var i = 0; i < this.width; i++) {
@@ -513,17 +517,12 @@ var Rouge;
                 this.console = new Console.TextBox(Console.Const.SidebarWidth, 0, 7);
 
                 var update = function () {
-                    function distance(x1, y1, x2, y2) {
-                        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-                    }
-                    var e = _this.manager.currEntity.unwrap;
-                    var short = _this.manager.characters[0];
-                    _this.manager.characters.forEach(function (c) {
-                        if (distance(c.x, c.y, e.x, e.y) < distance(short.x, short.y, e.x, e.y)) {
-                            short = c;
-                        }
-                    });
-                    _this.camera.centerOn(short.x);
+                    var middle = _this.manager.characters.map(function (c) {
+                        return c.x;
+                    }).reduce(function (x1, x2) {
+                        return x1 + x2;
+                    }) / _this.manager.characters.length;
+                    _this.camera.centerOn(middle);
                     _this.advanceFrame();
                 };
                 this.manager.currEntity.attach(update);
@@ -533,15 +532,18 @@ var Rouge;
                 });
                 this.manager.lastAttack.attach(function () {
                     var res = _this.manager.lastAttack.unwrap;
-                    _this.console.addLine(res.attacker.name + " hit " + res.defender.name + " for " + res.finalDmg + "! Hit: " + (res.hitRoll - res.attacker.skills.prowess.value) + "+" + res.attacker.skills.prowess.value + " vs " + (res.evadeRoll - res.defender.skills.evasion.value) + "+" + res.defender.skills.evasion.value + ". Armor: " + res.armorRolls.toString() + ".");
+                    _this.console.addLine(res.attacker.name + " hit " + res.defender.name + " for " + res.finalDmg + " damage! - Hit roll: " + (res.hitRoll - res.attacker.skills.prowess.value) + "+" + res.attacker.skills.prowess.value + " vs " + (res.evadeRoll - res.defender.skills.evasion.value) + "+" + res.defender.skills.evasion.value + " - Armor rolls: " + res.armorRolls.toString() + " -");
                 });
                 update();
             }
             GameScreen.prototype.advanceFrame = function () {
+                var _this = this;
                 this.manager.engine.lock();
 
                 this.camera.updateView(this.manager.level, this.manager.characters);
-                var matrix = new Console.DrawMatrix(0, 0, null, Console.Const.DisplayWidth, Console.Const.DisplayHeight).addOverlay(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap)).addOverlay(this.console.getMatrix(this.camera.width)).addOverlay(Console.GameUI.getLeftBar(this.manager.characters)).addOverlay(Console.GameUI.getDPad()).addOverlay(Console.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.unwrap, this.manager.characters.concat(this.manager.level.entities))).addOverlay(Console.GameUI.getBottomBar());
+                var matrix = new Console.DrawMatrix(0, 0, null, Console.Const.DisplayWidth, Console.Const.DisplayHeight).addOverlay(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap)).addOverlay(this.console.getMatrix(this.camera.width)).addOverlay(Console.GameUI.getLeftBar(this.manager.characters)).addOverlay(Console.GameUI.getDPad()).addOverlay(Console.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.unwrap, this.manager.characters.concat(this.manager.level.entities.filter(function (e) {
+                    return _this.camera.sees(e.x, e.y);
+                })))).addOverlay(Console.GameUI.getBottomBar());
                 this.nextFrame.unwrap = matrix;
 
                 this.manager.engine.unlock();

@@ -43,6 +43,10 @@
             this._view = this.addEntities(map, level.entities, players);
         }
 
+        sees(x: number, y: number): boolean {
+            return x >= this.x && y >= this.y && x < this.x + this.width && y < this.y + this.height;
+        }
+
         private getMapView(map: ROT.IMap): DrawMatrix {
 
             var matrix = new Array<Array<IDrawable>>();
