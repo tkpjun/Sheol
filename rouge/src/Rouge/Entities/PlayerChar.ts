@@ -30,5 +30,12 @@ module Rouge.Entities {
             this.stats.ap = this.stats.apMax;
             this._hasTurn = true;
         }
+
+        getAttack(): Attack {
+            return new Attack(this,
+                this.equipment.rightWeapon.damage,
+                this.equipment.rightWeapon.multiplier,
+                this.skills.prowess);
+        }
     }
 } 

@@ -52,7 +52,7 @@
             matrix.matrix[i][0] = { symbol: " ", bgColor: color1 }
         }
         matrix.addString(5, 0, "QUEUE");
-        for (var i = 0; i < both.length; i++) {
+        for (var i = 0; i < both.length && i < 9; i++) {
             var drawable = getDrawable(both[i].entity);
             matrix.addString(1, i * 3 + 2, both[i].entity.name, Const.SidebarWidth - 4);
             matrix.addString(1, i * 3 + 3, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Const.SidebarWidth - 4);
@@ -135,14 +135,12 @@
                 matrix.matrix[i][j] = { symbol: " ", bgColor: color1 };
             }
         }
-        matrix.addString(1, 0, " SWITCH ", null, null, color2);
+        matrix.addString(1, 0, "  MOVE  ", null, null, color2);
         matrix.addString(11, 0, " ATTACK ", null, null, color2);
         matrix.addString(21, 0, " SPECIAL ", null, null, color2);
-        //matrix.addString(32, 0, " ?????? ", null, null, color2);
+        matrix.addString(32, 0, " SWITCH ", null, null, color2);
 
-        matrix.addString(Const.DisplayWidth - 41, 0, "CON:");
-        matrix.addString(Const.DisplayWidth - 37, 0, " - ", null, null, color2);
-        matrix.addString(Const.DisplayWidth - 33, 0, " + ", null, null, color2);
+        matrix.addString(Const.DisplayWidth - 33, 0, "CON:");
         matrix.addString(Const.DisplayWidth - 29, 0, " v ", null, null, color2);
         matrix.addString(Const.DisplayWidth - 25, 0, " ^ ", null, null, color2);
         matrix.addString(Const.DisplayWidth - 20, 0, "INVENTORY", null, null, color2);

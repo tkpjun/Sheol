@@ -18,15 +18,27 @@
             this.hitRoll = Math.ceil(ROT.RNG.getUniform() * 20) + attack.hitSkill.value;
             this.defender = defender;
             this.evadeRoll = Math.ceil(ROT.RNG.getUniform() * 20) + evadeSkill.value;
-            //evades and crits not implemented, only rolls
+            var modMul = this.attackMul;
+            var modEvd = this.evadeRoll;
+            var modHit = this.hitRoll;
+            var modDmg = this.attackDmg;
+            while (modEvd >= this.hitRoll) {
+                modMul -= 1;
+                modEvd -= 7;
+            }
+            while (modHit >= modEvd + 7) {
+                modDmg += 2;
+                modHit -= 7;
+            }
+
             this.armorRolls = new Array<number>();
-            for (var i = 0; i < this.attackMul; i++) {
+            for (var i = 0; i < modMul; i++) {
                 var roll = Math.floor(ROT.RNG.getUniform() * (armorMax - armorMin)) + armorMin;
                 this.armorRolls.push(roll);
             }
             this.finalDmg = 0;
-            for (var j = 0; j < this.attackMul; j++) {
-                this.finalDmg += Math.max(0, this.attackDmg - this.armorRolls[i]);
+            for (var j = 0; j < modMul; j++) {
+                this.finalDmg += Math.max(0, modDmg - this.armorRolls[j]);
             }
         }
     }

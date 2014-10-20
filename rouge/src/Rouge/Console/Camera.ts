@@ -87,6 +87,7 @@
         private addEntities(matrix: DrawMatrix, entities: Array<IEntity>, characters: Array<Entities.PlayerChar>): DrawMatrix {
 
             entities.forEach((e) => {
+                //console.log(e);
                 if (e.x < this.x || e.y < this.y || e.x > this.x + this.width - 1 || e.y > this.y + this.height - 1) {
 
                 }

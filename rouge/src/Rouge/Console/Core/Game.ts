@@ -30,7 +30,7 @@
 
                 Const.DisplayWidth = this.display.getOptions().width;
                 this.gameScreen.camera.width = Const.DisplayWidth - Const.SidebarWidth * 2;
-                this.screen.advanceFrame();
+                this.gameScreen.manager.changed.notify();
                 console.log((window.innerWidth / window.innerHeight).toFixed(2));
                 console.log(this.display.getOptions().width);
             }

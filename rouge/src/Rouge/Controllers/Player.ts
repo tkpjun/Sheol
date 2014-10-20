@@ -2,8 +2,7 @@
 
     enum States {
         Move,
-        Melee,
-        Ranged,
+        Attack,
         Inactive
     }
 
@@ -44,7 +43,7 @@
                 manager.currPath.unwrap = newPath;
             }
         }
-        else if (state == States.Melee || state == States.Ranged) {
+        else if (state == States.Attack) {
             var oPath = manager.currPath.unwrap;
             var nPath = new StraightPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.equipment.rightWeapon.maxRange);
             if (!oPath || nPath.pointer.x != oPath.pointer.x || nPath.pointer.y != oPath.pointer.y) {
@@ -61,7 +60,7 @@
                 manager.currPath.unwrap = newPath;
             }
         }
-        else if (state == States.Melee || state == States.Ranged) {
+        else if (state == States.Attack) {
             var oPath = manager.currPath.unwrap;
             var nPath = new StraightPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.equipment.rightWeapon.maxRange);
             if (!oPath || nPath.pointer.x != oPath.pointer.x || nPath.pointer.y != oPath.pointer.y) {
@@ -110,7 +109,7 @@
                 console.log("char: " + state);
                 break;
             case "VK_2":
-                state = States.Melee;
+                state = States.Attack;
                 manager.currPath.unwrap = null;
                 console.log("char: " + state);
                 break;
@@ -156,7 +155,7 @@
 
         if (state == States.Move)
             manager.currPath.unwrap = new AstarPath(callback, oldPath.begin, location, char.stats.ap);
-        else if (state == States.Melee)
+        else if (state == States.Attack)
             manager.currPath.unwrap = new StraightPath(callback, oldPath.begin, location, char.equipment.rightWeapon.maxRange);
         else
             throw ("Unimplemented state!");
@@ -186,17 +185,23 @@
                     }
                 }
                 break;
-            case States.Melee:
+            case States.Attack:
                 char.nextAction = () => {
                     var limited = path.trim();
+                    var result;
 
-                    throw ("TODO: attack enemy");
+                    var targets = lvl.entities.filter((entity) => {
+                        return entity.x === limited.pointer.x && entity.y === limited.pointer.y;
+                    });
+                    if (targets[0] && char.stats.ap >= char.equipment.rightWeapon.apCost) {
+                        char.stats.ap -= char.equipment.rightWeapon.apCost;
+                        result = (<Entities.Entity>targets[0]).getStruck(char.getAttack());
+                        manager.lastAttack.unwrap = result;
+                    }
 
-                    char.stats.ap -= char.equipment.rightWeapon.apCost;
                     manager.currPath.unwrap = new StraightPath(callback,
                         { x: char.x, y: char.y },
                         { x: path._nodes[path._nodes.length - 1].x, y: path._nodes[path._nodes.length - 1].y });
-
                     if (!char.hasAP()) {
                         state = States.Inactive;
                     }

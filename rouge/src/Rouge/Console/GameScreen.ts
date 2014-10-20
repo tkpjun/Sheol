@@ -7,12 +7,18 @@
         manager: Controllers.EntityManager;
         camera: Camera;
         nextFrame: ObservableProperty<DrawMatrix>;
+        console: TextBox;
 
         constructor() {
             this.dungeon = new Array<Dungeon.Level>(new Dungeon.Level(Dungeon.MapTypes.Mines));
             this.currLevel = 0;
             this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
             this.nextFrame = new ObservableProperty<DrawMatrix>();
+            this.camera = new Camera(Const.SidebarWidth,
+                Const.DisplayWidth - Const.SidebarWidth * 2,
+                0,
+                Const.DisplayHeight - Const.BottomBarHeight);
+            this.console = new TextBox(Const.SidebarWidth, 0, 7);
 
             var update = () => {
                 function distance(x1, y1, x2, y2) {
@@ -31,10 +37,13 @@
             this.manager.currEntity.attach(update);
             this.manager.changed.attach(update);
             this.manager.currPath.attach(() => this.advanceFrame());
-            this.camera = new Camera(Const.SidebarWidth,
-                Const.DisplayWidth - Const.SidebarWidth * 2,
-                0,
-                Const.DisplayHeight - Const.BottomBarHeight);
+            this.manager.lastAttack.attach(() => {
+                var res = this.manager.lastAttack.unwrap;
+                this.console.addLine(res.attacker.name + " hit " + res.defender.name + " for " +
+                    res.finalDmg + "! Hit: " + (res.hitRoll - res.attacker.skills.prowess.value) +
+                    "+" + res.attacker.skills.prowess.value + " vs " + (res.evadeRoll - res.defender.skills.evasion.value) +
+                    "+" + res.defender.skills.evasion.value + ". Armor: " + res.armorRolls.toString() + ".");
+            });
             update();
         }
 
@@ -45,7 +54,7 @@
             var matrix = new DrawMatrix(0, 0, null, Const.DisplayWidth, Const.DisplayHeight).
                 addOverlay(this.camera.view.
                     addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap)).
-                addOverlay(this.debugBox()).
+                addOverlay(this.console.getMatrix(this.camera.width)).
                 addOverlay(GameUI.getLeftBar(this.manager.characters)).
                 addOverlay(GameUI.getDPad()).addOverlay(GameUI.getRightBar(this.manager.level.scheduler,
                     this.manager.currEntity.unwrap,
@@ -55,20 +64,6 @@
             this.nextFrame.unwrap = matrix;        
 
             this.manager.engine.unlock();
-        }
-
-        private debugBox(): DrawMatrix {
-            var box = new TextBox(Const.SidebarWidth, 0, 6);
-            box.addLine("Lorem ipsum dolor sit amet,");
-            box.addLine("consectetur adipiscing elit,");
-            box.addLine("sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.");
-            box.addLine("Ut enim ad minim veniam,");
-            box.addLine("quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.");
-            box.addLine("Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.");
-            box.addLine("Excepteur sint occaecat cupidatat non proident,");
-            box.addLine("sunt in culpa qui officia deserunt mollit anim id est laborum.");
-            var it = box.getMatrix(Const.DisplayWidth - 2 * Const.SidebarWidth);
-            return it;
         }
 
         acceptMousedown(tileX: number, tileY: number) {

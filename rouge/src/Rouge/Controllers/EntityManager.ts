@@ -8,6 +8,7 @@
         characters: Entities.PlayerChar[];
         engine: ROT.Engine;
         changed: IObservable;
+        lastAttack: ObservableProperty<Entities.AttackResult>;
 
         constructor(level: Dungeon.Level) {
             this.level = level;
@@ -17,6 +18,7 @@
             this.engine = new ROT.Engine(this.level.scheduler);
             this.changed = new Observable();
             this.characters = new Array<Entities.PlayerChar>();
+            this.lastAttack = new ObservableProperty<Entities.AttackResult>();
 
             this.start();
         }
@@ -26,7 +28,8 @@
         }
 
         private start() {
-            var room = (<ROT.Map.Dungeon>this.level.map).getRooms()[0];
+            var rooms = (<ROT.Map.Dungeon>this.level.map).getRooms()
+            var room = rooms[0];
             var player1 = new Entities.PlayerChar("char1");
             player1.equipment.equipWeapon(Items.getWeapon(Items.Weapons.Mace), Entities.WeaponSlots.Right);
             player1.x = room.getCenter()[0];
@@ -43,12 +46,16 @@
             this.level.scheduler.add(
                 new Controllers.ChangeProperty(this.currEntity, player2), true, 1.5);
 
-            var enemy = Entities.getEnemy("debug");
-            var room2 = (<ROT.Map.Dungeon>this.level.map).getRooms()[1];
-            enemy.x = room2.getCenter()[0];
-            enemy.y = room2.getCenter()[1];
-            this.level.entities.push(enemy);
-            this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true, 2);
+            for (var i = 0; i < rooms.length; i++){
+                if (i % 6 != 0) continue;
+
+                var enemy = Entities.getEnemy("debug" + i/6);
+                enemy.x = rooms[i].getLeft();
+                enemy.y = rooms[i].getBottom();
+                //console.log(enemy.x +", "+ enemy.y)
+                this.level.entities.push(enemy);
+                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true, 2);
+            }
 
             this.engine.start();
         }

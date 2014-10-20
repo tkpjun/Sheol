@@ -20,11 +20,13 @@
   <ItemGroup>
     <Content Include="game.css" />
     <Content Include="index.html" />
+    <Content Include="parallel.js" />
     <Content Include="phaser.js" />
     <Content Include="rot.js" />
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
+    <TypeScriptCompile Include="parallel.d.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\Camera.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\Core\Control.ts" />
     <TypeScriptCompile Include="src\Rouge\Console\DrawMatrix.ts" />

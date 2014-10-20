@@ -10,11 +10,16 @@
         }
     }
 
+    export interface ILocation {
+        x: number
+        y: number
+    }
+
     export interface IEntity{
         name: string;
         x: number;
         y: number;
-        //getStruck(attack: any): Entities.AttackResult;
+        //getStruck(attack: Entities.Attack): Entities.AttackResult;
         nextAction;
         hasAP(): boolean;
         newTurn();

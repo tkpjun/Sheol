@@ -11,11 +11,6 @@
         Southeast
     }
 
-    export interface ILocation {
-        x: number
-        y: number
-    }
-
     export function isPassable(loc: ILocation, level: Dungeon.Level, from?: ILocation): boolean {
         if (loc.x < 1 || loc.y < 1 || loc.x > level.map._width - 2 || loc.y > level.map._height - 2)
             return false;

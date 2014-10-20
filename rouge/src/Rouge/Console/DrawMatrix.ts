@@ -34,7 +34,7 @@
             var bgc;
 
             for (var i = 0; i < str.length; i++) {
-                if (i + x < limit) {
+                if (this.matrix[i + x] && this.matrix[i + x][y]) {
                     if (!bgColor) bgc = this.matrix[i + x][y].bgColor;
                     else bgc = bgColor;
                     this.matrix[i + x][y] = { symbol: str[i], color: color, bgColor: bgc };

@@ -30,7 +30,13 @@
             switch (attack.hitSkill) {
                 default: evadeSkill = this.skills.evasion;
             }
-            return new AttackResult(attack, this, evadeSkill, 0, 0);
+            var result = new AttackResult(attack, this, evadeSkill, 0, 0);
+            this.stats.hp -= result.finalDmg;
+            return result;
+        }
+
+        getAttack(): Attack {
+            throw ("Abstract!");
         }
 
         get nextAction() {
