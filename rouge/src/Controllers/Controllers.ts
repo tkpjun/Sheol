@@ -53,7 +53,7 @@
     export function planAction(entity: IEntity, manager: EntityManager) {
 
         if (entity instanceof Entities.PlayerChar) {
-            Player.activate(<Entities.PlayerChar>entity, manager);
+            Player.activate(<Entities.PlayerChar>entity);
         }
         else if (entity instanceof Entities.Enemy) {
             var enemy = <Entities.Enemy>entity;

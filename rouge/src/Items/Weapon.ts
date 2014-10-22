@@ -8,6 +8,7 @@
         private _minRange: number;
         private _maxRange: number;
         private _apCost: number;
+        private _durability: number;
         private _twoHand = false;
         private _toHit = 0;
         private _toEvasion = 0;
@@ -20,6 +21,7 @@
         get minRange(): number { return this._minRange }
         get maxRange(): number { return this._maxRange }
         get apCost(): number { return this._apCost }
+        get durability(): number { return this._durability }
         get twoHanded(): boolean { return this._twoHand }
         get toHit(): number { return this._toHit }
         get toEvasion(): number { return this._toEvasion }
@@ -48,6 +50,11 @@
             return this;
         }
 
+        setDurability(amount: number): Weapon {
+            this._durability = amount;
+            return this;
+        }
+
         setTwohanded(): Weapon {
             this._twoHand = true;
             return this;
@@ -61,6 +68,6 @@
             return this;
         }
 
-        static None = new Weapon();
+        static None = new Weapon().setName("none");
     }
 }

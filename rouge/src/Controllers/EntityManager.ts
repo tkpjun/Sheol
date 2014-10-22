@@ -8,7 +8,6 @@
         characters: Entities.PlayerChar[];
         engine: ROT.Engine;
         changed: IObservable;
-        lastAttack: ObservableProperty<Entities.AttackResult>;
 
         constructor(level: Dungeon.Level) {
             this.level = level;
@@ -18,16 +17,19 @@
             this.engine = new ROT.Engine(this.level.scheduler);
             this.changed = new Observable();
             this.characters = new Array<Entities.PlayerChar>();
-            this.lastAttack = new ObservableProperty<Entities.AttackResult>();
 
-            this.start();
+            this.init();
         }
 
         pause() {
             this.engine.lock();
         }
 
-        private start() {
+        start() {
+            this.engine.start();
+        }
+
+        private init() {
             var rooms = (<ROT.Map.Dungeon>this.level.map).getRooms()
             var room = rooms[0];
             var player1 = new Entities.PlayerChar("char1");
@@ -56,8 +58,6 @@
                 this.level.entities.push(enemy);
                 this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true, 2);
             }
-
-            this.engine.start();
         }
 
         update() {

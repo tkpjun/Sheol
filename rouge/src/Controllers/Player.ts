@@ -10,21 +10,26 @@
     var lvl: Dungeon.Level;
     var state = States.Inactive;
     var manager: EntityManager;
+    var con: IConsole;
     var callback;
 
-    export function activate(character: Entities.PlayerChar, entityManager: EntityManager) {
+    export function initialize(console: IConsole, entityManager: EntityManager) {
+        manager = entityManager;
+        con = console;
+        callback = (x, y) => {
+            return Controllers.isPassable({ x: x, y: y }, manager.level);
+        }
+    }
+
+    export function activate(character: Entities.PlayerChar) {
         if (state == States.Inactive) {
             char = character;
-            lvl = entityManager.level;
+            lvl = manager.level;
             state = States.Move;
-            manager = entityManager;
             /*
             callback = (x, y, from: Controllers.ILocation) => {
                 return Controllers.isPassable({ x: x, y: y }, manager.level, from);
             }*/
-            callback = (x, y) => {
-                return Controllers.isPassable({ x: x, y: y }, manager.level);
-            }
             manager.currPath.unwrap = new AstarPath(callback, { x: char.x, y: char.y });
         }
     }
@@ -195,8 +200,15 @@
                     });
                     if (targets[0] && char.stats.ap >= char.equipment.rightWeapon.apCost) {
                         char.stats.ap -= char.equipment.rightWeapon.apCost;
+                        char.equipment.rightWeapon.setDurability(char.equipment.rightWeapon.durability - 1);
                         result = (<Entities.Entity>targets[0]).getStruck(char.getAttack());
-                        manager.lastAttack.unwrap = result;
+                        con.addLine(result.attacker.name + " hit " + result.defender.name + " for " +
+                            result.finalDmg + " damage! - Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) +
+                            "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) +
+                            "+" + result.defender.skills.evasion.value + " - Armor rolls: " + result.armorRolls.toString() + " -");
+                    }
+                    else if (char.stats.ap < char.equipment.rightWeapon.apCost) {
+                        con.addLine("You need " + char.equipment.rightWeapon.apCost + " AP to attack with a " + char.equipment.rightWeapon.name + "!")
                     }
 
                     manager.currPath.unwrap = new StraightPath(callback,

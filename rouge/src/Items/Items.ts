@@ -24,116 +24,132 @@
         switch (type) {
             case Weapons.Dagger:
                 weapon = new Weapon().
-                    setName("Dagger").
+                    setName("dagger").
                     setDamage(4, 4).
                     setRange(0, 2).
                     setCost(2).
+                    setDurability(50).
                     setBonuses(0, 1, 0, 0);
                 break;
             case Weapons.ShortSword:
                 weapon = new Weapon().
-                    setName("Short sword").
+                    setName("short sword").
                     setDamage(4, 6).
                     setRange(0, 2).
+                    setDurability(40).
                     setCost(3)
                 break;
             case Weapons.Broadsword:
                 weapon = new Weapon().
-                    setName("Broadsword").
+                    setName("broadsword").
                     setDamage(3, 7).
                     setRange(2, 3).
+                    setDurability(30).
                     setCost(3)
                 break;
             case Weapons.Mace:
                 weapon = new Weapon().
-                    setName("Mace").
+                    setName("mace").
                     setDamage(1, 15).
                     setRange(2, 3).
+                    setDurability(45).
                     setCost(3);
                 break;
             case Weapons.HandAxe:
                 weapon = new Weapon().
-                    setName("Hand axe").
+                    setName("hand axe").
                     setDamage(3, 7).
                     setRange(0, 2).
+                    setDurability(30).
                     setCost(3)
                 break;
             case Weapons.BattleAxe:
                 weapon = new Weapon().
-                    setName("Battle axe").
+                    setName("battle axe").
                     setDamage(2, 8).
                     setRange(2, 3).
+                    setDurability(30).
                     setCost(3);
                 break;
             case Weapons.Mattock:
                 weapon = new Weapon().
-                    setName("Mattock").
+                    setName("mattock").
                     setDamage(1, 14).
                     setRange(2, 3).
                     setCost(3).
+                    setDurability(30).
                     setBonuses(-2, 0, 0, 0);
                 break;
             case Weapons.Spear:
                 weapon = new Weapon().
-                    setName("Spear").
+                    setName("spear").
                     setDamage(2, 7).
                     setRange(3, 5).
+                    setDurability(45).
                     setCost(3);
                 break;
             case Weapons.Pike:
                 weapon = new Weapon().
-                    setName("Pike").
+                    setName("pike").
                     setDamage(2, 10).
                     setRange(4, 7).
                     setCost(4).
+                    setDurability(30).
+                    setDurability(45).
                     setTwohanded();
                 break;
             case Weapons.Halberd:
                 weapon = new Weapon().
-                    setName("Halberd").
+                    setName("halberd").
                     setDamage(2, 11).
                     setRange(3, 5).
                     setCost(4).
+                    setDurability(30).
                     setTwohanded();
                 break;
             case Weapons.Maul:
                 weapon = new Weapon().
-                    setName("Maul").
+                    setName("maul").
                     setDamage(1, 25).
                     setRange(2, 3).
                     setCost(5).
+                    setDurability(45).
                     setTwohanded();
                 break;
             case Weapons.Greataxe:
                 weapon = new Weapon().
-                    setName("Great axe").
+                    setName("great axe").
                     setDamage(2, 12).
                     setRange(3, 4).
                     setCost(4).
+                    setDurability(30).
                     setTwohanded();
                 break;
             case Weapons.LongSword:
                 weapon = new Weapon().
-                    setName("Long sword").
+                    setName("long sword").
                     setDamage(3, 9).
                     setRange(2, 4).
                     setCost(4).
+                    setDurability(30).
                     setTwohanded();
                 break;
             case Weapons.RoundShield:
                 weapon = new Weapon().
-                    setName("Round shield").
+                    setName("round shield").
                     setDamage(3, 5).
                     setRange(2, 2).
                     setCost(3).
+                    setDurability(60).
                     setBonuses(0, 4, 1, 2)
                 break;
             case Weapons.TowerShield:
                 weapon = new Weapon().
-                    setName("Tower shield").
+                    setName("tower shield").
                     setDamage(3, 6).
                     setRange(2, 2).
                     setCost(4).
+                    setDurability(80).
                     setBonuses(-2, 4, 2, 3)
                 break;
             default:

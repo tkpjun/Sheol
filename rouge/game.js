@@ -515,6 +515,7 @@ var Rouge;
                 this.nextFrame = new Rouge.ObservableProperty();
                 this.camera = new Console.Camera(Console.Const.SidebarWidth, Console.Const.DisplayWidth - Console.Const.SidebarWidth * 2, 0, Console.Const.DisplayHeight - Console.Const.BottomBarHeight);
                 this.console = new Console.TextBox(Console.Const.SidebarWidth, 0, 7);
+                Rouge.Controllers.Player.initialize(this.console, this.manager);
 
                 var update = function () {
                     var middle = _this.manager.characters.map(function (c) {
@@ -530,10 +531,7 @@ var Rouge;
                 this.manager.currPath.attach(function () {
                     return _this.advanceFrame();
                 });
-                this.manager.lastAttack.attach(function () {
-                    var res = _this.manager.lastAttack.unwrap;
-                    _this.console.addLine(res.attacker.name + " hit " + res.defender.name + " for " + res.finalDmg + " damage! - Hit roll: " + (res.hitRoll - res.attacker.skills.prowess.value) + "+" + res.attacker.skills.prowess.value + " vs " + (res.evadeRoll - res.defender.skills.evasion.value) + "+" + res.defender.skills.evasion.value + " - Armor rolls: " + res.armorRolls.toString() + " -");
-                });
+                this.manager.start();
                 update();
             }
             GameScreen.prototype.advanceFrame = function () {
@@ -631,10 +629,10 @@ var Rouge;
                     //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, "---");
                     //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, "| |");
                     if (i % 2 == 0) {
-                        matrix.addString(Console.Const.SidebarWidth - 4, i * 3 + 2, (i + 1) + "  ", null, null, color2);
+                        matrix.addString(Console.Const.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, color2);
                         matrix.addString(Console.Const.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color2);
                     } else {
-                        matrix.addString(Console.Const.SidebarWidth - 4, i * 3 + 2, (i + 1) + "  ", null, null, color1);
+                        matrix.addString(Console.Const.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, color1);
                         matrix.addString(Console.Const.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color1);
                     }
 
@@ -645,6 +643,9 @@ var Rouge;
                         matrix.addString(0, i * 3 + 1, "--- +" + both[i].time.toFixed(2) + "tu ---", null, "red");
                     }
                 }
+                matrix.addString(Console.Const.SidebarWidth - 7, 29, "space:");
+                matrix.addString(Console.Const.SidebarWidth - 7, 30, " END  ", null, null, color2);
+                matrix.addString(Console.Const.SidebarWidth - 7, 31, " TURN ", null, null, color2);
 
                 return matrix;
             }
@@ -705,12 +706,16 @@ var Rouge;
                         matrix.matrix[i][j] = { symbol: " ", bgColor: color1 };
                     }
                 }
-                matrix.addString(1, 0, "  MOVE  ", null, null, color2);
-                matrix.addString(11, 0, " ATTACK ", null, null, color2);
-                matrix.addString(21, 0, " SPECIAL ", null, null, color2);
-                matrix.addString(32, 0, " SWITCH ", null, null, color2);
+                matrix.addString(1, 0, "1");
+                matrix.addString(2, 0, "  MOVE  ", null, null, color2);
+                matrix.addString(11, 0, "2");
+                matrix.addString(12, 0, " ATTACK ", null, null, color2);
+                matrix.addString(21, 0, "3");
+                matrix.addString(22, 0, " SPECIAL ", null, null, color2);
+                matrix.addString(32, 0, "4");
+                matrix.addString(33, 0, " SWITCH ", null, null, color2);
 
-                matrix.addString(Console.Const.DisplayWidth - 33, 0, "CON:");
+                matrix.addString(Console.Const.DisplayWidth - 32, 0, "CON");
                 matrix.addString(Console.Const.DisplayWidth - 29, 0, " v ", null, null, color2);
                 matrix.addString(Console.Const.DisplayWidth - 25, 0, " ^ ", null, null, color2);
                 matrix.addString(Console.Const.DisplayWidth - 20, 0, "INVENTORY", null, null, color2);
@@ -1000,7 +1005,7 @@ var Rouge;
 
         function planAction(entity, manager) {
             if (entity instanceof Rouge.Entities.PlayerChar) {
-                Controllers.Player.activate(entity, manager);
+                Controllers.Player.activate(entity);
             } else if (entity instanceof Rouge.Entities.Enemy) {
                 var enemy = entity;
                 enemy.nextAction = function () {
@@ -1028,15 +1033,18 @@ var Rouge;
                 this.engine = new ROT.Engine(this.level.scheduler);
                 this.changed = new Rouge.Observable();
                 this.characters = new Array();
-                this.lastAttack = new Rouge.ObservableProperty();
 
-                this.start();
+                this.init();
             }
             EntityManager.prototype.pause = function () {
                 this.engine.lock();
             };
 
             EntityManager.prototype.start = function () {
+                this.engine.start();
+            };
+
+            EntityManager.prototype.init = function () {
                 var rooms = this.level.map.getRooms();
                 var room = rooms[0];
                 var player1 = new Rouge.Entities.PlayerChar("char1");
@@ -1065,8 +1073,6 @@ var Rouge;
                     this.level.entities.push(enemy);
                     this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true, 2);
                 }
-
-                this.engine.start();
             };
 
             EntityManager.prototype.update = function () {
@@ -1119,22 +1125,28 @@ var Rouge;
             var lvl;
             var state = 2 /* Inactive */;
             var manager;
+            var con;
             var callback;
 
-            function activate(character, entityManager) {
+            function initialize(console, entityManager) {
+                manager = entityManager;
+                con = console;
+                callback = function (x, y) {
+                    return Controllers.isPassable({ x: x, y: y }, manager.level);
+                };
+            }
+            Player.initialize = initialize;
+
+            function activate(character) {
                 if (state == 2 /* Inactive */) {
                     char = character;
-                    lvl = entityManager.level;
+                    lvl = manager.level;
                     state = 0 /* Move */;
-                    manager = entityManager;
 
                     /*
                     callback = (x, y, from: Controllers.ILocation) => {
                     return Controllers.isPassable({ x: x, y: y }, manager.level, from);
                     }*/
-                    callback = function (x, y) {
-                        return Controllers.isPassable({ x: x, y: y }, manager.level);
-                    };
                     manager.currPath.unwrap = new Controllers.AstarPath(callback, { x: char.x, y: char.y });
                 }
             }
@@ -1311,8 +1323,11 @@ var Rouge;
                             });
                             if (targets[0] && char.stats.ap >= char.equipment.rightWeapon.apCost) {
                                 char.stats.ap -= char.equipment.rightWeapon.apCost;
+                                char.equipment.rightWeapon.setDurability(char.equipment.rightWeapon.durability - 1);
                                 result = targets[0].getStruck(char.getAttack());
-                                manager.lastAttack.unwrap = result;
+                                con.addLine(result.attacker.name + " hit " + result.defender.name + " for " + result.finalDmg + " damage! - Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) + "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) + "+" + result.defender.skills.evasion.value + " - Armor rolls: " + result.armorRolls.toString() + " -");
+                            } else if (char.stats.ap < char.equipment.rightWeapon.apCost) {
+                                con.addLine("You need " + char.equipment.rightWeapon.apCost + " AP to attack with a " + char.equipment.rightWeapon.name + "!");
                             }
 
                             manager.currPath.unwrap = new Controllers.StraightPath(callback, { x: char.x, y: char.y }, { x: path._nodes[path._nodes.length - 1].x, y: path._nodes[path._nodes.length - 1].y });
@@ -1933,49 +1948,49 @@ var Rouge;
             var weapon;
             switch (type) {
                 case 1 /* Dagger */:
-                    weapon = new Items.Weapon().setName("Dagger").setDamage(4, 4).setRange(0, 2).setCost(2).setBonuses(0, 1, 0, 0);
+                    weapon = new Items.Weapon().setName("dagger").setDamage(4, 4).setRange(0, 2).setCost(2).setDurability(50).setBonuses(0, 1, 0, 0);
                     break;
                 case 2 /* ShortSword */:
-                    weapon = new Items.Weapon().setName("Short sword").setDamage(4, 6).setRange(0, 2).setCost(3);
+                    weapon = new Items.Weapon().setName("short sword").setDamage(4, 6).setRange(0, 2).setDurability(40).setCost(3);
                     break;
                 case 3 /* Broadsword */:
-                    weapon = new Items.Weapon().setName("Broadsword").setDamage(3, 7).setRange(2, 3).setCost(3);
+                    weapon = new Items.Weapon().setName("broadsword").setDamage(3, 7).setRange(2, 3).setDurability(30).setCost(3);
                     break;
                 case 4 /* Mace */:
-                    weapon = new Items.Weapon().setName("Mace").setDamage(1, 15).setRange(2, 3).setCost(3);
+                    weapon = new Items.Weapon().setName("mace").setDamage(1, 15).setRange(2, 3).setDurability(45).setCost(3);
                     break;
                 case 5 /* HandAxe */:
-                    weapon = new Items.Weapon().setName("Hand axe").setDamage(3, 7).setRange(0, 2).setCost(3);
+                    weapon = new Items.Weapon().setName("hand axe").setDamage(3, 7).setRange(0, 2).setDurability(30).setCost(3);
                     break;
                 case 6 /* BattleAxe */:
-                    weapon = new Items.Weapon().setName("Battle axe").setDamage(2, 8).setRange(2, 3).setCost(3);
+                    weapon = new Items.Weapon().setName("battle axe").setDamage(2, 8).setRange(2, 3).setDurability(30).setCost(3);
                     break;
                 case 9 /* Mattock */:
-                    weapon = new Items.Weapon().setName("Mattock").setDamage(1, 14).setRange(2, 3).setCost(3).setBonuses(-2, 0, 0, 0);
+                    weapon = new Items.Weapon().setName("mattock").setDamage(1, 14).setRange(2, 3).setCost(3).setDurability(30).setBonuses(-2, 0, 0, 0);
                     break;
                 case 7 /* Spear */:
-                    weapon = new Items.Weapon().setName("Spear").setDamage(2, 7).setRange(3, 5).setCost(3);
+                    weapon = new Items.Weapon().setName("spear").setDamage(2, 7).setRange(3, 5).setDurability(45).setCost(3);
                     break;
                 case 8 /* Pike */:
-                    weapon = new Items.Weapon().setName("Pike").setDamage(2, 10).setRange(4, 7).setCost(4).setTwohanded();
+                    weapon = new Items.Weapon().setName("pike").setDamage(2, 10).setRange(4, 7).setCost(4).setDurability(30).setDurability(45).setTwohanded();
                     break;
                 case 13 /* Halberd */:
-                    weapon = new Items.Weapon().setName("Halberd").setDamage(2, 11).setRange(3, 5).setCost(4).setTwohanded();
+                    weapon = new Items.Weapon().setName("halberd").setDamage(2, 11).setRange(3, 5).setCost(4).setDurability(30).setTwohanded();
                     break;
                 case 10 /* Maul */:
-                    weapon = new Items.Weapon().setName("Maul").setDamage(1, 25).setRange(2, 3).setCost(5).setTwohanded();
+                    weapon = new Items.Weapon().setName("maul").setDamage(1, 25).setRange(2, 3).setCost(5).setDurability(45).setTwohanded();
                     break;
                 case 11 /* Greataxe */:
-                    weapon = new Items.Weapon().setName("Great axe").setDamage(2, 12).setRange(3, 4).setCost(4).setTwohanded();
+                    weapon = new Items.Weapon().setName("great axe").setDamage(2, 12).setRange(3, 4).setCost(4).setDurability(30).setTwohanded();
                     break;
                 case 12 /* LongSword */:
-                    weapon = new Items.Weapon().setName("Long sword").setDamage(3, 9).setRange(2, 4).setCost(4).setTwohanded();
+                    weapon = new Items.Weapon().setName("long sword").setDamage(3, 9).setRange(2, 4).setCost(4).setDurability(30).setTwohanded();
                     break;
                 case 14 /* RoundShield */:
-                    weapon = new Items.Weapon().setName("Round shield").setDamage(3, 5).setRange(2, 2).setCost(3).setBonuses(0, 4, 1, 2);
+                    weapon = new Items.Weapon().setName("round shield").setDamage(3, 5).setRange(2, 2).setCost(3).setDurability(60).setBonuses(0, 4, 1, 2);
                     break;
                 case 15 /* TowerShield */:
-                    weapon = new Items.Weapon().setName("Tower shield").setDamage(3, 6).setRange(2, 2).setCost(4).setBonuses(-2, 4, 2, 3);
+                    weapon = new Items.Weapon().setName("tower shield").setDamage(3, 6).setRange(2, 2).setCost(4).setDurability(80).setBonuses(-2, 4, 2, 3);
                     break;
                 default:
                     weapon = Items.Weapon.None;
@@ -2040,6 +2055,13 @@ var Rouge;
                 enumerable: true,
                 configurable: true
             });
+            Object.defineProperty(Weapon.prototype, "durability", {
+                get: function () {
+                    return this._durability;
+                },
+                enumerable: true,
+                configurable: true
+            });
             Object.defineProperty(Weapon.prototype, "twoHanded", {
                 get: function () {
                     return this._twoHand;
@@ -2098,6 +2120,11 @@ var Rouge;
                 return this;
             };
 
+            Weapon.prototype.setDurability = function (amount) {
+                this._durability = amount;
+                return this;
+            };
+
             Weapon.prototype.setTwohanded = function () {
                 this._twoHand = true;
                 return this;
@@ -2111,7 +2138,7 @@ var Rouge;
                 return this;
             };
 
-            Weapon.None = new Weapon();
+            Weapon.None = new Weapon().setName("none");
             return Weapon;
         })();
         Items.Weapon = Weapon;

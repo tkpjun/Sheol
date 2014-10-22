@@ -36,6 +36,10 @@
         name: string;
     }
 
+    export interface IConsole {
+        addLine(line: string): IConsole
+    }
+
     export interface IObservable {
         attach(observer: () => void);
         detach(observer: () => void);

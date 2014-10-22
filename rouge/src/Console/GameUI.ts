@@ -59,11 +59,11 @@
             //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, "---");
             //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, "| |");
             if (i % 2 == 0) {
-                matrix.addString(Const.SidebarWidth - 4, i * 3 + 2, (i + 1) + "  ", null, null, color2);
+                matrix.addString(Const.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, color2);
                 matrix.addString(Const.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color2);
             }
             else {
-                matrix.addString(Const.SidebarWidth - 4, i * 3 + 2, (i + 1) + "  ", null, null, color1);
+                matrix.addString(Const.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, color1);
                 matrix.addString(Const.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color1);
             }
             //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 4, "---");
@@ -74,6 +74,9 @@
                 matrix.addString(0, i * 3 + 1, "--- +" + (<number>both[i].time).toFixed(2) + "tu ---", null, "red");           
             }
         }
+        matrix.addString(Const.SidebarWidth - 7, 29, "space:");
+        matrix.addString(Const.SidebarWidth - 7, 30, " END  ", null, null, color2);
+        matrix.addString(Const.SidebarWidth - 7, 31, " TURN ", null, null, color2);
 
         return matrix;
     }
@@ -135,12 +138,16 @@
                 matrix.matrix[i][j] = { symbol: " ", bgColor: color1 };
             }
         }
-        matrix.addString(1, 0, "  MOVE  ", null, null, color2);
-        matrix.addString(11, 0, " ATTACK ", null, null, color2);
-        matrix.addString(21, 0, " SPECIAL ", null, null, color2);
-        matrix.addString(32, 0, " SWITCH ", null, null, color2);
+        matrix.addString(1, 0, "1");
+        matrix.addString(2, 0, "  MOVE  ", null, null, color2);
+        matrix.addString(11, 0, "2");
+        matrix.addString(12, 0, " ATTACK ", null, null, color2);
+        matrix.addString(21, 0, "3");
+        matrix.addString(22, 0, " SPECIAL ", null, null, color2);
+        matrix.addString(32, 0, "4");
+        matrix.addString(33, 0, " SWITCH ", null, null, color2);
 
-        matrix.addString(Const.DisplayWidth - 33, 0, "CON:");
+        matrix.addString(Const.DisplayWidth - 32, 0, "CON");
         matrix.addString(Const.DisplayWidth - 29, 0, " v ", null, null, color2);
         matrix.addString(Const.DisplayWidth - 25, 0, " ^ ", null, null, color2);
         matrix.addString(Const.DisplayWidth - 20, 0, "INVENTORY", null, null, color2);

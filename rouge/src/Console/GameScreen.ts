@@ -19,6 +19,7 @@
                 0,
                 Const.DisplayHeight - Const.BottomBarHeight);
             this.console = new TextBox(Const.SidebarWidth, 0, 7);
+            Controllers.Player.initialize(this.console, this.manager);
 
             var update = () => {
                 var middle = this.manager.characters.map((c) => { 
@@ -32,13 +33,7 @@
             this.manager.currEntity.attach(update);
             this.manager.changed.attach(update);
             this.manager.currPath.attach(() => this.advanceFrame());
-            this.manager.lastAttack.attach(() => {
-                var res = this.manager.lastAttack.unwrap;
-                this.console.addLine(res.attacker.name + " hit " + res.defender.name + " for " +
-                    res.finalDmg + " damage! - Hit roll: " + (res.hitRoll - res.attacker.skills.prowess.value) +
-                    "+" + res.attacker.skills.prowess.value + " vs " + (res.evadeRoll - res.defender.skills.evasion.value) +
-                    "+" + res.defender.skills.evasion.value + " - Armor rolls: " + res.armorRolls.toString() + " -");
-            });
+            this.manager.start();
             update();
         }
 
