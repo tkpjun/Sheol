@@ -38,9 +38,12 @@
             this.y += y;
         }
 
-        updateView(level: Dungeon.Level, players: Array<Entities.PlayerChar>) {
+        updateView(level: Dungeon.Level, entities?: Array<IEntity>) {
             var map = this.getMapView(level.map);
-            this._view = this.addEntities(map, level.entities, players);
+            if (entities)
+                this._view = this.addEntities(map, entities);
+            else
+                this._view = this.addEntities(map, level.entities);
         }
 
         sees(x: number, y: number): boolean {
@@ -88,7 +91,7 @@
             return new DrawMatrix(this.xOffset, this.yOffset, matrix);
         }
 
-        private addEntities(matrix: DrawMatrix, entities: Array<IEntity>, characters: Array<Entities.PlayerChar>): DrawMatrix {
+        private addEntities(matrix: DrawMatrix, entities: Array<IEntity>): DrawMatrix {
 
             entities.forEach((e) => {
                 //console.log(e);
@@ -99,15 +102,6 @@
                     matrix.matrix[e.x - this.x][e.y - this.y] = getDrawable(e);
                 }
             })
-            characters.forEach((p) => {
-                if (p.x < this.x || p.y < this.y || p.x > this.x + this.width - 1 || p.y > this.y + this.height - 1) {
-
-                }
-                else {
-                    matrix.matrix[p.x - this.x][p.y - this.y] = getDrawable(p);
-                }
-            })
-
             return matrix;
         }
 

@@ -4,6 +4,7 @@ module Rouge.Entities {
     export class PlayerChar extends Entity {
 
         equipment: Equipment;
+        currWeapon: Items.Weapon;
         effects: any;
         _hasTurn: boolean;
 
@@ -33,8 +34,8 @@ module Rouge.Entities {
 
         getAttack(): Attack {
             return new Attack(this,
-                this.equipment.rightWeapon.damage,
-                this.equipment.rightWeapon.multiplier,
+                this.currWeapon.damage,
+                this.currWeapon.multiplier,
                 this.skills.prowess);
         }
     }

@@ -2,21 +2,27 @@
 module Rouge.Controllers {
 
     export class StraightPath extends Path {
-        constructor(passableFn: (x: number, y: number) => boolean, from: ILocation, to?: ILocation, lengthInAP?: number) {
+        constructor(from: ILocation, to?: ILocation, lengthInAP?: number) {
             super();
             this._lengthInAP = lengthInAP;
             this.begin = from;
+            this._nodes.push(from);
+            this._costs.push(0);
 
-            if (to) {
-                this.createPath(passableFn, from, to);
-                this.updateCosts();
+            if (to) {               
                 this.pointer = to;
             }
             else {
-                this._nodes.push(from);
-                this._costs.push(0);
                 this.pointer = from;
             }
+        }
+
+        connect(passableFn: (x: number, y: number) => boolean) {
+            this._nodes.length = 0;
+            this._costs.length = 0;
+
+            this.createPath(passableFn, this.begin, this.pointer);
+            this.updateCosts();
         }
 
         private createPath(passableFn: (x: number, y: number) => boolean, from: ILocation, to: ILocation) {

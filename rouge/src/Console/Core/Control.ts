@@ -33,7 +33,6 @@
 
         document.addEventListener("mousemove", (event) => {
             if (lastDownTarget != canvas) return;
-            if (!mouseDown) return;
             if (Math.abs(event.x - lastMouseX) < 5 &&
                 Math.abs(event.y - lastMouseY) < 8) return;
 
@@ -47,7 +46,12 @@
             if (x >= 0 && y >= 1) {
                 if (x >= Const.CamXOffset && x < Const.CamXOffset + Const.CamWidth &&
                     y >= Const.CamYOffset && y < Const.CamYOffset + Const.CamHeight) {
-                    game.gameScreen.acceptMousemove(x, y);
+                    if (mouseDown) {
+                        game.gameScreen.acceptMousedrag(x, y);
+                    }
+                    else {
+                        game.gameScreen.acceptMousemove(x, y);
+                    }
                 }
             }
         }, false);

@@ -31,9 +31,12 @@
                 this.y += y;
             };
 
-            Camera.prototype.updateView = function (level, players) {
+            Camera.prototype.updateView = function (level, entities) {
                 var map = this.getMapView(level.map);
-                this._view = this.addEntities(map, level.entities, players);
+                if (entities)
+                    this._view = this.addEntities(map, entities);
+                else
+                    this._view = this.addEntities(map, level.entities);
             };
 
             Camera.prototype.sees = function (x, y) {
@@ -80,7 +83,7 @@
                 return new Console.DrawMatrix(this.xOffset, this.yOffset, matrix);
             };
 
-            Camera.prototype.addEntities = function (matrix, entities, characters) {
+            Camera.prototype.addEntities = function (matrix, entities) {
                 var _this = this;
                 entities.forEach(function (e) {
                     //console.log(e);
@@ -89,13 +92,6 @@
                         matrix.matrix[e.x - _this.x][e.y - _this.y] = Console.getDrawable(e);
                     }
                 });
-                characters.forEach(function (p) {
-                    if (p.x < _this.x || p.y < _this.y || p.x > _this.x + _this.width - 1 || p.y > _this.y + _this.height - 1) {
-                    } else {
-                        matrix.matrix[p.x - _this.x][p.y - _this.y] = Console.getDrawable(p);
-                    }
-                });
-
                 return matrix;
             };
             return Camera;
@@ -243,8 +239,6 @@ var Rouge;
                     document.addEventListener("mousemove", function (event) {
                         if (lastDownTarget != canvas)
                             return;
-                        if (!mouseDown)
-                            return;
                         if (Math.abs(event.x - lastMouseX) < 5 && Math.abs(event.y - lastMouseY) < 8)
                             return;
 
@@ -257,7 +251,11 @@ var Rouge;
                         var y = pos[1];
                         if (x >= 0 && y >= 1) {
                             if (x >= Console.Const.CamXOffset && x < Console.Const.CamXOffset + Console.Const.CamWidth && y >= Console.Const.CamYOffset && y < Console.Const.CamYOffset + Console.Const.CamHeight) {
-                                game.gameScreen.acceptMousemove(x, y);
+                                if (mouseDown) {
+                                    game.gameScreen.acceptMousedrag(x, y);
+                                } else {
+                                    game.gameScreen.acceptMousemove(x, y);
+                                }
                             }
                         }
                     }, false);
@@ -538,10 +536,10 @@ var Rouge;
                 var _this = this;
                 this.manager.engine.lock();
 
-                this.camera.updateView(this.manager.level, this.manager.characters);
-                var matrix = new Console.DrawMatrix(0, 0, null, Console.Const.DisplayWidth, Console.Const.DisplayHeight).addOverlay(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap)).addOverlay(this.console.getMatrix(this.camera.width)).addOverlay(Console.GameUI.getLeftBar(this.manager.characters)).addOverlay(Console.GameUI.getDPad()).addOverlay(Console.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.unwrap, this.manager.characters.concat(this.manager.level.entities.filter(function (e) {
+                this.camera.updateView(this.manager.level);
+                var matrix = new Console.DrawMatrix(0, 0, null, Console.Const.DisplayWidth, Console.Const.DisplayHeight).addOverlay(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap)).addOverlay(this.console.getMatrix(this.camera.width)).addOverlay(Console.GameUI.getLeftBar(this.manager.characters)).addOverlay(Console.GameUI.getDPad()).addOverlay(Console.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.unwrap, this.manager.level.entities.filter(function (e) {
                     return _this.camera.sees(e.x, e.y);
-                })))).addOverlay(Console.GameUI.getBottomBar());
+                }))).addOverlay(Console.GameUI.getBottomBar());
                 this.nextFrame.unwrap = matrix;
 
                 this.manager.engine.unlock();
@@ -549,6 +547,10 @@ var Rouge;
 
             GameScreen.prototype.acceptMousedown = function (tileX, tileY) {
                 Rouge.Controllers.Player.updateClick(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
+            };
+
+            GameScreen.prototype.acceptMousedrag = function (tileX, tileY) {
+                Rouge.Controllers.Player.updateMousedrag(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
             };
 
             GameScreen.prototype.acceptMousemove = function (tileX, tileY) {
@@ -831,6 +833,19 @@ var Rouge;
                 });
             };
 
+            Path.prototype.connect = function (passableFn) {
+                throw ("Abstract!");
+            };
+
+            Path.prototype.disconnect = function () {
+                this._nodes.length = 1;
+                this._costs.length = 1;
+            };
+
+            Path.prototype.isConnected = function () {
+                return this._nodes.length > 1;
+            };
+
             Path.prototype.limitedNodes = function () {
                 if (this._lengthInAP) {
                     var arr = new Array();
@@ -898,35 +913,55 @@ var Rouge;
     (function (Controllers) {
         var AstarPath = (function (_super) {
             __extends(AstarPath, _super);
-            function AstarPath(passableFn, from, to, lengthInAP) {
-                var _this = this;
+            function AstarPath(from, to, lengthInAP) {
                 _super.call(this);
                 this._lengthInAP = lengthInAP;
                 this.begin = from;
+                this._nodes.push(from);
+                this._costs.push(0);
 
                 if (to) {
-                    this._astar = new ROT.Path.AStar(to.x, to.y, passableFn, { topology: 4 });
-                    this._astar.compute(from.x, from.y, function (x, y) {
-                        _this._nodes.push({ x: x, y: y });
-                    });
-
-                    //this.fixPath(passableFn);
-                    this.updateCosts();
                     this.pointer = to;
                 } else {
-                    this._nodes.push(from);
-                    this._costs.push(0);
                     this.pointer = from;
                 }
+            }
+            AstarPath.prototype.connect = function (passableFn) {
+                var _this = this;
+                this._nodes.length = 0;
+                this._costs.length = 0;
+
+                this._astar = new ROT.Path.AStar(this.pointer.x, this.pointer.y, passableFn, { topology: 4 });
+                this._astar.compute(this.begin.x, this.begin.y, function (x, y) {
+                    _this._nodes.push({ x: x, y: y });
+                });
+
+                //this.fixPath(passableFn);
+                this.updateCosts();
 
                 if (!passableFn(this.pointer.x, this.pointer.y)) {
                     this._nodes.pop();
                     this._costs.pop();
                 }
-            }
+            };
             return AstarPath;
         })(Controllers.Path);
         Controllers.AstarPath = AstarPath;
+    })(Rouge.Controllers || (Rouge.Controllers = {}));
+    var Controllers = Rouge.Controllers;
+})(Rouge || (Rouge = {}));
+var Rouge;
+(function (Rouge) {
+    (function (Controllers) {
+        (function (BasicAI) {
+            var char;
+            var lvl;
+            var state = 2 /* Inactive */;
+            var manager;
+            var con;
+            var callback;
+        })(Controllers.BasicAI || (Controllers.BasicAI = {}));
+        var BasicAI = Controllers.BasicAI;
     })(Rouge.Controllers || (Rouge.Controllers = {}));
     var Controllers = Rouge.Controllers;
 })(Rouge || (Rouge = {}));
@@ -952,21 +987,18 @@ var Rouge;
 var Rouge;
 (function (Rouge) {
     (function (Controllers) {
-        (function (Direction) {
-            Direction[Direction["North"] = 0] = "North";
-            Direction[Direction["South"] = 1] = "South";
-            Direction[Direction["West"] = 2] = "West";
-            Direction[Direction["East"] = 3] = "East";
-            Direction[Direction["Northwest"] = 4] = "Northwest";
-            Direction[Direction["Northeast"] = 5] = "Northeast";
-            Direction[Direction["Southwest"] = 6] = "Southwest";
-            Direction[Direction["Southeast"] = 7] = "Southeast";
-        })(Controllers.Direction || (Controllers.Direction = {}));
-        var Direction = Controllers.Direction;
+        (function (States) {
+            States[States["Move"] = 0] = "Move";
+            States[States["Attack"] = 1] = "Attack";
+            States[States["Inactive"] = 2] = "Inactive";
+        })(Controllers.States || (Controllers.States = {}));
+        var States = Controllers.States;
 
-        function isPassable(loc, level, from) {
+        function isPassable(user, loc, level, from) {
             if (loc.x < 1 || loc.y < 1 || loc.x > level.map._width - 2 || loc.y > level.map._height - 2)
                 return false;
+            if (loc.x == user.x && loc.y == user.y)
+                return true;
 
             var cell = level.map[loc.x + "," + loc.y];
 
@@ -1045,21 +1077,28 @@ var Rouge;
             };
 
             EntityManager.prototype.init = function () {
+                var _this = this;
                 var rooms = this.level.map.getRooms();
                 var room = rooms[0];
                 var player1 = new Rouge.Entities.PlayerChar("char1");
-                player1.equipment.equipWeapon(Rouge.Items.getWeapon(4 /* Mace */), 1 /* Right */);
+                player1.equipment.equipWeapon(Rouge.Items.getWeapon(3 /* Mace */));
+                player1.currWeapon = player1.equipment.mainHand;
                 player1.x = room.getCenter()[0];
                 player1.y = room.getCenter()[1];
                 this.characters.push(player1);
                 this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player1), true, 1);
 
                 var player2 = new Rouge.Entities.PlayerChar("char2");
-                player2.equipment.equipWeapon(Rouge.Items.getWeapon(7 /* Spear */), 1 /* Right */);
+                player2.equipment.equipWeapon(Rouge.Items.getWeapon(6 /* Spear */));
+                player2.currWeapon = player2.equipment.mainHand;
                 player2.x = room.getCenter()[0] + 1;
                 player2.y = room.getCenter()[1];
                 this.characters.push(player2);
                 this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player2), true, 1.5);
+
+                this.characters.forEach(function (c) {
+                    _this.level.entities.push(c);
+                });
 
                 for (var i = 0; i < rooms.length; i++) {
                     if (i % 6 != 0)
@@ -1114,13 +1153,6 @@ var Rouge;
 (function (Rouge) {
     (function (Controllers) {
         (function (Player) {
-            var States;
-            (function (States) {
-                States[States["Move"] = 0] = "Move";
-                States[States["Attack"] = 1] = "Attack";
-                States[States["Inactive"] = 2] = "Inactive";
-            })(States || (States = {}));
-
             var char;
             var lvl;
             var state = 2 /* Inactive */;
@@ -1131,23 +1163,18 @@ var Rouge;
             function initialize(console, entityManager) {
                 manager = entityManager;
                 con = console;
-                callback = function (x, y) {
-                    return Controllers.isPassable({ x: x, y: y }, manager.level);
-                };
             }
             Player.initialize = initialize;
 
             function activate(character) {
                 if (state == 2 /* Inactive */) {
                     char = character;
+                    callback = function (x, y) {
+                        return Controllers.isPassable(char, { x: x, y: y }, manager.level);
+                    };
                     lvl = manager.level;
                     state = 0 /* Move */;
-
-                    /*
-                    callback = (x, y, from: Controllers.ILocation) => {
-                    return Controllers.isPassable({ x: x, y: y }, manager.level, from);
-                    }*/
-                    manager.currPath.unwrap = new Controllers.AstarPath(callback, { x: char.x, y: char.y });
+                    manager.currPath.unwrap = new Controllers.AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
                 }
             }
             Player.activate = activate;
@@ -1157,37 +1184,44 @@ var Rouge;
                     return;
 
                 var path = manager.currPath.unwrap;
-                if (path && x == path.pointer.x && y == path.pointer.y) {
+                if (path && path.isConnected() && x == path.pointer.x && y == path.pointer.y) {
                     confirm();
-                } else if (state == 0 /* Move */) {
-                    var oldPath = manager.currPath.unwrap;
-                    var newPath = new Controllers.AstarPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.stats.ap);
-                    if (!oldPath || newPath.pointer.x != oldPath.pointer.x || newPath.pointer.y != oldPath.pointer.y) {
-                        manager.currPath.unwrap = newPath;
-                    }
-                } else if (state == 1 /* Attack */) {
-                    var oPath = manager.currPath.unwrap;
-                    var nPath = new Controllers.StraightPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.equipment.rightWeapon.maxRange);
-                    if (!oPath || nPath.pointer.x != oPath.pointer.x || nPath.pointer.y != oPath.pointer.y) {
-                        manager.currPath.unwrap = nPath;
-                    }
+                } else if (state == 0 /* Move */ || state == 1 /* Attack */) {
+                    var newLoc = { x: x, y: y };
+
+                    //if (newLoc.x != path.pointer.x || newLoc.y != path.pointer.y) {
+                    path.pointer = newLoc;
+                    path.connect(callback);
+                    manager.currPath.unwrap = path;
+                    //}
                 }
             }
             Player.updateClick = updateClick;
 
+            function updateMousedrag(x, y) {
+                if (state == 2 /* Inactive */)
+                    return;
+                var path = manager.currPath.unwrap;
+
+                var newLoc = { x: x, y: y };
+                if (newLoc.x != path.pointer.x || newLoc.y != path.pointer.y) {
+                    path.pointer = newLoc;
+                    path.connect(callback);
+                    manager.currPath.unwrap = path;
+                }
+            }
+            Player.updateMousedrag = updateMousedrag;
+
             function updateMousemove(x, y) {
-                if (state == 0 /* Move */) {
-                    var oldPath = manager.currPath.unwrap;
-                    var newPath = new Controllers.AstarPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.stats.ap);
-                    if (!oldPath || newPath.pointer.x != oldPath.pointer.x || newPath.pointer.y != oldPath.pointer.y) {
-                        manager.currPath.unwrap = newPath;
-                    }
-                } else if (state == 1 /* Attack */) {
-                    var oPath = manager.currPath.unwrap;
-                    var nPath = new Controllers.StraightPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.equipment.rightWeapon.maxRange);
-                    if (!oPath || nPath.pointer.x != oPath.pointer.x || nPath.pointer.y != oPath.pointer.y) {
-                        manager.currPath.unwrap = nPath;
-                    }
+                if (state == 2 /* Inactive */)
+                    return;
+                var path = manager.currPath.unwrap;
+
+                if (x != path.pointer.x || y != path.pointer.y) {
+                    path.disconnect();
+
+                    path.pointer = { x: x, y: y };
+                    manager.currPath.unwrap = path;
                 }
             }
             Player.updateMousemove = updateMousemove;
@@ -1229,13 +1263,13 @@ var Rouge;
                         break;
                     case "VK_1":
                         state = 0 /* Move */;
-                        manager.currPath.unwrap = null;
-                        console.log("char: " + state);
+                        var old = manager.currPath.unwrap;
+                        manager.currPath.unwrap = new Controllers.AstarPath(old.begin, null, char.stats.ap);
                         break;
                     case "VK_2":
                         state = 1 /* Attack */;
-                        manager.currPath.unwrap = null;
-                        console.log("char: " + state);
+                        var old = manager.currPath.unwrap;
+                        manager.currPath.unwrap = new Controllers.StraightPath(old.begin, null, char.currWeapon.maxRange);
                         break;
                     default:
                         break;
@@ -1281,11 +1315,12 @@ var Rouge;
                 if (location.y > lvl.map._height - 1)
                     location.y = lvl.map._height - 1;
 
-                if (state == 0 /* Move */)
-                    manager.currPath.unwrap = new Controllers.AstarPath(callback, oldPath.begin, location, char.stats.ap);
-                else if (state == 1 /* Attack */)
-                    manager.currPath.unwrap = new Controllers.StraightPath(callback, oldPath.begin, location, char.equipment.rightWeapon.maxRange);
-                else
+                var path = manager.currPath.unwrap;
+                if (state == 0 /* Move */ || state == 1 /* Attack */) {
+                    path.pointer = location;
+                    path.connect(callback);
+                    manager.currPath.unwrap = path;
+                } else
                     throw ("Unimplemented state!");
             }
 
@@ -1299,19 +1334,26 @@ var Rouge;
 
             function confirm() {
                 var path = manager.currPath.unwrap;
+                var ptr = { x: path.pointer.x, y: path.pointer.y };
+
                 switch (state) {
                     case 0 /* Move */:
-                        char.nextAction = function () {
-                            var limited = path.trim();
-                            char.x = limited._nodes[path.limitedNodes().length - 1].x;
-                            char.y = limited._nodes[path.limitedNodes().length - 1].y;
-                            char.stats.ap -= limited.cost();
-                            manager.currPath.unwrap = new Controllers.AstarPath(callback, { x: char.x, y: char.y });
+                        if (char.stats.ap > 1) {
+                            char.nextAction = function () {
+                                var limited = path.trim();
+                                char.x = limited._nodes[path.limitedNodes().length - 1].x;
+                                char.y = limited._nodes[path.limitedNodes().length - 1].y;
+                                char.stats.ap -= limited.cost();
+                                manager.currPath.unwrap = new Controllers.AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
 
-                            if (!char.hasAP()) {
-                                state = 2 /* Inactive */;
-                            }
-                        };
+                                if (!char.hasAP()) {
+                                    state = 2 /* Inactive */;
+                                }
+                            };
+                        } else {
+                            con.addLine("You need at least 2 AP to move! Ending turn...");
+                            endTurn();
+                        }
                         break;
                     case 1 /* Attack */:
                         char.nextAction = function () {
@@ -1321,16 +1363,18 @@ var Rouge;
                             var targets = lvl.entities.filter(function (entity) {
                                 return entity.x === limited.pointer.x && entity.y === limited.pointer.y;
                             });
-                            if (targets[0] && char.stats.ap >= char.equipment.rightWeapon.apCost) {
-                                char.stats.ap -= char.equipment.rightWeapon.apCost;
-                                char.equipment.rightWeapon.setDurability(char.equipment.rightWeapon.durability - 1);
+                            if (targets[0] && char.stats.ap >= char.currWeapon.apCost) {
+                                char.stats.ap -= char.currWeapon.apCost;
+                                char.currWeapon.setDurability(char.currWeapon.durability - 1);
                                 result = targets[0].getStruck(char.getAttack());
                                 con.addLine(result.attacker.name + " hit " + result.defender.name + " for " + result.finalDmg + " damage! - Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) + "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) + "+" + result.defender.skills.evasion.value + " - Armor rolls: " + result.armorRolls.toString() + " -");
-                            } else if (char.stats.ap < char.equipment.rightWeapon.apCost) {
-                                con.addLine("You need " + char.equipment.rightWeapon.apCost + " AP to attack with a " + char.equipment.rightWeapon.name + "!");
+                            } else if (char.stats.ap < char.currWeapon.apCost) {
+                                con.addLine("You need " + char.currWeapon.apCost + " AP to attack with a " + char.currWeapon.name + "!");
                             }
 
-                            manager.currPath.unwrap = new Controllers.StraightPath(callback, { x: char.x, y: char.y }, { x: path._nodes[path._nodes.length - 1].x, y: path._nodes[path._nodes.length - 1].y });
+                            path.pointer = ptr;
+                            path.connect(callback);
+                            manager.currPath.unwrap = path;
                             if (!char.hasAP()) {
                                 state = 2 /* Inactive */;
                             }
@@ -1352,21 +1396,27 @@ var Rouge;
     (function (Controllers) {
         var StraightPath = (function (_super) {
             __extends(StraightPath, _super);
-            function StraightPath(passableFn, from, to, lengthInAP) {
+            function StraightPath(from, to, lengthInAP) {
                 _super.call(this);
                 this._lengthInAP = lengthInAP;
                 this.begin = from;
+                this._nodes.push(from);
+                this._costs.push(0);
 
                 if (to) {
-                    this.createPath(passableFn, from, to);
-                    this.updateCosts();
                     this.pointer = to;
                 } else {
-                    this._nodes.push(from);
-                    this._costs.push(0);
                     this.pointer = from;
                 }
             }
+            StraightPath.prototype.connect = function (passableFn) {
+                this._nodes.length = 0;
+                this._costs.length = 0;
+
+                this.createPath(passableFn, this.begin, this.pointer);
+                this.updateCosts();
+            };
+
             StraightPath.prototype.createPath = function (passableFn, from, to) {
                 var _this = this;
                 var last = from;
@@ -1437,11 +1487,6 @@ var Rouge;
         })(Dungeon.MapTypes || (Dungeon.MapTypes = {}));
         var MapTypes = Dungeon.MapTypes;
 
-        (function (ItemTypes) {
-            ItemTypes[ItemTypes["Weapon"] = 0] = "Weapon";
-        })(Dungeon.ItemTypes || (Dungeon.ItemTypes = {}));
-        var ItemTypes = Dungeon.ItemTypes;
-
         function createMap(type) {
             var map;
 
@@ -1477,7 +1522,10 @@ var Rouge;
 (function (Rouge) {
     (function (Dungeon) {
         var ItemObject = (function () {
-            function ItemObject() {
+            function ItemObject(item, x, y) {
+                this._x = x;
+                this._y = y;
+                this.item = item;
             }
             Object.defineProperty(ItemObject.prototype, "x", {
                 get: function () {
@@ -1501,11 +1549,15 @@ var Rouge;
                 configurable: true
             });
 
-            ItemObject.prototype.isPassable = function () {
-                return true;
-            };
+            Object.defineProperty(ItemObject.prototype, "isPassable", {
+                get: function () {
+                    return true;
+                },
+                enumerable: true,
+                configurable: true
+            });
 
-            ItemObject.prototype.use = function () {
+            ItemObject.prototype.pick = function () {
                 return this.item;
             };
             return ItemObject;
@@ -1522,6 +1574,7 @@ var Rouge;
                 this.scheduler = new ROT.Scheduler.Action();
                 this.map = Dungeon.createMap(type);
                 this.entities = new Array();
+                this.items = new Array();
             }
             return Level;
         })();
@@ -1726,34 +1779,104 @@ var Rouge;
     (function (Entities) {
         var Equipment = (function () {
             function Equipment() {
-                this.noWeaponSlots = false;
-                this.leftWeapon = Rouge.Items.Weapon.None;
-                this.rightWeapon = Rouge.Items.Weapon.None;
+                this.mainHand = Rouge.Items.Weapon.None;
+                this.offHand = Rouge.Items.Weapon.None;
             }
-            Equipment.prototype.equipWeapon = function (weapon, slot) {
-                if (this.noWeaponSlots)
-                    throw ("Can't equip weapons!");
-                switch (slot) {
-                    case 0 /* Left */:
-                        this.leftWeapon = weapon;
+            Equipment.prototype.equipWeapon = function (weapon, offHand) {
+                var removed = new Array();
+                switch (weapon.type) {
+                    case 1 /* Offhand */:
+                        if (this.mainHand.type != 2 /* Twohanded */)
+                            removed.push(this.offHand);
+                        this.offHand = weapon;
                         break;
-                    case 1 /* Right */:
-                        this.rightWeapon = weapon;
+                    case 3 /* Ranged */:
+                        removed.push(this.ranged);
+                        this.ranged = weapon;
+                        break;
+                    case 2 /* Twohanded */:
+                        removed.push(this.mainHand);
+                        if (this.offHand != Rouge.Items.Weapon.None)
+                            removed.push(this.offHand);
+                        this.mainHand = weapon;
+                        break;
+                    case 0 /* Normal */:
+                        if (!offHand) {
+                            removed.push(this.mainHand);
+                            this.mainHand = weapon;
+                        } else {
+                            removed.push(this.offHand);
+                            this.offHand = weapon;
+                        }
                         break;
                 }
-                return this;
+                return removed;
             };
 
             Equipment.prototype.unequipWeapon = function (slot) {
                 var removed = Rouge.Items.Weapon.None;
                 switch (slot) {
-                    case 0 /* Left */:
-                        removed = this.leftWeapon;
-                        this.leftWeapon = Rouge.Items.Weapon.None;
+                    case "mainhand":
+                        removed = this.mainHand;
+                        this.mainHand = Rouge.Items.Weapon.None;
                         break;
-                    case 1 /* Right */:
-                        removed = this.leftWeapon;
-                        this.rightWeapon = Rouge.Items.Weapon.None;
+                    case "offhand":
+                        removed = this.mainHand;
+                        this.offHand = Rouge.Items.Weapon.None;
+                        break;
+                    case "ranged":
+                        removed = this.ranged;
+                        this.ranged = Rouge.Items.Weapon.None;
+                        break;
+                }
+                return removed;
+            };
+
+            Equipment.prototype.equipArmor = function (piece) {
+                var removed = Rouge.Items.ArmorPiece.None;
+                switch (piece.type) {
+                    case 0 /* Head */:
+                        if (this.head !== Rouge.Items.ArmorPiece.None)
+                            removed = this.head;
+                        this.head = piece;
+                        break;
+                    case 2 /* Arms */:
+                        if (this.arms !== Rouge.Items.ArmorPiece.None)
+                            removed = this.arms;
+                        this.arms = piece;
+                        break;
+                    case 3 /* Body */:
+                        if (this.body !== Rouge.Items.ArmorPiece.None)
+                            removed = this.body;
+                        this.body = piece;
+                        break;
+                    case 1 /* Legs */:
+                        if (this.legs !== Rouge.Items.ArmorPiece.None)
+                            removed = this.legs;
+                        this.legs = piece;
+                        break;
+                }
+                return removed;
+            };
+
+            Equipment.prototype.unequipArmor = function (slot) {
+                var removed = Rouge.Items.ArmorPiece.None;
+                switch (slot) {
+                    case "head":
+                        removed = this.head;
+                        this.mainHand = Rouge.Items.Weapon.None;
+                        break;
+                    case "arms":
+                        removed = this.arms;
+                        this.offHand = Rouge.Items.Weapon.None;
+                        break;
+                    case "body":
+                        removed = this.body;
+                        this.ranged = Rouge.Items.Weapon.None;
+                        break;
+                    case "legs":
+                        removed = this.legs;
+                        this.ranged = Rouge.Items.Weapon.None;
                         break;
                 }
                 return removed;
@@ -1761,13 +1884,6 @@ var Rouge;
             return Equipment;
         })();
         Entities.Equipment = Equipment;
-
-        (function (WeaponSlots) {
-            WeaponSlots[WeaponSlots["Left"] = 0] = "Left";
-            WeaponSlots[WeaponSlots["Right"] = 1] = "Right";
-            WeaponSlots[WeaponSlots["Ranged"] = 2] = "Ranged";
-        })(Entities.WeaponSlots || (Entities.WeaponSlots = {}));
-        var WeaponSlots = Entities.WeaponSlots;
     })(Rouge.Entities || (Rouge.Entities = {}));
     var Entities = Rouge.Entities;
 })(Rouge || (Rouge = {}));
@@ -1801,7 +1917,7 @@ var Rouge;
             };
 
             PlayerChar.prototype.getAttack = function () {
-                return new Entities.Attack(this, this.equipment.rightWeapon.damage, this.equipment.rightWeapon.multiplier, this.skills.prowess);
+                return new Entities.Attack(this, this.currWeapon.damage, this.currWeapon.multiplier, this.skills.prowess);
             };
             return PlayerChar;
         })(Entities.Entity);
@@ -1902,7 +2018,112 @@ var Rouge;
     (function (Items) {
         var ArmorPiece = (function () {
             function ArmorPiece() {
+                this._toHit = 0;
+                this._toEvasion = 0;
+                this._toMinArmor = 0;
+                this._toMaxArmor = 0;
             }
+            Object.defineProperty(ArmorPiece.prototype, "name", {
+                get: function () {
+                    return this._name;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(ArmorPiece.prototype, "description", {
+                get: function () {
+                    return this._description;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(ArmorPiece.prototype, "type", {
+                get: function () {
+                    return this._type;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(ArmorPiece.prototype, "durability", {
+                get: function () {
+                    return this._durability;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(ArmorPiece.prototype, "weight", {
+                get: function () {
+                    return this._weight;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(ArmorPiece.prototype, "toHit", {
+                get: function () {
+                    return this._toHit;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(ArmorPiece.prototype, "toEvasion", {
+                get: function () {
+                    return this._toEvasion;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(ArmorPiece.prototype, "toMinArmor", {
+                get: function () {
+                    return this._toMinArmor;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(ArmorPiece.prototype, "toMaxArmor", {
+                get: function () {
+                    return this._toMaxArmor;
+                },
+                enumerable: true,
+                configurable: true
+            });
+
+            ArmorPiece.prototype.setName = function (name) {
+                this._name = name;
+                return this;
+            };
+            ArmorPiece.prototype.setDescription = function (description) {
+                this._description = description;
+                return this;
+            };
+
+            ArmorPiece.prototype.setType = function (type) {
+                this._type = type;
+                return this;
+            };
+
+            ArmorPiece.prototype.setDurability = function (amount) {
+                this._durability = amount;
+                return this;
+            };
+
+            ArmorPiece.prototype.setWeight = function (amount) {
+                this._weight = amount;
+                return this;
+            };
+
+            ArmorPiece.prototype.setArmor = function (min, max) {
+                this._toMinArmor = min;
+                this._toMaxArmor = max;
+                return this;
+            };
+
+            ArmorPiece.prototype.setBonuses = function (hit, evasion) {
+                this._toHit = hit;
+                this._toEvasion = evasion;
+                return this;
+            };
+
+            ArmorPiece.None = new ArmorPiece().setName("none");
             return ArmorPiece;
         })();
         Items.ArmorPiece = ArmorPiece;
@@ -1925,72 +2146,103 @@ var Rouge;
 (function (Rouge) {
     (function (Items) {
         (function (Weapons) {
-            Weapons[Weapons["None"] = 0] = "None";
-            Weapons[Weapons["Dagger"] = 1] = "Dagger";
-            Weapons[Weapons["ShortSword"] = 2] = "ShortSword";
-            Weapons[Weapons["Broadsword"] = 3] = "Broadsword";
-            Weapons[Weapons["Mace"] = 4] = "Mace";
-            Weapons[Weapons["HandAxe"] = 5] = "HandAxe";
-            Weapons[Weapons["BattleAxe"] = 6] = "BattleAxe";
-            Weapons[Weapons["Spear"] = 7] = "Spear";
-            Weapons[Weapons["Pike"] = 8] = "Pike";
-            Weapons[Weapons["Mattock"] = 9] = "Mattock";
-            Weapons[Weapons["Maul"] = 10] = "Maul";
-            Weapons[Weapons["Greataxe"] = 11] = "Greataxe";
-            Weapons[Weapons["LongSword"] = 12] = "LongSword";
-            Weapons[Weapons["Halberd"] = 13] = "Halberd";
-            Weapons[Weapons["RoundShield"] = 14] = "RoundShield";
-            Weapons[Weapons["TowerShield"] = 15] = "TowerShield";
+            Weapons[Weapons["Dagger"] = 0] = "Dagger";
+            Weapons[Weapons["ShortSword"] = 1] = "ShortSword";
+            Weapons[Weapons["Broadsword"] = 2] = "Broadsword";
+            Weapons[Weapons["Mace"] = 3] = "Mace";
+            Weapons[Weapons["HandAxe"] = 4] = "HandAxe";
+            Weapons[Weapons["BattleAxe"] = 5] = "BattleAxe";
+            Weapons[Weapons["Spear"] = 6] = "Spear";
+            Weapons[Weapons["Pike"] = 7] = "Pike";
+            Weapons[Weapons["Mattock"] = 8] = "Mattock";
+            Weapons[Weapons["Maul"] = 9] = "Maul";
+            Weapons[Weapons["Greataxe"] = 10] = "Greataxe";
+            Weapons[Weapons["LongSword"] = 11] = "LongSword";
+            Weapons[Weapons["Halberd"] = 12] = "Halberd";
+            Weapons[Weapons["RoundShield"] = 13] = "RoundShield";
+            Weapons[Weapons["TowerShield"] = 14] = "TowerShield";
         })(Items.Weapons || (Items.Weapons = {}));
         var Weapons = Items.Weapons;
 
-        function getWeapon(type) {
+        (function (Armors) {
+            Armors[Armors["Coat"] = 0] = "Coat";
+            Armors[Armors["LeatherArmor"] = 1] = "LeatherArmor";
+            Armors[Armors["MailShirt"] = 2] = "MailShirt";
+            Armors[Armors["Hauberk"] = 3] = "Hauberk";
+            Armors[Armors["Lamellar"] = 4] = "Lamellar";
+            Armors[Armors["Gloves"] = 5] = "Gloves";
+            Armors[Armors["Gauntlets"] = 6] = "Gauntlets";
+            Armors[Armors["Hat"] = 7] = "Hat";
+            Armors[Armors["Helmet"] = 8] = "Helmet";
+            Armors[Armors["FullHelm"] = 9] = "FullHelm";
+            Armors[Armors["Boots"] = 10] = "Boots";
+            Armors[Armors["Greaves"] = 11] = "Greaves";
+        })(Items.Armors || (Items.Armors = {}));
+        var Armors = Items.Armors;
+
+        (function (WeaponTypes) {
+            WeaponTypes[WeaponTypes["Normal"] = 0] = "Normal";
+            WeaponTypes[WeaponTypes["Offhand"] = 1] = "Offhand";
+            WeaponTypes[WeaponTypes["Twohanded"] = 2] = "Twohanded";
+            WeaponTypes[WeaponTypes["Ranged"] = 3] = "Ranged";
+        })(Items.WeaponTypes || (Items.WeaponTypes = {}));
+        var WeaponTypes = Items.WeaponTypes;
+
+        (function (ArmorTypes) {
+            ArmorTypes[ArmorTypes["Head"] = 0] = "Head";
+            ArmorTypes[ArmorTypes["Legs"] = 1] = "Legs";
+            ArmorTypes[ArmorTypes["Arms"] = 2] = "Arms";
+            ArmorTypes[ArmorTypes["Body"] = 3] = "Body";
+        })(Items.ArmorTypes || (Items.ArmorTypes = {}));
+        var ArmorTypes = Items.ArmorTypes;
+
+        function getWeapon(which) {
             var weapon;
-            switch (type) {
-                case 1 /* Dagger */:
-                    weapon = new Items.Weapon().setName("dagger").setDamage(4, 4).setRange(0, 2).setCost(2).setDurability(50).setBonuses(0, 1, 0, 0);
+            switch (which) {
+                case 0 /* Dagger */:
+                    weapon = new Items.Weapon().setName("dagger").setType(0 /* Normal */).setDamage(4, 4).setRange(0, 2).setCost(2).setDurability(50).setBonuses(0, 1, 0, 0);
                     break;
-                case 2 /* ShortSword */:
-                    weapon = new Items.Weapon().setName("short sword").setDamage(4, 6).setRange(0, 2).setDurability(40).setCost(3);
+                case 1 /* ShortSword */:
+                    weapon = new Items.Weapon().setName("short sword").setType(0 /* Normal */).setDamage(4, 6).setRange(0, 2).setDurability(40).setCost(3);
                     break;
-                case 3 /* Broadsword */:
-                    weapon = new Items.Weapon().setName("broadsword").setDamage(3, 7).setRange(2, 3).setDurability(30).setCost(3);
+                case 2 /* Broadsword */:
+                    weapon = new Items.Weapon().setName("broadsword").setType(0 /* Normal */).setDamage(3, 7).setRange(2, 3).setDurability(30).setCost(3);
                     break;
-                case 4 /* Mace */:
-                    weapon = new Items.Weapon().setName("mace").setDamage(1, 15).setRange(2, 3).setDurability(45).setCost(3);
+                case 3 /* Mace */:
+                    weapon = new Items.Weapon().setName("mace").setType(0 /* Normal */).setDamage(1, 15).setRange(2, 3).setDurability(45).setCost(3);
                     break;
-                case 5 /* HandAxe */:
-                    weapon = new Items.Weapon().setName("hand axe").setDamage(3, 7).setRange(0, 2).setDurability(30).setCost(3);
+                case 4 /* HandAxe */:
+                    weapon = new Items.Weapon().setName("hand axe").setType(0 /* Normal */).setDamage(3, 7).setRange(0, 2).setDurability(30).setCost(3);
                     break;
-                case 6 /* BattleAxe */:
-                    weapon = new Items.Weapon().setName("battle axe").setDamage(2, 8).setRange(2, 3).setDurability(30).setCost(3);
+                case 5 /* BattleAxe */:
+                    weapon = new Items.Weapon().setName("battle axe").setType(0 /* Normal */).setDamage(2, 8).setRange(2, 3).setDurability(30).setCost(3);
                     break;
-                case 9 /* Mattock */:
-                    weapon = new Items.Weapon().setName("mattock").setDamage(1, 14).setRange(2, 3).setCost(3).setDurability(30).setBonuses(-2, 0, 0, 0);
+                case 8 /* Mattock */:
+                    weapon = new Items.Weapon().setName("mattock").setType(0 /* Normal */).setDamage(1, 14).setRange(2, 3).setCost(3).setDurability(30).setBonuses(-2, 0, 0, 0);
                     break;
-                case 7 /* Spear */:
-                    weapon = new Items.Weapon().setName("spear").setDamage(2, 7).setRange(3, 5).setDurability(45).setCost(3);
+                case 6 /* Spear */:
+                    weapon = new Items.Weapon().setName("spear").setType(0 /* Normal */).setDamage(2, 7).setRange(3, 5).setDurability(45).setCost(3);
                     break;
-                case 8 /* Pike */:
-                    weapon = new Items.Weapon().setName("pike").setDamage(2, 10).setRange(4, 7).setCost(4).setDurability(30).setDurability(45).setTwohanded();
+                case 7 /* Pike */:
+                    weapon = new Items.Weapon().setName("pike").setType(2 /* Twohanded */).setDamage(2, 10).setRange(4, 7).setCost(4).setDurability(45);
                     break;
-                case 13 /* Halberd */:
-                    weapon = new Items.Weapon().setName("halberd").setDamage(2, 11).setRange(3, 5).setCost(4).setDurability(30).setTwohanded();
+                case 12 /* Halberd */:
+                    weapon = new Items.Weapon().setName("halberd").setType(2 /* Twohanded */).setDamage(2, 11).setRange(3, 5).setCost(4).setDurability(30);
                     break;
-                case 10 /* Maul */:
-                    weapon = new Items.Weapon().setName("maul").setDamage(1, 25).setRange(2, 3).setCost(5).setDurability(45).setTwohanded();
+                case 9 /* Maul */:
+                    weapon = new Items.Weapon().setName("maul").setType(2 /* Twohanded */).setDamage(1, 25).setRange(2, 3).setCost(5).setDurability(45);
                     break;
-                case 11 /* Greataxe */:
-                    weapon = new Items.Weapon().setName("great axe").setDamage(2, 12).setRange(3, 4).setCost(4).setDurability(30).setTwohanded();
+                case 10 /* Greataxe */:
+                    weapon = new Items.Weapon().setName("great axe").setType(2 /* Twohanded */).setDamage(2, 12).setRange(3, 4).setCost(4).setDurability(30);
                     break;
-                case 12 /* LongSword */:
-                    weapon = new Items.Weapon().setName("long sword").setDamage(3, 9).setRange(2, 4).setCost(4).setDurability(30).setTwohanded();
+                case 11 /* LongSword */:
+                    weapon = new Items.Weapon().setName("long sword").setType(2 /* Twohanded */).setDamage(3, 9).setRange(2, 4).setCost(4).setDurability(30);
                     break;
-                case 14 /* RoundShield */:
-                    weapon = new Items.Weapon().setName("round shield").setDamage(3, 5).setRange(2, 2).setCost(3).setDurability(60).setBonuses(0, 4, 1, 2);
+                case 13 /* RoundShield */:
+                    weapon = new Items.Weapon().setName("round shield").setType(1 /* Offhand */).setDamage(3, 5).setRange(2, 2).setCost(3).setDurability(60).setBonuses(0, 4, 1, 2);
                     break;
-                case 15 /* TowerShield */:
-                    weapon = new Items.Weapon().setName("tower shield").setDamage(3, 6).setRange(2, 2).setCost(4).setDurability(80).setBonuses(-2, 4, 2, 3);
+                case 14 /* TowerShield */:
+                    weapon = new Items.Weapon().setName("tower shield").setType(1 /* Offhand */).setDamage(3, 6).setRange(2, 2).setCost(4).setDurability(80).setBonuses(-2, 4, 2, 3);
                     break;
                 default:
                     weapon = Items.Weapon.None;
@@ -1999,6 +2251,50 @@ var Rouge;
             return weapon;
         }
         Items.getWeapon = getWeapon;
+
+        function getArmor(which) {
+            var piece;
+            switch (which) {
+                case 0 /* Coat */:
+                    piece = new Items.ArmorPiece().setName("wool coat").setType(3 /* Body */).setArmor(0, 2).setBonuses(0, 2).setDurability(70);
+                    break;
+                case 1 /* LeatherArmor */:
+                    piece = new Items.ArmorPiece().setName("leather armor").setType(3 /* Body */).setArmor(0, 4).setBonuses(0, 1).setDurability(90);
+                    break;
+                case 2 /* MailShirt */:
+                    piece = new Items.ArmorPiece().setName("mail shirt").setType(3 /* Body */).setArmor(1, 4).setBonuses(0, 0).setDurability(100);
+                    break;
+                case 3 /* Hauberk */:
+                    piece = new Items.ArmorPiece().setName("mail hauberk").setType(3 /* Body */).setArmor(2, 5).setBonuses(0, 0).setDurability(120);
+                    break;
+                case 4 /* Lamellar */:
+                    piece = new Items.ArmorPiece().setName("lamellar armour").setType(3 /* Body */).setArmor(3, 6).setBonuses(-1, -1).setDurability(90);
+                    break;
+                case 5 /* Gloves */:
+                    piece = new Items.ArmorPiece().setName("leather gloves").setType(2 /* Arms */).setArmor(0, 1).setBonuses(0, 1).setDurability(70);
+                    break;
+                case 6 /* Gauntlets */:
+                    piece = new Items.ArmorPiece().setName("mail gauntlets").setType(2 /* Arms */).setArmor(1, 2).setBonuses(-1, 0).setDurability(90);
+                    break;
+                case 10 /* Boots */:
+                    piece = new Items.ArmorPiece().setName("leather boots").setType(1 /* Legs */).setArmor(0, 1).setBonuses(0, 1).setDurability(70);
+                    break;
+                case 11 /* Greaves */:
+                    piece = new Items.ArmorPiece().setName("greaves").setType(1 /* Legs */).setArmor(1, 2).setBonuses(0, 0).setDurability(90);
+                    break;
+                case 7 /* Hat */:
+                    piece = new Items.ArmorPiece().setName("leather hat").setType(0 /* Head */).setArmor(0, 1).setBonuses(0, 0).setDurability(70);
+                    break;
+                case 8 /* Helmet */:
+                    piece = new Items.ArmorPiece().setName("helmet").setType(0 /* Head */).setArmor(1, 1).setBonuses(0, 0).setDurability(100);
+                    break;
+                case 9 /* FullHelm */:
+                    piece = new Items.ArmorPiece().setName("full helm").setType(0 /* Head */).setArmor(2, 3).setBonuses(-2, 0).setDurability(120);
+                    break;
+            }
+            return piece;
+        }
+        Items.getArmor = getArmor;
     })(Rouge.Items || (Rouge.Items = {}));
     var Items = Rouge.Items;
 })(Rouge || (Rouge = {}));
@@ -2007,7 +2303,6 @@ var Rouge;
     (function (Items) {
         var Weapon = (function () {
             function Weapon() {
-                this._twoHand = false;
                 this._toHit = 0;
                 this._toEvasion = 0;
                 this._toMinArmor = 0;
@@ -2016,6 +2311,20 @@ var Rouge;
             Object.defineProperty(Weapon.prototype, "name", {
                 get: function () {
                     return this._name;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Weapon.prototype, "description", {
+                get: function () {
+                    return this._description;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Weapon.prototype, "type", {
+                get: function () {
+                    return this._type;
                 },
                 enumerable: true,
                 configurable: true
@@ -2062,9 +2371,9 @@ var Rouge;
                 enumerable: true,
                 configurable: true
             });
-            Object.defineProperty(Weapon.prototype, "twoHanded", {
+            Object.defineProperty(Weapon.prototype, "weight", {
                 get: function () {
-                    return this._twoHand;
+                    return this._weight;
                 },
                 enumerable: true,
                 configurable: true
@@ -2108,6 +2417,15 @@ var Rouge;
                 this._name = name;
                 return this;
             };
+            Weapon.prototype.setDescription = function (description) {
+                this._description = description;
+                return this;
+            };
+
+            Weapon.prototype.setType = function (type) {
+                this._type = type;
+                return this;
+            };
 
             Weapon.prototype.setRange = function (min, max) {
                 this._minRange = min;
@@ -2125,8 +2443,8 @@ var Rouge;
                 return this;
             };
 
-            Weapon.prototype.setTwohanded = function () {
-                this._twoHand = true;
+            Weapon.prototype.setWeight = function (amount) {
+                this._weight = amount;
                 return this;
             };
 
@@ -2211,5 +2529,17 @@ var Rouge;
         return Const;
     })();
     Rouge.Const = Const;
+
+    (function (Direction) {
+        Direction[Direction["North"] = 0] = "North";
+        Direction[Direction["South"] = 1] = "South";
+        Direction[Direction["West"] = 2] = "West";
+        Direction[Direction["East"] = 3] = "East";
+        Direction[Direction["Northwest"] = 4] = "Northwest";
+        Direction[Direction["Northeast"] = 5] = "Northeast";
+        Direction[Direction["Southwest"] = 6] = "Southwest";
+        Direction[Direction["Southeast"] = 7] = "Southeast";
+    })(Rouge.Direction || (Rouge.Direction = {}));
+    var Direction = Rouge.Direction;
 })(Rouge || (Rouge = {}));
 //# sourceMappingURL=game.js.map

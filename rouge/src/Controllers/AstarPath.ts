@@ -5,25 +5,31 @@ module Rouge.Controllers {
 
         _astar: ROT.IPath;
 
-        constructor(passableFn: (x: number, y: number) => boolean, from: ILocation, to?: ILocation, lengthInAP?: number) {
+        constructor(from: ILocation, to?: ILocation, lengthInAP?: number) {
             super();
             this._lengthInAP = lengthInAP;
             this.begin = from;
+            this._nodes.push(from);
+            this._costs.push(0);
 
-            if (to) {
-                this._astar = new ROT.Path.AStar(to.x, to.y, passableFn, { topology: 4 });
-                this._astar.compute(from.x, from.y, (x, y) => {
-                    this._nodes.push({ x: x, y: y });
-                });
-                //this.fixPath(passableFn);
-                this.updateCosts();
+            if (to) {               
                 this.pointer = to;
             }
             else {
-                this._nodes.push(from);
-                this._costs.push(0);
                 this.pointer = from;
             }
+        }
+
+        connect(passableFn: (x: number, y: number) => boolean) {
+            this._nodes.length = 0;
+            this._costs.length = 0;
+
+            this._astar = new ROT.Path.AStar(this.pointer.x, this.pointer.y, passableFn, { topology: 4 });
+            this._astar.compute(this.begin.x, this.begin.y, (x, y) => {
+                this._nodes.push({ x: x, y: y });
+            });
+            //this.fixPath(passableFn);
+            this.updateCosts();
 
             if (!passableFn(this.pointer.x, this.pointer.y)) {
                 this._nodes.pop();

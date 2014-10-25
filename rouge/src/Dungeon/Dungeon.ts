@@ -7,10 +7,6 @@
         Tutorial
     }
 
-    export enum ItemTypes {
-        Weapon
-    }
-
     export function createMap(type: MapTypes): ROT.IMap {
         var map;
 

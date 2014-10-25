@@ -5,7 +5,12 @@
         private _x: number;
         private _y: number;
         item: IItem;
-        type: ItemTypes;
+
+        constructor(item: IItem, x: number, y: number) {
+            this._x = x;
+            this._y = y;
+            this.item = item;
+        }
 
         get x(): number {
             return this._x;
@@ -21,9 +26,9 @@
             this._y = value;
         }
 
-        isPassable(): boolean { return true }
+        get isPassable(): boolean { return true }
 
-        use(): IItem {
+        pick(): IItem {
             return this.item;
         }
     }

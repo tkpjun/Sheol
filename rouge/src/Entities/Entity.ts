@@ -3,6 +3,7 @@
     export class Entity implements IEntity {
 
         name: string;
+        description: string;
         stats: Statset;
         skills: Skillset;
         traits: Trait[];

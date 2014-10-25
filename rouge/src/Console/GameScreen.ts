@@ -40,7 +40,7 @@
         advanceFrame() {
             this.manager.engine.lock();
 
-            this.camera.updateView(this.manager.level, this.manager.characters);
+            this.camera.updateView(this.manager.level);
             var matrix = new DrawMatrix(0, 0, null, Const.DisplayWidth, Const.DisplayHeight)
                 .addOverlay(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap))
                 .addOverlay(this.console.getMatrix(this.camera.width))
@@ -49,10 +49,10 @@
                 .addOverlay(GameUI.getRightBar(
                     this.manager.level.scheduler,
                     this.manager.currEntity.unwrap,
-                    (<Array<IEntity>>this.manager.characters).concat(this.manager.level.entities.filter((e) => {
+                    this.manager.level.entities.filter((e) => {
                             return this.camera.sees(e.x, e.y);
                         }))
-                    ))
+                    )
                 .addOverlay(GameUI.getBottomBar())
             this.nextFrame.unwrap = matrix;        
 
@@ -61,6 +61,11 @@
 
         acceptMousedown(tileX: number, tileY: number) {
             Controllers.Player.updateClick(tileX - this.camera.xOffset + this.camera.x,
+                tileY - this.camera.yOffset + this.camera.y);
+        }
+
+        acceptMousedrag(tileX: number, tileY: number) {
+            Controllers.Player.updateMousedrag(tileX - this.camera.xOffset + this.camera.x,
                 tileY - this.camera.yOffset + this.camera.y);
         }
 

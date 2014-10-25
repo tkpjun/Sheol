@@ -10,6 +10,17 @@
         }
     }
 
+    export enum Direction {
+        North,
+        South,
+        West,
+        East,
+        Northwest,
+        Northeast,
+        Southwest,
+        Southeast
+    }
+
     export interface ILocation {
         x: number
         y: number
@@ -17,6 +28,7 @@
 
     export interface IEntity{
         name: string;
+        description: string;
         x: number;
         y: number;
         //getStruck(attack: Entities.Attack): Entities.AttackResult;
@@ -28,12 +40,13 @@
     export interface IObject {
         x: number;
         y: number;
-        isPassable(): boolean;
-        use(): any;
+        isPassable: boolean;
+        pick(): any;
     }
 
     export interface IItem {
         name: string;
+        description: string;
     }
 
     export interface IConsole {

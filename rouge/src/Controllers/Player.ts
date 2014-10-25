@@ -1,10 +1,4 @@
-﻿module Rouge.Controllers.Player {
-
-    enum States {
-        Move,
-        Attack,
-        Inactive
-    }
+﻿module Rouge.Controllers.Player { 
 
     var char: Entities.PlayerChar;
     var lvl: Dungeon.Level;
@@ -16,21 +10,17 @@
     export function initialize(console: IConsole, entityManager: EntityManager) {
         manager = entityManager;
         con = console;
-        callback = (x, y) => {
-            return Controllers.isPassable({ x: x, y: y }, manager.level);
-        }
     }
 
     export function activate(character: Entities.PlayerChar) {
         if (state == States.Inactive) {
             char = character;
+            callback = (x, y) => {
+                return Controllers.isPassable(char, { x: x, y: y }, manager.level);
+            }
             lvl = manager.level;
             state = States.Move;
-            /*
-            callback = (x, y, from: Controllers.ILocation) => {
-                return Controllers.isPassable({ x: x, y: y }, manager.level, from);
-            }*/
-            manager.currPath.unwrap = new AstarPath(callback, { x: char.x, y: char.y });
+            manager.currPath.unwrap = new AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
         }
     }
 
@@ -38,39 +28,40 @@
         if (state == States.Inactive) return;
 
         var path = manager.currPath.unwrap;
-        if (path && x == path.pointer.x && y == path.pointer.y) {
+        if (path && path.isConnected() && x == path.pointer.x && y == path.pointer.y) {
             confirm();
         }  
-        else if (state == States.Move) {
-            var oldPath = manager.currPath.unwrap;
-            var newPath = new AstarPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.stats.ap);
-            if (!oldPath || newPath.pointer.x != oldPath.pointer.x || newPath.pointer.y != oldPath.pointer.y) {
-                manager.currPath.unwrap = newPath;
-            }
-        }
-        else if (state == States.Attack) {
-            var oPath = manager.currPath.unwrap;
-            var nPath = new StraightPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.equipment.rightWeapon.maxRange);
-            if (!oPath || nPath.pointer.x != oPath.pointer.x || nPath.pointer.y != oPath.pointer.y) {
-                manager.currPath.unwrap = nPath;
-            }
+        else if (state == States.Move || state == States.Attack) {
+            var newLoc = { x: x, y: y };
+            //if (newLoc.x != path.pointer.x || newLoc.y != path.pointer.y) {
+            path.pointer = newLoc;
+            path.connect(callback);
+            manager.currPath.unwrap = path;
+            //}
         }
     }
 
+    export function updateMousedrag(x: number, y: number) {
+        if (state == States.Inactive) return;
+        var path = manager.currPath.unwrap;
+
+        var newLoc = { x: x, y: y };
+        if (newLoc.x != path.pointer.x || newLoc.y != path.pointer.y) {
+            path.pointer = newLoc;
+            path.connect(callback);
+            manager.currPath.unwrap = path;
+        }        
+    }
+
     export function updateMousemove(x: number, y: number) {
-        if (state == States.Move) {
-            var oldPath = manager.currPath.unwrap;
-            var newPath = new AstarPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.stats.ap);
-            if (!oldPath || newPath.pointer.x != oldPath.pointer.x || newPath.pointer.y != oldPath.pointer.y) {
-                manager.currPath.unwrap = newPath;
-            }
-        }
-        else if (state == States.Attack) {
-            var oPath = manager.currPath.unwrap;
-            var nPath = new StraightPath(callback, { x: char.x, y: char.y }, { x: x, y: y }, char.equipment.rightWeapon.maxRange);
-            if (!oPath || nPath.pointer.x != oPath.pointer.x || nPath.pointer.y != oPath.pointer.y) {
-                manager.currPath.unwrap = nPath;
-            }
+        if (state == States.Inactive) return;
+        var path = manager.currPath.unwrap;
+
+        if (x != path.pointer.x || y != path.pointer.y) {
+            path.disconnect();
+
+            path.pointer = { x: x, y: y };
+            manager.currPath.unwrap = path;
         }
     }
 
@@ -110,13 +101,13 @@
                 break;
             case "VK_1":
                 state = States.Move;
-                manager.currPath.unwrap = null;
-                console.log("char: " + state);
+                var old = manager.currPath.unwrap;
+                manager.currPath.unwrap = new AstarPath(old.begin, null, char.stats.ap);
                 break;
             case "VK_2":
                 state = States.Attack;
-                manager.currPath.unwrap = null;
-                console.log("char: " + state);
+                var old = manager.currPath.unwrap;
+                manager.currPath.unwrap = new StraightPath(old.begin, null, char.currWeapon.maxRange);
                 break;
             default:
                 break;
@@ -158,10 +149,12 @@
         if (location.x > lvl.map._width - 1) location.x = lvl.map._width - 1;
         if (location.y > lvl.map._height - 1) location.y = lvl.map._height - 1;
 
-        if (state == States.Move)
-            manager.currPath.unwrap = new AstarPath(callback, oldPath.begin, location, char.stats.ap);
-        else if (state == States.Attack)
-            manager.currPath.unwrap = new StraightPath(callback, oldPath.begin, location, char.equipment.rightWeapon.maxRange);
+        var path = manager.currPath.unwrap;
+        if (state == States.Move || state == States.Attack) {
+            path.pointer = location;
+            path.connect(callback);
+            manager.currPath.unwrap = path;
+        }
         else
             throw ("Unimplemented state!");
     }
@@ -176,18 +169,26 @@
 
     function confirm() {
         var path = manager.currPath.unwrap;
+        var ptr = { x: path.pointer.x, y: path.pointer.y };
+
         switch (state){
             case States.Move:
-                char.nextAction = () => {
-                    var limited = path.trim();
-                    char.x = limited._nodes[path.limitedNodes().length - 1].x;
-                    char.y = limited._nodes[path.limitedNodes().length - 1].y;
-                    char.stats.ap -= limited.cost();
-                    manager.currPath.unwrap = new AstarPath(callback, { x: char.x, y: char.y });
+                if (char.stats.ap > 1) {
+                    char.nextAction = () => {
+                        var limited = path.trim();
+                        char.x = limited._nodes[path.limitedNodes().length - 1].x;
+                        char.y = limited._nodes[path.limitedNodes().length - 1].y;
+                        char.stats.ap -= limited.cost();
+                        manager.currPath.unwrap = new AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
 
-                    if (!char.hasAP()) {
-                        state = States.Inactive;
+                        if (!char.hasAP()) {
+                            state = States.Inactive;
+                        }
                     }
+                }
+                else {
+                    con.addLine("You need at least 2 AP to move! Ending turn...");
+                    endTurn();
                 }
                 break;
             case States.Attack:
@@ -198,22 +199,22 @@
                     var targets = lvl.entities.filter((entity) => {
                         return entity.x === limited.pointer.x && entity.y === limited.pointer.y;
                     });
-                    if (targets[0] && char.stats.ap >= char.equipment.rightWeapon.apCost) {
-                        char.stats.ap -= char.equipment.rightWeapon.apCost;
-                        char.equipment.rightWeapon.setDurability(char.equipment.rightWeapon.durability - 1);
+                    if (targets[0] && char.stats.ap >= char.currWeapon.apCost) {
+                        char.stats.ap -= char.currWeapon.apCost;
+                        char.currWeapon.setDurability(char.currWeapon.durability - 1);
                         result = (<Entities.Entity>targets[0]).getStruck(char.getAttack());
                         con.addLine(result.attacker.name + " hit " + result.defender.name + " for " +
                             result.finalDmg + " damage! - Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) +
                             "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) +
                             "+" + result.defender.skills.evasion.value + " - Armor rolls: " + result.armorRolls.toString() + " -");
                     }
-                    else if (char.stats.ap < char.equipment.rightWeapon.apCost) {
-                        con.addLine("You need " + char.equipment.rightWeapon.apCost + " AP to attack with a " + char.equipment.rightWeapon.name + "!")
+                    else if (char.stats.ap < char.currWeapon.apCost) {
+                        con.addLine("You need " + char.currWeapon.apCost + " AP to attack with a " + char.currWeapon.name + "!")
                     }
 
-                    manager.currPath.unwrap = new StraightPath(callback,
-                        { x: char.x, y: char.y },
-                        { x: path._nodes[path._nodes.length - 1].x, y: path._nodes[path._nodes.length - 1].y });
+                    path.pointer = ptr;
+                    path.connect(callback);
+                    manager.currPath.unwrap = path;
                     if (!char.hasAP()) {
                         state = States.Inactive;
                     }

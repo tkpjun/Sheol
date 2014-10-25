@@ -18,6 +18,19 @@
             return this._costs.reduce((x, y) => x+y);
         }
 
+        connect(passableFn: (x: number, y: number) => boolean) {
+            throw ("Abstract!");
+        }
+
+        disconnect() {
+            this._nodes.length = 1;
+            this._costs.length = 1;
+        }
+
+        isConnected(): boolean {
+            return this._nodes.length > 1;
+        }
+
         limitedNodes(): Array<ILocation> {
             if (this._lengthInAP) {
                 var arr = new Array<ILocation>();

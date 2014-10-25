@@ -1,19 +1,16 @@
 ﻿module Rouge.Controllers {
 
-    export enum Direction {
-        North, 
-        South,
-        West,
-        East,
-        Northwest,
-        Northeast,
-        Southwest,
-        Southeast
+    export enum States {
+        Move,
+        Attack,
+        Inactive
     }
 
-    export function isPassable(loc: ILocation, level: Dungeon.Level, from?: ILocation): boolean {
+    export function isPassable(user: IEntity, loc: ILocation, level: Dungeon.Level, from?: ILocation): boolean {
         if (loc.x < 1 || loc.y < 1 || loc.x > level.map._width - 2 || loc.y > level.map._height - 2)
             return false;
+        if (loc.x == user.x && loc.y == user.y)
+            return true;
 
         var cell = level.map[loc.x + "," + loc.y];
         

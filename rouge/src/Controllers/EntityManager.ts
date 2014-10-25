@@ -33,7 +33,8 @@
             var rooms = (<ROT.Map.Dungeon>this.level.map).getRooms()
             var room = rooms[0];
             var player1 = new Entities.PlayerChar("char1");
-            player1.equipment.equipWeapon(Items.getWeapon(Items.Weapons.Mace), Entities.WeaponSlots.Right);
+            player1.equipment.equipWeapon(Items.getWeapon(Items.Weapons.Mace));
+            player1.currWeapon = player1.equipment.mainHand;
             player1.x = room.getCenter()[0];
             player1.y = room.getCenter()[1];
             this.characters.push(player1);
@@ -41,12 +42,15 @@
                 new Controllers.ChangeProperty(this.currEntity, player1), true, 1);
 
             var player2 = new Entities.PlayerChar("char2");
-            player2.equipment.equipWeapon(Items.getWeapon(Items.Weapons.Spear), Entities.WeaponSlots.Right);
+            player2.equipment.equipWeapon(Items.getWeapon(Items.Weapons.Spear));
+            player2.currWeapon = player2.equipment.mainHand;
             player2.x = room.getCenter()[0] + 1;
             player2.y = room.getCenter()[1];
             this.characters.push(player2);
             this.level.scheduler.add(
                 new Controllers.ChangeProperty(this.currEntity, player2), true, 1.5);
+
+            this.characters.forEach((c) => { this.level.entities.push(c) });
 
             for (var i = 0; i < rooms.length; i++){
                 if (i % 6 != 0) continue;

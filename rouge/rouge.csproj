@@ -35,6 +35,7 @@
     <TypeScriptCompile Include="src\Console\MainMenuScreen.ts" />
     <TypeScriptCompile Include="src\Console\TextBox.ts" />
     <TypeScriptCompile Include="src\Controllers\AstarPath.ts" />
+    <TypeScriptCompile Include="src\Controllers\BasicAI.ts" />
     <TypeScriptCompile Include="src\Controllers\Path.ts" />
     <TypeScriptCompile Include="src\Controllers\Player.ts" />
     <TypeScriptCompile Include="src\Controllers\StraightPath.ts" />
