@@ -4,7 +4,6 @@ module Common.Entities {
     export class PlayerChar extends Entity {
 
         equipment: Equipment;
-        currWeapon: Items.Weapon;
         effects: any;
         _hasTurn: boolean;
 

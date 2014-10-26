@@ -1,4 +1,5 @@
-﻿module ConsoleGame.GameUI {
+﻿/// <reference path="../Common/Common.ts" />
+module ConsoleGame.GameUI {
     import Ent = Common.Entities;
     import Cont = Common.Controllers;
     import C = Common;

@@ -1,4 +1,5 @@
-﻿module ConsoleGame {
+﻿/// <reference path="../Common/Common.ts" />
+module ConsoleGame {
     import Dungeon = Common.Dungeon;
     import Entities = Common.Entities;
     import C = Common;

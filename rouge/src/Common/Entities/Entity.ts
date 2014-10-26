@@ -12,6 +12,7 @@
         private _y: number;
         private action: () => void;
         dir: IVector2;
+        currWeapon: Items.Weapon;
 
         get x(): number {
             return this._x;

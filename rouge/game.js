@@ -510,18 +510,26 @@ var Common;
                         }
                         break;
                     case 1 /* Attack */:
-                        char.nextAction = function () {
-                            var limited = path.trim();
-                            var result;
+                        var limited = path.trim();
+                        var result;
+                        var targets = [];
+                        var index = 1;
 
-                            var targets = lvl.entities.filter(function (entity) {
-                                return entity.x === limited.pointer.x && entity.y === limited.pointer.y;
+                        while (!targets[0]) {
+                            if (index >= limited._nodes.length)
+                                break;
+
+                            targets = lvl.entities.filter(function (entity) {
+                                return entity.x === limited._nodes[index].x && entity.y === limited._nodes[index].y;
                             });
+                            index += 1;
+                        }
+                        char.nextAction = function () {
                             if (targets[0] && char.stats.ap >= char.currWeapon.apCost) {
                                 char.stats.ap -= char.currWeapon.apCost;
                                 char.currWeapon.setDurability(char.currWeapon.durability - 1);
                                 result = targets[0].getStruck(char.getAttack());
-                                con.addLine(result.attacker.name + " hit " + result.defender.name + " for " + result.finalDmg + " damage! - Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) + "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) + "+" + result.defender.skills.evasion.value + " - Armor rolls: " + result.armorRolls.toString() + " -");
+                                con.addLine(result.attacker.name + " hit " + result.defender.name + " with a " + result.attacker.currWeapon.name + " for " + result.finalDmg + " damage! - Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) + "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) + "+" + result.defender.skills.evasion.value + " - Armor rolls: " + result.armorRolls.toString() + " -");
                             } else if (char.stats.ap < char.currWeapon.apCost) {
                                 con.addLine("You need " + char.currWeapon.apCost + " AP to attack with a " + char.currWeapon.name + "!");
                             }
@@ -1758,6 +1766,7 @@ var Common;
     })();
     Common.Vec = Vec;
 })(Common || (Common = {}));
+/// <reference path="../Common/Common.ts" />
 var ConsoleGame;
 (function (ConsoleGame) {
     var Camera = (function () {
@@ -1861,6 +1870,8 @@ var ConsoleGame;
     })();
     ConsoleGame.Camera = Camera;
 })(ConsoleGame || (ConsoleGame = {}));
+/// <reference path="../Common/Common.ts" />
+/// <reference path="../Common/Dungeon/Dungeon.ts" />
 var ConsoleGame;
 (function (ConsoleGame) {
     var Entities = Common.Entities;
@@ -2010,8 +2021,8 @@ var ConsoleGame;
                     ConsoleGame.Settings.DisplayWidth = _this.display.getOptions().width;
                     _this.gameScreen.camera.width = ConsoleGame.Settings.DisplayWidth - ConsoleGame.Settings.SidebarWidth * 2;
                     _this.gameScreen.manager.changed.notify();
-                    console.log((window.innerWidth / window.innerHeight).toFixed(2));
-                    console.log(_this.display.getOptions().width);
+                    //console.log((window.innerWidth / window.innerHeight).toFixed(2));
+                    //console.log(this.display.getOptions().width);
                 };
                 window.onresize = resize;
                 resize();
@@ -2033,6 +2044,7 @@ var ConsoleGame;
 window.onload = function () {
     document.getElementById("content").appendChild(new ConsoleGame.Core.Game().display.getContainer());
 };
+/// <reference path="../Common/Common.ts" />
 var ConsoleGame;
 (function (ConsoleGame) {
     var DrawMatrix = (function () {
@@ -2185,6 +2197,7 @@ var ConsoleGame;
     })();
     ConsoleGame.DrawMatrix = DrawMatrix;
 })(ConsoleGame || (ConsoleGame = {}));
+/// <reference path="../Common/Common.ts" />
 var ConsoleGame;
 (function (ConsoleGame) {
     var Dungeon = Common.Dungeon;
@@ -2254,6 +2267,7 @@ var ConsoleGame;
 })(ConsoleGame || (ConsoleGame = {}));
 var ConsoleGame;
 (function (ConsoleGame) {
+    /// <reference path="../Common/Common.ts" />
     (function (GameUI) {
         var Cont = Common.Controllers;
 
