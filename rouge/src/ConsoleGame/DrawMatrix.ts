@@ -1,4 +1,4 @@
-﻿/// <reference path="../Common/Common.ts" />
+﻿/// <reference path="../Common/Controllers/Controllers.ts" />
 module ConsoleGame {
     import Controllers = Common.Controllers;
 

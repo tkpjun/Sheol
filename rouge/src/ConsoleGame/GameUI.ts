@@ -1,36 +1,60 @@
 ﻿/// <reference path="../Common/Common.ts" />
+/// <reference path="../Common/Controllers/Controllers.ts" />
+/// <reference path="../Common/Entities/Entities.ts" />
 module ConsoleGame.GameUI {
-    import Ent = Common.Entities;
-    import Cont = Common.Controllers;
+    import Entitites = Common.Entities;
+    import Controllers = Common.Controllers;
     import C = Common;
 
     var color1 = "midnightblue";
     var color2 = "royalblue";
 
-    export function getLeftBar(characters: Array<Ent.PlayerChar>): DrawMatrix {
+    export function getLeftBar(characters: Array<Entitites.PlayerChar>): DrawMatrix {
         var p1 = characters[0];
         var p2 = characters[1];
         var w = Settings.SidebarWidth; //Limit for text wrapping
-        var matrix = new DrawMatrix(0, 0, null, w, 11);
+        var matrix = new DrawMatrix(0, 0, null, w, 23);
 
         for (var i = 0; i < Settings.SidebarWidth; i++) {
             matrix.matrix[i][0] = { symbol: " ", bgColor: color1 }
         }
         matrix.addString(4, 0, "LEVEL:1");
 
-        matrix.addString(1, 2, p1.name);
-        matrix.addString(1, 4, "HP: " + p1.stats.hp + "/" + p1.stats.hpMax);
-        matrix.addString(1, 5, "AP: " + p1.stats.ap + "/" + p1.stats.apMax);
+        matrix.addString(1, 1, "EXP:");
+        matrix.addString(1, 3, p1.name);
+        matrix.addString(1, 4, "Health:");
+        matrix.addString(10, 4, p1.stats.hp + "/" + p1.stats.hpMax);
+        matrix.addString(1, 5, "Actions:");
+        matrix.addString(10, 5, p1.stats.ap + "/" + p1.stats.apMax);
+        matrix.addString(1, 6, "Endur:");
+        matrix.addString(5, 7, "(+5, 1x15)");
+        matrix.addString(5, 8, "[+5, 0-0]");
 
-        matrix.addString(1, 7, p2.name);
-        matrix.addString(1, 9, "HP: " + p2.stats.hp + "/" + p2.stats.hpMax);
-        matrix.addString(1, 10, "AP: " + p2.stats.ap + "/" + p2.stats.apMax);
+        matrix.addString(1, 10, p2.name);
+        matrix.addString(1, 11, "Health:");
+        matrix.addString(10, 11, p2.stats.hp + "/" + p2.stats.hpMax);
+        matrix.addString(1, 12, "Actions:");
+        matrix.addString(10, 12, p2.stats.ap + "/" + p2.stats.apMax);
+        matrix.addString(1, 13, "Endur:");
+        matrix.addString(5, 14, "(+5, 3x7)");
+        matrix.addString(5, 15, "[+5, 0-0]");
+
+        /*
+        matrix.addString(1, 17, p2.name);
+        matrix.addString(1, 18, "Health:");
+        matrix.addString(10, 18, p2.stats.hp + "/" + p2.stats.hpMax);
+        matrix.addString(1, 19, "Actions:");
+        matrix.addString(10, 19, p2.stats.ap + "/" + p2.stats.apMax);
+        matrix.addString(1, 20, "Enur:");
+        matrix.addString(5, 21, "(+5, 3x7)");
+        matrix.addString(5, 22, "[+5, 0-0]");
+        */
 
         return matrix;
     }
 
     export function getRightBar(scheduler: ROT.Scheduler.Action,
-                                current: Ent.Entity,
+                                current: Entitites.Entity,
                                 seen: Array<C.IEntity>,
                                 baseTime?: number): DrawMatrix {
         var w = Settings.SidebarWidth;
@@ -46,10 +70,10 @@ module ConsoleGame.GameUI {
             both.push({ event: events[i], time: times[i] });
         }
         both = both.filter(obj => {
-            return obj.event instanceof Cont.ChangeProperty &&
-                seen.indexOf((<Cont.ChangeProperty<Ent.Entity>>obj.event).target) >= 0;
+            return obj.event instanceof Controllers.ChangeProperty &&
+                seen.indexOf((<Controllers.ChangeProperty<Entitites.Entity>>obj.event).target) >= 0;
         }).map(obj => {
-            return { entity: (<Cont.ChangeProperty<Ent.Entity>>obj.event).target, time: obj.time };
+            return { entity: (<Controllers.ChangeProperty<Entitites.Entity>>obj.event).target, time: obj.time };
         }).sort((obj1, obj2) => {
             return obj1.time - obj2.time;
         });

@@ -1767,6 +1767,8 @@ var Common;
     Common.Vec = Vec;
 })(Common || (Common = {}));
 /// <reference path="../Common/Common.ts" />
+/// <reference path="../Common/Dungeon/Dungeon.ts" />
+/// <reference path="../Common/Entities/Entities.ts" />
 var ConsoleGame;
 (function (ConsoleGame) {
     var Camera = (function () {
@@ -1871,7 +1873,7 @@ var ConsoleGame;
     ConsoleGame.Camera = Camera;
 })(ConsoleGame || (ConsoleGame = {}));
 /// <reference path="../Common/Common.ts" />
-/// <reference path="../Common/Dungeon/Dungeon.ts" />
+/// <reference path="../Common/Entities/Entities.ts" />
 var ConsoleGame;
 (function (ConsoleGame) {
     var Entities = Common.Entities;
@@ -2044,7 +2046,7 @@ var ConsoleGame;
 window.onload = function () {
     document.getElementById("content").appendChild(new ConsoleGame.Core.Game().display.getContainer());
 };
-/// <reference path="../Common/Common.ts" />
+/// <reference path="../Common/Controllers/Controllers.ts" />
 var ConsoleGame;
 (function (ConsoleGame) {
     var DrawMatrix = (function () {
@@ -2268,8 +2270,10 @@ var ConsoleGame;
 var ConsoleGame;
 (function (ConsoleGame) {
     /// <reference path="../Common/Common.ts" />
+    /// <reference path="../Common/Controllers/Controllers.ts" />
+    /// <reference path="../Common/Entities/Entities.ts" />
     (function (GameUI) {
-        var Cont = Common.Controllers;
+        var Controllers = Common.Controllers;
 
         var color1 = "midnightblue";
         var color2 = "royalblue";
@@ -2278,21 +2282,42 @@ var ConsoleGame;
             var p1 = characters[0];
             var p2 = characters[1];
             var w = ConsoleGame.Settings.SidebarWidth;
-            var matrix = new ConsoleGame.DrawMatrix(0, 0, null, w, 11);
+            var matrix = new ConsoleGame.DrawMatrix(0, 0, null, w, 23);
 
             for (var i = 0; i < ConsoleGame.Settings.SidebarWidth; i++) {
                 matrix.matrix[i][0] = { symbol: " ", bgColor: color1 };
             }
             matrix.addString(4, 0, "LEVEL:1");
 
-            matrix.addString(1, 2, p1.name);
-            matrix.addString(1, 4, "HP: " + p1.stats.hp + "/" + p1.stats.hpMax);
-            matrix.addString(1, 5, "AP: " + p1.stats.ap + "/" + p1.stats.apMax);
+            matrix.addString(1, 1, "EXP:");
+            matrix.addString(1, 3, p1.name);
+            matrix.addString(1, 4, "Health:");
+            matrix.addString(10, 4, p1.stats.hp + "/" + p1.stats.hpMax);
+            matrix.addString(1, 5, "Actions:");
+            matrix.addString(10, 5, p1.stats.ap + "/" + p1.stats.apMax);
+            matrix.addString(1, 6, "Endur:");
+            matrix.addString(5, 7, "(+5, 1x15)");
+            matrix.addString(5, 8, "[+5, 0-0]");
 
-            matrix.addString(1, 7, p2.name);
-            matrix.addString(1, 9, "HP: " + p2.stats.hp + "/" + p2.stats.hpMax);
-            matrix.addString(1, 10, "AP: " + p2.stats.ap + "/" + p2.stats.apMax);
+            matrix.addString(1, 10, p2.name);
+            matrix.addString(1, 11, "Health:");
+            matrix.addString(10, 11, p2.stats.hp + "/" + p2.stats.hpMax);
+            matrix.addString(1, 12, "Actions:");
+            matrix.addString(10, 12, p2.stats.ap + "/" + p2.stats.apMax);
+            matrix.addString(1, 13, "Endur:");
+            matrix.addString(5, 14, "(+5, 3x7)");
+            matrix.addString(5, 15, "[+5, 0-0]");
 
+            /*
+            matrix.addString(1, 17, p2.name);
+            matrix.addString(1, 18, "Health:");
+            matrix.addString(10, 18, p2.stats.hp + "/" + p2.stats.hpMax);
+            matrix.addString(1, 19, "Actions:");
+            matrix.addString(10, 19, p2.stats.ap + "/" + p2.stats.apMax);
+            matrix.addString(1, 20, "Enur:");
+            matrix.addString(5, 21, "(+5, 3x7)");
+            matrix.addString(5, 22, "[+5, 0-0]");
+            */
             return matrix;
         }
         GameUI.getLeftBar = getLeftBar;
@@ -2312,7 +2337,7 @@ var ConsoleGame;
                 both.push({ event: events[i], time: times[i] });
             }
             both = both.filter(function (obj) {
-                return obj.event instanceof Cont.ChangeProperty && seen.indexOf(obj.event.target) >= 0;
+                return obj.event instanceof Controllers.ChangeProperty && seen.indexOf(obj.event.target) >= 0;
             }).map(function (obj) {
                 return { entity: obj.event.target, time: obj.time };
             }).sort(function (obj1, obj2) {
