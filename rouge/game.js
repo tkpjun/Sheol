@@ -1,825 +1,5 @@
-﻿var Rouge;
-(function (Rouge) {
-    (function (Console) {
-        var Camera = (function () {
-            function Camera(xOffset, width, yOffset, height) {
-                this.width = width;
-                this.height = height;
-                this.xOffset = xOffset;
-                this.yOffset = yOffset;
-                this.x = 0;
-                this.y = 0;
-            }
-            Object.defineProperty(Camera.prototype, "view", {
-                get: function () {
-                    return this._view;
-                },
-                enumerable: true,
-                configurable: true
-            });
-
-            Camera.prototype.centerOn = function (x, y, level, players) {
-                this.x = Math.floor(x - this.width / 2) - 1;
-                if (y)
-                    this.y = Math.floor(y - this.height / 2) - 1;
-                if (level && players)
-                    this.updateView(level, players);
-            };
-
-            Camera.prototype.translate = function (x, y) {
-                this.x += x;
-                this.y += y;
-            };
-
-            Camera.prototype.updateView = function (level, entities) {
-                var map = this.getMapView(level.map);
-                if (entities)
-                    this._view = this.addEntities(map, entities);
-                else
-                    this._view = this.addEntities(map, level.entities);
-            };
-
-            Camera.prototype.sees = function (x, y) {
-                return x >= this.x && y >= this.y && x < this.x + this.width && y < this.y + this.height;
-            };
-
-            Camera.prototype.getMapView = function (map) {
-                var matrix = new Array();
-                for (var i = 0; i < this.width; i++) {
-                    matrix[i] = new Array();
-                    for (var j = 0; j < this.height; j++) {
-                        matrix[i][j] = { symbol: " " };
-                    }
-                }
-
-                for (var key in map) {
-                    var parts = key.split(",");
-                    var x = parseInt(parts[0]);
-                    var y = parseInt(parts[1]);
-
-                    if (isNaN(x) || isNaN(y)) {
-                        continue;
-                    }
-                    if (x < this.x || y < this.y || x > this.x + this.width - 1 || y > this.y + this.height - 1) {
-                        continue;
-                    }
-
-                    switch (map[key]) {
-                        case " ":
-                            matrix[x - this.x][y - this.y] = {
-                                symbol: map[key],
-                                color: "white",
-                                bgColor: "gray"
-                            };
-                            break;
-                        default:
-                            matrix[x - this.x][y - this.y] = {
-                                symbol: map[key],
-                                color: "white"
-                            };
-                            break;
-                    }
-                }
-                return new Console.DrawMatrix(this.xOffset, this.yOffset, matrix);
-            };
-
-            Camera.prototype.addEntities = function (matrix, entities) {
-                var _this = this;
-                entities.forEach(function (e) {
-                    //console.log(e);
-                    if (e.x < _this.x || e.y < _this.y || e.x > _this.x + _this.width - 1 || e.y > _this.y + _this.height - 1) {
-                    } else {
-                        matrix.matrix[e.x - _this.x][e.y - _this.y] = Console.getDrawable(e);
-                    }
-                });
-                return matrix;
-            };
-            return Camera;
-        })();
-        Console.Camera = Camera;
-    })(Rouge.Console || (Rouge.Console = {}));
-    var Console = Rouge.Console;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Console) {
-        var Const = (function () {
-            function Const() {
-            }
-            Object.defineProperty(Const, "SidebarWidth", {
-                get: function () {
-                    return 16;
-                },
-                enumerable: true,
-                configurable: true
-            });
-            Object.defineProperty(Const, "BottomBarHeight", {
-                get: function () {
-                    return 1;
-                },
-                enumerable: true,
-                configurable: true
-            });
-            Object.defineProperty(Const, "DisplayWidth", {
-                get: function () {
-                    return Const._displayWidth;
-                },
-                set: function (val) {
-                    Const._displayWidth = val;
-                },
-                enumerable: true,
-                configurable: true
-            });
-            Object.defineProperty(Const, "DisplayHeight", {
-                get: function () {
-                    return 34;
-                },
-                enumerable: true,
-                configurable: true
-            });
-            Object.defineProperty(Const, "CamXOffset", {
-                get: function () {
-                    return Const.SidebarWidth;
-                },
-                enumerable: true,
-                configurable: true
-            });
-            Object.defineProperty(Const, "CamYOffset", {
-                get: function () {
-                    return 0;
-                },
-                enumerable: true,
-                configurable: true
-            });
-            Object.defineProperty(Const, "CamWidth", {
-                get: function () {
-                    return Const.DisplayWidth - Const.SidebarWidth * 2;
-                },
-                enumerable: true,
-                configurable: true
-            });
-            Object.defineProperty(Const, "CamHeight", {
-                get: function () {
-                    return Const.DisplayHeight - Const.BottomBarHeight;
-                },
-                enumerable: true,
-                configurable: true
-            });
-            Const._displayWidth = 92;
-            return Const;
-        })();
-        Console.Const = Const;
-
-        function symbolO(item) {
-            throw ("TODO");
-        }
-        Console.symbolO = symbolO;
-
-        function colorO(item) {
-            throw ("TODO");
-        }
-        Console.colorO = colorO;
-
-        function symbolE(entity) {
-            throw ("TODO");
-        }
-        Console.symbolE = symbolE;
-
-        function colorE(entity) {
-            throw ("TODO");
-        }
-        Console.colorE = colorE;
-
-        function getDrawable(entity) {
-            if (entity instanceof Rouge.Entities.PlayerChar) {
-                return { symbol: "@" };
-            } else {
-                return { symbol: "e" };
-            }
-        }
-        Console.getDrawable = getDrawable;
-    })(Rouge.Console || (Rouge.Console = {}));
-    var Console = Rouge.Console;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Console) {
-        (function (Core) {
-            (function (Control) {
-                var lastDownTarget;
-                var lastMouseX = 0;
-                var lastMouseY = 0;
-                var mouseDown = false;
-
-                function init(game) {
-                    var display = game.display;
-                    var canvas = display.getContainer();
-
-                    document.addEventListener("mousedown", function (event) {
-                        mouseDown = true;
-                        lastDownTarget = event.target;
-                        if (lastDownTarget != canvas)
-                            return;
-
-                        var pos = display.eventToPosition(event);
-                        var x = pos[0];
-                        var y = pos[1];
-                        if (x >= 0 && y >= 1) {
-                            //console.log(x + "," + y);
-                            if (x >= Console.Const.CamXOffset && x < Console.Const.CamXOffset + Console.Const.CamWidth && y >= Console.Const.CamYOffset && y < Console.Const.CamYOffset + Console.Const.CamHeight) {
-                                game.gameScreen.acceptMousedown(x, y);
-                            }
-                        }
-                    }, false);
-
-                    document.addEventListener("mouseup", function (event) {
-                        mouseDown = false;
-                    }, false);
-
-                    document.addEventListener("mousemove", function (event) {
-                        if (lastDownTarget != canvas)
-                            return;
-                        if (Math.abs(event.x - lastMouseX) < 5 && Math.abs(event.y - lastMouseY) < 8)
-                            return;
-
-                        //console.log(event.x +","+ event.y)
-                        lastMouseX = event.x;
-                        lastMouseY = event.y;
-
-                        var pos = display.eventToPosition(event);
-                        var x = pos[0];
-                        var y = pos[1];
-                        if (x >= 0 && y >= 1) {
-                            if (x >= Console.Const.CamXOffset && x < Console.Const.CamXOffset + Console.Const.CamWidth && y >= Console.Const.CamYOffset && y < Console.Const.CamYOffset + Console.Const.CamHeight) {
-                                if (mouseDown) {
-                                    game.gameScreen.acceptMousedrag(x, y);
-                                } else {
-                                    game.gameScreen.acceptMousemove(x, y);
-                                }
-                            }
-                        }
-                    }, false);
-
-                    document.addEventListener("keydown", function (event) {
-                        if (lastDownTarget != canvas)
-                            return;
-
-                        var code = event.keyCode;
-                        var vk;
-                        for (var name in ROT) {
-                            if (ROT[name] == code && name.indexOf("VK_") == 0) {
-                                vk = name;
-                                break;
-                            }
-                        }
-                        game.gameScreen.acceptKeydown(vk);
-                    }, false);
-                    /*document.addEventListener("keypress", (event) => {
-                    if (lastDownTarget != canvas) return;
-                    
-                    var code = event.charCode;
-                    var ch = String.fromCharCode(code);
-                    
-                    //console.log("Keypress: char is " + ch);
-                    }, false);*/
-                }
-                Control.init = init;
-                ;
-            })(Core.Control || (Core.Control = {}));
-            var Control = Core.Control;
-        })(Console.Core || (Console.Core = {}));
-        var Core = Console.Core;
-    })(Rouge.Console || (Rouge.Console = {}));
-    var Console = Rouge.Console;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Console) {
-        (function (Core) {
-            var Game = (function () {
-                function Game() {
-                    var _this = this;
-                    this.display = new ROT.Display({ width: Console.Const.DisplayWidth, height: Console.Const.DisplayHeight });
-                    this.gameScreen = new Console.GameScreen();
-                    this.gameScreen.nextFrame.attach(function () {
-                        _this.draw(_this.gameScreen.nextFrame.unwrap);
-                    });
-                    this.screen = this.gameScreen;
-                    Core.Control.init(this);
-
-                    var resize = function () {
-                        var size = _this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight);
-                        _this.display.setOptions({ fontSize: size });
-
-                        while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) >= size) {
-                            _this.display.setOptions({ width: _this.display.getOptions().width + 1 });
-                        }
-                        while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) < size) {
-                            _this.display.setOptions({ width: _this.display.getOptions().width - 1 });
-                        }
-
-                        Console.Const.DisplayWidth = _this.display.getOptions().width;
-                        _this.gameScreen.camera.width = Console.Const.DisplayWidth - Console.Const.SidebarWidth * 2;
-                        _this.gameScreen.manager.changed.notify();
-                        console.log((window.innerWidth / window.innerHeight).toFixed(2));
-                        console.log(_this.display.getOptions().width);
-                    };
-                    window.onresize = resize;
-                    resize();
-                }
-                Game.prototype.draw = function (matrix) {
-                    this.display.clear();
-                    matrix.draw(this.display);
-                    //Eventual goal: the game logic should be a web worker,
-                    //with control sending string messages of DOM events to it
-                    //and it sending JSON:ed DrawMatrixes to this
-                };
-                return Game;
-            })();
-            Core.Game = Game;
-        })(Console.Core || (Console.Core = {}));
-        var Core = Console.Core;
-    })(Rouge.Console || (Rouge.Console = {}));
-    var Console = Rouge.Console;
-})(Rouge || (Rouge = {}));
-
-window.onload = function () {
-    document.getElementById("content").appendChild(new Rouge.Console.Core.Game().display.getContainer());
-};
-var Rouge;
-(function (Rouge) {
-    (function (Console) {
-        var DrawMatrix = (function () {
-            function DrawMatrix(xOffset, yOffset, matrix, width, height, bgColor) {
-                this.xOffset = xOffset;
-                this.yOffset = yOffset;
-
-                if (matrix) {
-                    this.matrix = matrix;
-                } else {
-                    this.matrix = new Array();
-                    for (var i = 0; i < width; i++) {
-                        this.matrix[i] = new Array();
-                        for (var j = 0; j < height; j++) {
-                            this.matrix[i][j] = { symbol: " ", bgColor: bgColor };
-                        }
-                    }
-                }
-            }
-            DrawMatrix.prototype.addString = function (x, y, str, wrapAt, color, bgColor) {
-                if (!str)
-                    return this;
-
-                var limit = this.matrix.length;
-                if (wrapAt) {
-                    limit = wrapAt;
-                }
-                var bgc;
-
-                for (var i = 0; i < str.length; i++) {
-                    if (this.matrix[i + x] && this.matrix[i + x][y]) {
-                        if (!bgColor)
-                            bgc = this.matrix[i + x][y].bgColor;
-                        else
-                            bgc = bgColor;
-                        this.matrix[i + x][y] = { symbol: str[i], color: color, bgColor: bgc };
-                    } else {
-                        //Add wrapping
-                    }
-                }
-                return this;
-            };
-
-            DrawMatrix.prototype.addPath = function (path, offsetX, offsetY, maxAP, excludeFirst, color) {
-                var _this = this;
-                if (!path)
-                    return this;
-
-                var nodes = path._nodes;
-                var limited = path.limitedNodes();
-                if (!color)
-                    color = "slateblue";
-                if (excludeFirst) {
-                    nodes.shift();
-                }
-                nodes.forEach(function (node) {
-                    if (_this.matrix[node.x - offsetX] && _this.matrix[node.x - offsetX][node.y - offsetY]) {
-                        var bg = _this.matrix[node.x - offsetX][node.y - offsetY].bgColor;
-                        if (!bg)
-                            bg = "black";
-                        _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString("purple"), 0.33)));
-                    }
-                });
-                limited.forEach(function (node) {
-                    if (_this.matrix[node.x - offsetX] && _this.matrix[node.x - offsetX][node.y - offsetY]) {
-                        var bg = _this.matrix[node.x - offsetX][node.y - offsetY].bgColor;
-                        if (!bg)
-                            bg = "black";
-                        _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString(color), 0.5)));
-                    }
-                });
-                var p = path.pointer;
-                if (this.matrix[p.x - offsetX] && this.matrix[p.x - offsetX][p.y - offsetY]) {
-                    var bg = this.matrix[p.x - offsetX][p.y - offsetY].bgColor;
-                    if (!bg)
-                        bg = "black";
-                    if (limited[limited.length - 1] && p.x == limited[limited.length - 1].x && p.y == limited[limited.length - 1].y)
-                        this.matrix[p.x - offsetX][p.y - offsetY].bgColor = color;
-                    else
-                        this.matrix[p.x - offsetX][p.y - offsetY].bgColor = "purple";
-                }
-                return this;
-            };
-
-            DrawMatrix.prototype.addOverlay = function (other) {
-                var newXOff = Math.min(this.xOffset, other.xOffset);
-                var newYOff = Math.min(this.yOffset, other.yOffset);
-
-                if (newXOff < this.xOffset) {
-                    var ext = new Array();
-                    for (var i = 0; i < newXOff - this.xOffset; i++) {
-                        ext[i] = new Array();
-                        for (var j = 0; j < this.matrix[0].length; j++) {
-                            ext[i][j] = { symbol: " " };
-                        }
-                    }
-                    this.matrix = ext.concat(this.matrix);
-                    this.xOffset = newXOff;
-                }
-                if (newYOff < this.yOffset) {
-                    for (var i = 0; i < this.matrix.length; i++) {
-                        var ext2 = new Array();
-                        for (var j = 0; j < newYOff - this.yOffset; j++) {
-                            ext2[j] = { symbol: " " };
-                        }
-                        this.matrix[i] = ext2.concat(this.matrix[i]);
-                    }
-                    this.yOffset = newYOff;
-                }
-
-                for (var i = 0; i < other.matrix.length; i++) {
-                    for (var j = 0; j < other.matrix[0].length; j++) {
-                        if (other.matrix[i][j].symbol && other.matrix[i][j].symbol !== " ") {
-                            this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].symbol = other.matrix[i][j].symbol;
-                            this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = other.matrix[i][j].color;
-                        } else {
-                            var c1 = this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color;
-                            var c2 = other.matrix[i][j].bgColor;
-                            if (!c1)
-                                c1 = "black";
-                            if (!c2)
-                                c2 = "black";
-                            this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(c1), ROT.Color.fromString(c2), 0.75)));
-                        }
-                        var bg1 = this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor;
-                        var bg2 = other.matrix[i][j].bgColor;
-                        if (!bg1)
-                            bg1 = "black";
-                        if (!bg2)
-                            bg2 = "black";
-
-                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg1), ROT.Color.fromString(bg2), 0.75)));
-                    }
-                }
-
-                return this;
-            };
-
-            DrawMatrix.prototype.draw = function (display) {
-                for (var i = 0; i < this.matrix.length; i++) {
-                    for (var j = 0; j < this.matrix[0].length; j++) {
-                        if (!this.matrix[i][j])
-                            continue;
-
-                        display.draw(i + this.xOffset, j + this.yOffset, this.matrix[i][j].symbol, this.matrix[i][j].color, this.matrix[i][j].bgColor);
-                    }
-                }
-            };
-            return DrawMatrix;
-        })();
-        Console.DrawMatrix = DrawMatrix;
-    })(Rouge.Console || (Rouge.Console = {}));
-    var Console = Rouge.Console;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Console) {
-        var GameScreen = (function () {
-            function GameScreen() {
-                var _this = this;
-                this.dungeon = new Array(new Rouge.Dungeon.Level(0 /* Mines */));
-                this.currLevel = 0;
-                this.manager = new Rouge.Controllers.EntityManager(this.dungeon[this.currLevel]);
-                this.nextFrame = new Rouge.ObservableProperty();
-                this.camera = new Console.Camera(Console.Const.SidebarWidth, Console.Const.DisplayWidth - Console.Const.SidebarWidth * 2, 0, Console.Const.DisplayHeight - Console.Const.BottomBarHeight);
-                this.console = new Console.TextBox(Console.Const.SidebarWidth, 0, 7);
-                Rouge.Controllers.Player.initialize(this.console, this.manager);
-
-                var update = function () {
-                    var middle = _this.manager.characters.map(function (c) {
-                        return c.x;
-                    }).reduce(function (x1, x2) {
-                        return x1 + x2;
-                    }) / _this.manager.characters.length;
-                    _this.camera.centerOn(middle);
-                    _this.advanceFrame();
-                };
-                this.manager.currEntity.attach(update);
-                this.manager.changed.attach(update);
-                this.manager.currPath.attach(function () {
-                    return _this.advanceFrame();
-                });
-                this.manager.start();
-                update();
-            }
-            GameScreen.prototype.advanceFrame = function () {
-                var _this = this;
-                this.manager.engine.lock();
-
-                this.camera.updateView(this.manager.level);
-                var matrix = new Console.DrawMatrix(0, 0, null, Console.Const.DisplayWidth, Console.Const.DisplayHeight).addOverlay(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap)).addOverlay(this.console.getMatrix(this.camera.width)).addOverlay(Console.GameUI.getLeftBar(this.manager.characters)).addOverlay(Console.GameUI.getDPad()).addOverlay(Console.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.unwrap, this.manager.level.entities.filter(function (e) {
-                    return _this.camera.sees(e.x, e.y);
-                }))).addOverlay(Console.GameUI.getBottomBar());
-                this.nextFrame.unwrap = matrix;
-
-                this.manager.engine.unlock();
-            };
-
-            GameScreen.prototype.acceptMousedown = function (tileX, tileY) {
-                Rouge.Controllers.Player.updateClick(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
-            };
-
-            GameScreen.prototype.acceptMousedrag = function (tileX, tileY) {
-                Rouge.Controllers.Player.updateMousedrag(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
-            };
-
-            GameScreen.prototype.acceptMousemove = function (tileX, tileY) {
-                Rouge.Controllers.Player.updateMousemove(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
-            };
-
-            GameScreen.prototype.acceptKeydown = function (keyCode) {
-                Rouge.Controllers.Player.update(keyCode);
-            };
-            return GameScreen;
-        })();
-        Console.GameScreen = GameScreen;
-    })(Rouge.Console || (Rouge.Console = {}));
-    var Console = Rouge.Console;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Console) {
-        (function (GameUI) {
-            var color1 = "midnightblue";
-            var color2 = "royalblue";
-
-            function getLeftBar(characters) {
-                var p1 = characters[0];
-                var p2 = characters[1];
-                var w = Console.Const.SidebarWidth;
-                var matrix = new Console.DrawMatrix(0, 0, null, w, 11);
-
-                for (var i = 0; i < Console.Const.SidebarWidth; i++) {
-                    matrix.matrix[i][0] = { symbol: " ", bgColor: color1 };
-                }
-                matrix.addString(4, 0, "LEVEL:1");
-
-                matrix.addString(1, 2, p1.name);
-                matrix.addString(1, 4, "HP: " + p1.stats.hp + "/" + p1.stats.hpMax);
-                matrix.addString(1, 5, "AP: " + p1.stats.ap + "/" + p1.stats.apMax);
-
-                matrix.addString(1, 7, p2.name);
-                matrix.addString(1, 9, "HP: " + p2.stats.hp + "/" + p2.stats.hpMax);
-                matrix.addString(1, 10, "AP: " + p2.stats.ap + "/" + p2.stats.apMax);
-
-                return matrix;
-            }
-            GameUI.getLeftBar = getLeftBar;
-
-            function getRightBar(scheduler, current, seen, baseTime) {
-                var w = Console.Const.SidebarWidth;
-                var wDisp = Console.Const.DisplayWidth;
-                var leftEdge = wDisp - w;
-                var matrix = new Console.DrawMatrix(leftEdge, 0, null, w, Console.Const.DisplayHeight - 2);
-                if (!baseTime)
-                    baseTime = 0;
-
-                var events = scheduler._queue._events;
-                var times = scheduler._queue._eventTimes;
-                var both = [];
-                for (var i = 0; i < events.length; i++) {
-                    both.push({ event: events[i], time: times[i] });
-                }
-                both = both.filter(function (obj) {
-                    return obj.event instanceof Rouge.Controllers.ChangeProperty && seen.indexOf(obj.event.target) >= 0;
-                }).map(function (obj) {
-                    return { entity: obj.event.target, time: obj.time };
-                }).sort(function (obj1, obj2) {
-                    return obj1.time - obj2.time;
-                });
-                both.unshift({ entity: current, time: baseTime });
-
-                for (var i = 0; i < Console.Const.SidebarWidth; i++) {
-                    matrix.matrix[i][0] = { symbol: " ", bgColor: color1 };
-                }
-                matrix.addString(5, 0, "QUEUE");
-                for (var i = 0; i < both.length && i < 9; i++) {
-                    var drawable = Console.getDrawable(both[i].entity);
-                    matrix.addString(1, i * 3 + 2, both[i].entity.name, Console.Const.SidebarWidth - 4);
-                    matrix.addString(1, i * 3 + 3, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Console.Const.SidebarWidth - 4);
-
-                    //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, "---");
-                    //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, "| |");
-                    if (i % 2 == 0) {
-                        matrix.addString(Console.Const.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, color2);
-                        matrix.addString(Console.Const.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color2);
-                    } else {
-                        matrix.addString(Console.Const.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, color1);
-                        matrix.addString(Console.Const.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color1);
-                    }
-
-                    //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 4, "---");
-                    if (both[i].time === 0) {
-                        matrix.addString(0, i * 3 + 1, "---  ready  ---", null, "green");
-                    } else {
-                        matrix.addString(0, i * 3 + 1, "--- +" + both[i].time.toFixed(2) + "tu ---", null, "red");
-                    }
-                }
-                matrix.addString(Console.Const.SidebarWidth - 7, 29, "space:");
-                matrix.addString(Console.Const.SidebarWidth - 7, 30, " END  ", null, null, color2);
-                matrix.addString(Console.Const.SidebarWidth - 7, 31, " TURN ", null, null, color2);
-
-                return matrix;
-            }
-            GameUI.getRightBar = getRightBar;
-
-            function getDPad() {
-                var w = Console.Const.SidebarWidth;
-                var hDisp = Console.Const.DisplayHeight;
-                var hThis = 10;
-                var matrix = new Console.DrawMatrix(0, hDisp - hThis - Console.Const.BottomBarHeight, null, w, hThis);
-
-                /*
-                matrix.addString(0, 0, "q--- w--- e---");
-                matrix.addString(0, 1, "|NW| | N| |NE|");
-                matrix.addString(0, 2, "---- ---- ----");
-                matrix.addString(0, 3, "a--- f--- d---");
-                matrix.addString(0, 4, "|W | PICK | E|");
-                matrix.addString(0, 5, "---- ---- ----");
-                matrix.addString(0, 6, "z--- x--- c---");
-                matrix.addString(0, 7, "|SW| |S | |SE|");
-                matrix.addString(0, 8, "---- ---- ----");*/
-                matrix.addString(1, 1, "    |    |    ");
-                matrix.addString(1, 2, "    |    |    ");
-                matrix.addString(1, 3, "----+----+----");
-                matrix.addString(1, 4, "    |    |    ");
-                matrix.addString(1, 5, "    |    |    ");
-                matrix.addString(1, 6, "----+----+----");
-                matrix.addString(1, 7, "    |    |    ");
-                matrix.addString(1, 8, "    |    |    ");
-                matrix.addString(1, 1, "q   ", null, null, color1);
-                matrix.addString(1, 2, " NW ", null, null, color1);
-                matrix.addString(6, 1, "w   ", null, null, color2);
-                matrix.addString(6, 2, "  N ", null, null, color2);
-                matrix.addString(11, 1, "e   ", null, null, color1);
-                matrix.addString(11, 2, " NE ", null, null, color1);
-                matrix.addString(1, 4, "a   ", null, null, color2);
-                matrix.addString(1, 5, " W  ", null, null, color2);
-                matrix.addString(6, 4, "f   ", null, null, color1);
-                matrix.addString(6, 5, "PICK", null, null, color1);
-                matrix.addString(11, 4, "d   ", null, null, color2);
-                matrix.addString(11, 5, "  E ", null, null, color2);
-                matrix.addString(1, 7, "z   ", null, null, color1);
-                matrix.addString(1, 8, " SW ", null, null, color1);
-                matrix.addString(6, 7, "x   ", null, null, color2);
-                matrix.addString(6, 8, " S  ", null, null, color2);
-                matrix.addString(11, 7, "c   ", null, null, color1);
-                matrix.addString(11, 8, " SE ", null, null, color1);
-
-                return matrix;
-            }
-            GameUI.getDPad = getDPad;
-
-            function getBottomBar() {
-                var matrix = new Console.DrawMatrix(0, Console.Const.DisplayHeight - Console.Const.BottomBarHeight, null, Console.Const.DisplayWidth, Console.Const.BottomBarHeight);
-
-                for (var i = 0; i < matrix.matrix.length; i++) {
-                    for (var j = 0; j < matrix.matrix[0].length; j++) {
-                        matrix.matrix[i][j] = { symbol: " ", bgColor: color1 };
-                    }
-                }
-                matrix.addString(1, 0, "1");
-                matrix.addString(2, 0, "  MOVE  ", null, null, color2);
-                matrix.addString(11, 0, "2");
-                matrix.addString(12, 0, " ATTACK ", null, null, color2);
-                matrix.addString(21, 0, "3");
-                matrix.addString(22, 0, " SPECIAL ", null, null, color2);
-                matrix.addString(32, 0, "4");
-                matrix.addString(33, 0, " SWITCH ", null, null, color2);
-
-                matrix.addString(Console.Const.DisplayWidth - 32, 0, "CON");
-                matrix.addString(Console.Const.DisplayWidth - 29, 0, " v ", null, null, color2);
-                matrix.addString(Console.Const.DisplayWidth - 25, 0, " ^ ", null, null, color2);
-                matrix.addString(Console.Const.DisplayWidth - 20, 0, "INVENTORY", null, null, color2);
-                matrix.addString(Console.Const.DisplayWidth - 9, 0, "  MENU  ", null, null, color2);
-
-                return matrix;
-            }
-            GameUI.getBottomBar = getBottomBar;
-        })(Console.GameUI || (Console.GameUI = {}));
-        var GameUI = Console.GameUI;
-    })(Rouge.Console || (Rouge.Console = {}));
-    var Console = Rouge.Console;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Console) {
-        var MainMenuScreen = (function () {
-            function MainMenuScreen() {
-            }
-            return MainMenuScreen;
-        })();
-        Console.MainMenuScreen = MainMenuScreen;
-    })(Rouge.Console || (Rouge.Console = {}));
-    var Console = Rouge.Console;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    (function (Console) {
-        var TextBox = (function () {
-            function TextBox(x, y, height) {
-                this.x = x;
-                this.y = y;
-                this.height = height;
-                this.lines = new Array();
-            }
-            TextBox.prototype.addLine = function (line) {
-                this.lines.push(line);
-                if (this.lines.length > 50) {
-                    this.lines.splice(0, 25);
-                }
-                return this;
-            };
-
-            TextBox.prototype.getMatrix = function (width) {
-                var matrix = new Console.DrawMatrix(this.x, this.y, null, width, this.height);
-                var used = 0;
-                var index = this.lines.length - 1;
-
-                while (used < this.height && index >= 0) {
-                    var nextLine = this.lines[index];
-
-                    if (nextLine.length > width - 2) {
-                        var split = this.breakIntoLines(nextLine, width - 2);
-
-                        matrix.addString(1, this.height - used - 1, split[1], width - 1);
-                        used += 1;
-                        if (used >= this.height)
-                            break;
-                        else {
-                            matrix.addString(1, this.height - used - 1, split[0], width - 1);
-                            used += 1;
-                        }
-                    } else {
-                        matrix.addString(1, this.height - used - 1, nextLine, width - 1);
-                        used += 1;
-                    }
-                    index -= 1;
-                }
-                return matrix;
-            };
-
-            TextBox.prototype.breakIntoLines = function (str, limit) {
-                var arr = new Array();
-
-                var words = str.split(" ");
-                var i = 1;
-                var next = words[i];
-                var lt = words[0].length;
-                arr[0] = words[0];
-                while (next && lt + next.length + 1 < limit) {
-                    lt += next.length + 1;
-                    arr[0] += " " + next;
-                    i += 1;
-                    next = words[i];
-                }
-                arr[1] = words[i];
-                i += 1;
-                while (i < words.length) {
-                    arr[1] += " " + words[i];
-                    i += 1;
-                }
-
-                return arr;
-            };
-            return TextBox;
-        })();
-        Console.TextBox = TextBox;
-    })(Rouge.Console || (Rouge.Console = {}));
-    var Console = Rouge.Console;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+﻿var Common;
+(function (Common) {
     (function (Controllers) {
         var Path = (function () {
             function Path() {
@@ -898,17 +78,17 @@ var Rouge;
             return Path;
         })();
         Controllers.Path = Path;
-    })(Rouge.Controllers || (Rouge.Controllers = {}));
-    var Controllers = Rouge.Controllers;
-})(Rouge || (Rouge = {}));
+    })(Common.Controllers || (Common.Controllers = {}));
+    var Controllers = Common.Controllers;
+})(Common || (Common = {}));
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var Rouge;
-(function (Rouge) {
+var Common;
+(function (Common) {
     ///<reference path="Path.ts"/>
     (function (Controllers) {
         var AstarPath = (function (_super) {
@@ -947,11 +127,11 @@ var Rouge;
             return AstarPath;
         })(Controllers.Path);
         Controllers.AstarPath = AstarPath;
-    })(Rouge.Controllers || (Rouge.Controllers = {}));
-    var Controllers = Rouge.Controllers;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Controllers || (Common.Controllers = {}));
+    var Controllers = Common.Controllers;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Controllers) {
         (function (BasicAI) {
             var char;
@@ -962,11 +142,11 @@ var Rouge;
             var callback;
         })(Controllers.BasicAI || (Controllers.BasicAI = {}));
         var BasicAI = Controllers.BasicAI;
-    })(Rouge.Controllers || (Rouge.Controllers = {}));
-    var Controllers = Rouge.Controllers;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Controllers || (Common.Controllers = {}));
+    var Controllers = Common.Controllers;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Controllers) {
         var ChangeProperty = (function () {
             function ChangeProperty(which, to) {
@@ -981,11 +161,11 @@ var Rouge;
             return ChangeProperty;
         })();
         Controllers.ChangeProperty = ChangeProperty;
-    })(Rouge.Controllers || (Rouge.Controllers = {}));
-    var Controllers = Rouge.Controllers;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Controllers || (Common.Controllers = {}));
+    var Controllers = Common.Controllers;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Controllers) {
         (function (States) {
             States[States["Move"] = 0] = "Move";
@@ -1036,9 +216,9 @@ var Rouge;
         Controllers.diagonal = diagonal;
 
         function planAction(entity, manager) {
-            if (entity instanceof Rouge.Entities.PlayerChar) {
+            if (entity instanceof Common.Entities.PlayerChar) {
                 Controllers.Player.activate(entity);
-            } else if (entity instanceof Rouge.Entities.Enemy) {
+            } else if (entity instanceof Common.Entities.Enemy) {
                 var enemy = entity;
                 enemy.nextAction = function () {
                     enemy.stats.ap = 2;
@@ -1047,23 +227,23 @@ var Rouge;
             }
         }
         Controllers.planAction = planAction;
-    })(Rouge.Controllers || (Rouge.Controllers = {}));
-    var Controllers = Rouge.Controllers;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Controllers || (Common.Controllers = {}));
+    var Controllers = Common.Controllers;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Controllers) {
         var EntityManager = (function () {
             function EntityManager(level) {
                 var _this = this;
                 this.level = level;
-                this.currEntity = new Rouge.ObservableProperty();
+                this.currEntity = new Common.ObservableProperty();
                 this.currEntity.attach(function () {
                     return _this.update();
                 });
-                this.currPath = new Rouge.ObservableProperty();
+                this.currPath = new Common.ObservableProperty();
                 this.engine = new ROT.Engine(this.level.scheduler);
-                this.changed = new Rouge.Observable();
+                this.changed = new Common.Observable();
                 this.characters = new Array();
 
                 this.init();
@@ -1080,16 +260,16 @@ var Rouge;
                 var _this = this;
                 var rooms = this.level.map.getRooms();
                 var room = rooms[0];
-                var player1 = new Rouge.Entities.PlayerChar("char1");
-                player1.equipment.equipWeapon(Rouge.Items.getWeapon(3 /* Mace */));
+                var player1 = new Common.Entities.PlayerChar("char1");
+                player1.equipment.equipWeapon(Common.Items.getWeapon(3 /* Mace */));
                 player1.currWeapon = player1.equipment.mainHand;
                 player1.x = room.getCenter()[0];
                 player1.y = room.getCenter()[1];
                 this.characters.push(player1);
                 this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player1), true, 1);
 
-                var player2 = new Rouge.Entities.PlayerChar("char2");
-                player2.equipment.equipWeapon(Rouge.Items.getWeapon(6 /* Spear */));
+                var player2 = new Common.Entities.PlayerChar("char2");
+                player2.equipment.equipWeapon(Common.Items.getWeapon(6 /* Spear */));
                 player2.currWeapon = player2.equipment.mainHand;
                 player2.x = room.getCenter()[0] + 1;
                 player2.y = room.getCenter()[1];
@@ -1104,7 +284,7 @@ var Rouge;
                     if (i % 6 != 0)
                         continue;
 
-                    var enemy = Rouge.Entities.getEnemy("debug" + i / 6);
+                    var enemy = Common.Entities.getEnemy("debug" + i / 6);
                     enemy.x = rooms[i].getLeft();
                     enemy.y = rooms[i].getBottom();
 
@@ -1129,7 +309,7 @@ var Rouge;
                     }
 
                     if (entity.hasAP() && entity.hasTurn()) {
-                        setTimeout(pollForAction, Rouge.Const.UPDATE_RATE);
+                        setTimeout(pollForAction, Common.Settings.UpdateRate);
                     } else {
                         _this.level.scheduler.setDuration(Math.max(0.5, 1 - (entity.stats.ap / entity.stats.apMax)));
                         entity.newTurn();
@@ -1138,7 +318,7 @@ var Rouge;
                         var unlock = function () {
                             _this.engine.unlock();
                         };
-                        setTimeout(unlock, Rouge.Const.UPDATE_RATE * 4);
+                        setTimeout(unlock, Common.Settings.UpdateRate * 4);
                     }
                 };
                 pollForAction();
@@ -1146,11 +326,11 @@ var Rouge;
             return EntityManager;
         })();
         Controllers.EntityManager = EntityManager;
-    })(Rouge.Controllers || (Rouge.Controllers = {}));
-    var Controllers = Rouge.Controllers;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Controllers || (Common.Controllers = {}));
+    var Controllers = Common.Controllers;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Controllers) {
         (function (Player) {
             var char;
@@ -1232,28 +412,28 @@ var Rouge;
 
                 switch (key) {
                     case "VK_Q":
-                        alterPath(4 /* Northwest */);
+                        alterPath(Common.Vec.Northwest);
                         break;
                     case "VK_W":
-                        alterPath(0 /* North */);
+                        alterPath(Common.Vec.North);
                         break;
                     case "VK_E":
-                        alterPath(5 /* Northeast */);
+                        alterPath(Common.Vec.Northeast);
                         break;
                     case "VK_A":
-                        alterPath(2 /* West */);
+                        alterPath(Common.Vec.West);
                         break;
                     case "VK_D":
-                        alterPath(3 /* East */);
+                        alterPath(Common.Vec.East);
                         break;
                     case "VK_Z":
-                        alterPath(6 /* Southwest */);
+                        alterPath(Common.Vec.Southwest);
                         break;
                     case "VK_X":
-                        alterPath(1 /* South */);
+                        alterPath(Common.Vec.South);
                         break;
                     case "VK_C":
-                        alterPath(7 /* Southeast */);
+                        alterPath(Common.Vec.Southeast);
                         break;
                     case "VK_SPACE":
                         endTurn();
@@ -1279,33 +459,7 @@ var Rouge;
 
             function alterPath(dir) {
                 var oldPath = manager.currPath.unwrap;
-                var location = oldPath.pointer;
-                switch (dir) {
-                    case 4 /* Northwest */:
-                        location = { x: location.x - 1, y: location.y - 1 };
-                        break;
-                    case 0 /* North */:
-                        location = { x: location.x, y: location.y - 1 };
-                        break;
-                    case 5 /* Northeast */:
-                        location = { x: location.x + 1, y: location.y - 1 };
-                        break;
-                    case 2 /* West */:
-                        location = { x: location.x - 1, y: location.y };
-                        break;
-                    case 3 /* East */:
-                        location = { x: location.x + 1, y: location.y };
-                        break;
-                    case 6 /* Southwest */:
-                        location = { x: location.x - 1, y: location.y + 1 };
-                        break;
-                    case 1 /* South */:
-                        location = { x: location.x, y: location.y + 1 };
-                        break;
-                    case 7 /* Southeast */:
-                        location = { x: location.x + 1, y: location.y + 1 };
-                        break;
-                }
+                var location = Common.Vec.add(oldPath.pointer, dir);
                 if (location.x < 0)
                     location.x = 0;
                 if (location.y < 0)
@@ -1387,11 +541,11 @@ var Rouge;
             }
         })(Controllers.Player || (Controllers.Player = {}));
         var Player = Controllers.Player;
-    })(Rouge.Controllers || (Rouge.Controllers = {}));
-    var Controllers = Rouge.Controllers;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Controllers || (Common.Controllers = {}));
+    var Controllers = Common.Controllers;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     ///<reference path="Path.ts"/>
     (function (Controllers) {
         var StraightPath = (function (_super) {
@@ -1473,11 +627,11 @@ var Rouge;
             return StraightPath;
         })(Controllers.Path);
         Controllers.StraightPath = StraightPath;
-    })(Rouge.Controllers || (Rouge.Controllers = {}));
-    var Controllers = Rouge.Controllers;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Controllers || (Common.Controllers = {}));
+    var Controllers = Common.Controllers;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Dungeon) {
         (function (MapTypes) {
             MapTypes[MapTypes["Mines"] = 0] = "Mines";
@@ -1492,7 +646,7 @@ var Rouge;
 
             switch (type) {
                 case 0 /* Mines */:
-                    map = new ROT.Map.Digger(200, Rouge.Const.MAP_HEIGHT, {
+                    map = new ROT.Map.Digger(200, Common.Settings.MapHeight, {
                         dugPercentage: 0.55,
                         roomWidth: [4, 9],
                         roomHeight: [3, 7],
@@ -1515,11 +669,11 @@ var Rouge;
             return map;
         }
         Dungeon.createMap = createMap;
-    })(Rouge.Dungeon || (Rouge.Dungeon = {}));
-    var Dungeon = Rouge.Dungeon;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Dungeon || (Common.Dungeon = {}));
+    var Dungeon = Common.Dungeon;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Dungeon) {
         var ItemObject = (function () {
             function ItemObject(item, x, y) {
@@ -1563,11 +717,11 @@ var Rouge;
             return ItemObject;
         })();
         Dungeon.ItemObject = ItemObject;
-    })(Rouge.Dungeon || (Rouge.Dungeon = {}));
-    var Dungeon = Rouge.Dungeon;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Dungeon || (Common.Dungeon = {}));
+    var Dungeon = Common.Dungeon;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Dungeon) {
         var Level = (function () {
             function Level(type) {
@@ -1579,11 +733,11 @@ var Rouge;
             return Level;
         })();
         Dungeon.Level = Level;
-    })(Rouge.Dungeon || (Rouge.Dungeon = {}));
-    var Dungeon = Rouge.Dungeon;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Dungeon || (Common.Dungeon = {}));
+    var Dungeon = Common.Dungeon;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Entities) {
         var Attack = (function () {
             function Attack(user, damage, multiplier, hitSkill) {
@@ -1595,11 +749,11 @@ var Rouge;
             return Attack;
         })();
         Entities.Attack = Attack;
-    })(Rouge.Entities || (Rouge.Entities = {}));
-    var Entities = Rouge.Entities;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Entities) {
         var AttackResult = (function () {
             function AttackResult(attack, defender, evadeSkill, armorMin, armorMax) {
@@ -1635,11 +789,11 @@ var Rouge;
             return AttackResult;
         })();
         Entities.AttackResult = AttackResult;
-    })(Rouge.Entities || (Rouge.Entities = {}));
-    var Entities = Rouge.Entities;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Entities) {
         var Entity = (function () {
             function Entity() {
@@ -1707,11 +861,11 @@ var Rouge;
             return Entity;
         })();
         Entities.Entity = Entity;
-    })(Rouge.Entities || (Rouge.Entities = {}));
-    var Entities = Rouge.Entities;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     ///<reference path="Entity.ts"/>
     (function (Entities) {
         var Enemy = (function (_super) {
@@ -1730,6 +884,7 @@ var Rouge;
                 this.stats = stats;
                 this.inventory = new Array();
                 this.active = true;
+                this.dir = Common.Vec.West;
             }
             Enemy.prototype.hasAP = function () {
                 return this.stats.ap > 0;
@@ -1746,11 +901,11 @@ var Rouge;
             return Enemy;
         })(Entities.Entity);
         Entities.Enemy = Enemy;
-    })(Rouge.Entities || (Rouge.Entities = {}));
-    var Entities = Rouge.Entities;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Entities) {
         (function (Skills) {
             Skills[Skills["prowess"] = 0] = "prowess";
@@ -1771,16 +926,16 @@ var Rouge;
             }
         }
         Entities.getEnemy = getEnemy;
-    })(Rouge.Entities || (Rouge.Entities = {}));
-    var Entities = Rouge.Entities;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Entities) {
         var Equipment = (function () {
             function Equipment() {
-                this.mainHand = Rouge.Items.Weapon.None;
-                this.offHand = Rouge.Items.Weapon.None;
+                this.mainHand = Common.Items.Weapon.None;
+                this.offHand = Common.Items.Weapon.None;
             }
             Equipment.prototype.equipWeapon = function (weapon, offHand) {
                 var removed = new Array();
@@ -1796,7 +951,7 @@ var Rouge;
                         break;
                     case 2 /* Twohanded */:
                         removed.push(this.mainHand);
-                        if (this.offHand != Rouge.Items.Weapon.None)
+                        if (this.offHand != Common.Items.Weapon.None)
                             removed.push(this.offHand);
                         this.mainHand = weapon;
                         break;
@@ -1814,44 +969,44 @@ var Rouge;
             };
 
             Equipment.prototype.unequipWeapon = function (slot) {
-                var removed = Rouge.Items.Weapon.None;
+                var removed = Common.Items.Weapon.None;
                 switch (slot) {
                     case "mainhand":
                         removed = this.mainHand;
-                        this.mainHand = Rouge.Items.Weapon.None;
+                        this.mainHand = Common.Items.Weapon.None;
                         break;
                     case "offhand":
                         removed = this.mainHand;
-                        this.offHand = Rouge.Items.Weapon.None;
+                        this.offHand = Common.Items.Weapon.None;
                         break;
                     case "ranged":
                         removed = this.ranged;
-                        this.ranged = Rouge.Items.Weapon.None;
+                        this.ranged = Common.Items.Weapon.None;
                         break;
                 }
                 return removed;
             };
 
             Equipment.prototype.equipArmor = function (piece) {
-                var removed = Rouge.Items.ArmorPiece.None;
+                var removed = Common.Items.ArmorPiece.None;
                 switch (piece.type) {
                     case 0 /* Head */:
-                        if (this.head !== Rouge.Items.ArmorPiece.None)
+                        if (this.head !== Common.Items.ArmorPiece.None)
                             removed = this.head;
                         this.head = piece;
                         break;
                     case 2 /* Arms */:
-                        if (this.arms !== Rouge.Items.ArmorPiece.None)
+                        if (this.arms !== Common.Items.ArmorPiece.None)
                             removed = this.arms;
                         this.arms = piece;
                         break;
                     case 3 /* Body */:
-                        if (this.body !== Rouge.Items.ArmorPiece.None)
+                        if (this.body !== Common.Items.ArmorPiece.None)
                             removed = this.body;
                         this.body = piece;
                         break;
                     case 1 /* Legs */:
-                        if (this.legs !== Rouge.Items.ArmorPiece.None)
+                        if (this.legs !== Common.Items.ArmorPiece.None)
                             removed = this.legs;
                         this.legs = piece;
                         break;
@@ -1860,23 +1015,23 @@ var Rouge;
             };
 
             Equipment.prototype.unequipArmor = function (slot) {
-                var removed = Rouge.Items.ArmorPiece.None;
+                var removed = Common.Items.ArmorPiece.None;
                 switch (slot) {
                     case "head":
                         removed = this.head;
-                        this.mainHand = Rouge.Items.Weapon.None;
+                        this.mainHand = Common.Items.Weapon.None;
                         break;
                     case "arms":
                         removed = this.arms;
-                        this.offHand = Rouge.Items.Weapon.None;
+                        this.offHand = Common.Items.Weapon.None;
                         break;
                     case "body":
                         removed = this.body;
-                        this.ranged = Rouge.Items.Weapon.None;
+                        this.ranged = Common.Items.Weapon.None;
                         break;
                     case "legs":
                         removed = this.legs;
-                        this.ranged = Rouge.Items.Weapon.None;
+                        this.ranged = Common.Items.Weapon.None;
                         break;
                 }
                 return removed;
@@ -1884,11 +1039,11 @@ var Rouge;
             return Equipment;
         })();
         Entities.Equipment = Equipment;
-    })(Rouge.Entities || (Rouge.Entities = {}));
-    var Entities = Rouge.Entities;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     ///<reference path="Entity.ts"/>
     (function (Entities) {
         var PlayerChar = (function (_super) {
@@ -1902,6 +1057,7 @@ var Rouge;
                 this.inventory = new Array();
                 this._hasTurn = true;
                 this.equipment = new Entities.Equipment();
+                this.dir = Common.Vec.East;
             }
             PlayerChar.prototype.hasAP = function () {
                 return this.stats.ap > 0;
@@ -1922,11 +1078,11 @@ var Rouge;
             return PlayerChar;
         })(Entities.Entity);
         Entities.PlayerChar = PlayerChar;
-    })(Rouge.Entities || (Rouge.Entities = {}));
-    var Entities = Rouge.Entities;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Entities) {
         var Skill = (function () {
             function Skill(which, value) {
@@ -1936,11 +1092,11 @@ var Rouge;
             return Skill;
         })();
         Entities.Skill = Skill;
-    })(Rouge.Entities || (Rouge.Entities = {}));
-    var Entities = Rouge.Entities;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Entities) {
         var Skillset = (function () {
             function Skillset() {
@@ -1964,11 +1120,11 @@ var Rouge;
             return Skillset;
         })();
         Entities.Skillset = Skillset;
-    })(Rouge.Entities || (Rouge.Entities = {}));
-    var Entities = Rouge.Entities;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Entities) {
         var Statset = (function () {
             function Statset(maxHp, maxAP, maxEnd, eqWt) {
@@ -1998,11 +1154,11 @@ var Rouge;
             return Statset;
         })();
         Entities.Statset = Statset;
-    })(Rouge.Entities || (Rouge.Entities = {}));
-    var Entities = Rouge.Entities;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Entities) {
         var Trait = (function () {
             function Trait() {
@@ -2010,11 +1166,11 @@ var Rouge;
             return Trait;
         })();
         Entities.Trait = Trait;
-    })(Rouge.Entities || (Rouge.Entities = {}));
-    var Entities = Rouge.Entities;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Items) {
         var ArmorPiece = (function () {
             function ArmorPiece() {
@@ -2127,11 +1283,11 @@ var Rouge;
             return ArmorPiece;
         })();
         Items.ArmorPiece = ArmorPiece;
-    })(Rouge.Items || (Rouge.Items = {}));
-    var Items = Rouge.Items;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Items || (Common.Items = {}));
+    var Items = Common.Items;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Items) {
         var Consumable = (function () {
             function Consumable() {
@@ -2139,11 +1295,11 @@ var Rouge;
             return Consumable;
         })();
         Items.Consumable = Consumable;
-    })(Rouge.Items || (Rouge.Items = {}));
-    var Items = Rouge.Items;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Items || (Common.Items = {}));
+    var Items = Common.Items;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Items) {
         (function (Weapons) {
             Weapons[Weapons["Dagger"] = 0] = "Dagger";
@@ -2295,11 +1451,11 @@ var Rouge;
             return piece;
         }
         Items.getArmor = getArmor;
-    })(Rouge.Items || (Rouge.Items = {}));
-    var Items = Rouge.Items;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Items || (Common.Items = {}));
+    var Items = Common.Items;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Items) {
         var Weapon = (function () {
             function Weapon() {
@@ -2460,11 +1616,11 @@ var Rouge;
             return Weapon;
         })();
         Items.Weapon = Weapon;
-    })(Rouge.Items || (Rouge.Items = {}));
-    var Items = Rouge.Items;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
+    })(Common.Items || (Common.Items = {}));
+    var Items = Common.Items;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     var Observable = (function () {
         function Observable() {
             this.observers = new Array();
@@ -2485,7 +1641,7 @@ var Rouge;
         };
         return Observable;
     })();
-    Rouge.Observable = Observable;
+    Common.Observable = Observable;
 
     var ObservableProperty = (function (_super) {
         __extends(ObservableProperty, _super);
@@ -2505,41 +1661,909 @@ var Rouge;
         });
         return ObservableProperty;
     })(Observable);
-    Rouge.ObservableProperty = ObservableProperty;
-})(Rouge || (Rouge = {}));
-var Rouge;
-(function (Rouge) {
-    var Const = (function () {
-        function Const() {
+    Common.ObservableProperty = ObservableProperty;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
+    var Settings = (function () {
+        function Settings() {
         }
-        Object.defineProperty(Const, "UPDATE_RATE", {
+        Object.defineProperty(Settings, "UpdateRate", {
             get: function () {
                 return 33;
             },
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(Const, "MAP_HEIGHT", {
+        Object.defineProperty(Settings, "MapHeight", {
             get: function () {
                 return 33;
             },
             enumerable: true,
             configurable: true
         });
-        return Const;
+        return Settings;
     })();
-    Rouge.Const = Const;
+    Common.Settings = Settings;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
+    var Vec = (function () {
+        function Vec() {
+        }
+        Object.defineProperty(Vec, "East", {
+            get: function () {
+                return { x: 1, y: 0 };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Vec, "West", {
+            get: function () {
+                return { x: -1, y: 0 };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Vec, "North", {
+            get: function () {
+                return { x: 0, y: -1 };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Vec, "South", {
+            get: function () {
+                return { x: 0, y: 1 };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Vec, "Southeast", {
+            get: function () {
+                return { x: 1, y: 1 };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Vec, "Northwest", {
+            get: function () {
+                return { x: -1, y: -1 };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Vec, "Northeast", {
+            get: function () {
+                return { x: 1, y: -1 };
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Vec, "Southwest", {
+            get: function () {
+                return { x: -1, y: 1 };
+            },
+            enumerable: true,
+            configurable: true
+        });
 
-    (function (Direction) {
-        Direction[Direction["North"] = 0] = "North";
-        Direction[Direction["South"] = 1] = "South";
-        Direction[Direction["West"] = 2] = "West";
-        Direction[Direction["East"] = 3] = "East";
-        Direction[Direction["Northwest"] = 4] = "Northwest";
-        Direction[Direction["Northeast"] = 5] = "Northeast";
-        Direction[Direction["Southwest"] = 6] = "Southwest";
-        Direction[Direction["Southeast"] = 7] = "Southeast";
-    })(Rouge.Direction || (Rouge.Direction = {}));
-    var Direction = Rouge.Direction;
-})(Rouge || (Rouge = {}));
+        Vec.add = function (a, b) {
+            return { x: a.x + b.x, y: a.y + b.y };
+        };
+        Vec.sub = function (a, b) {
+            return { x: a.x - b.x, y: a.y - b.y };
+        };
+        return Vec;
+    })();
+    Common.Vec = Vec;
+})(Common || (Common = {}));
+var ConsoleGame;
+(function (ConsoleGame) {
+    var Camera = (function () {
+        function Camera(xOffset, width, yOffset, height) {
+            this.width = width;
+            this.height = height;
+            this.xOffset = xOffset;
+            this.yOffset = yOffset;
+            this.x = 0;
+            this.y = 0;
+        }
+        Object.defineProperty(Camera.prototype, "view", {
+            get: function () {
+                return this._view;
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+        Camera.prototype.centerOn = function (x, y, level, players) {
+            this.x = Math.floor(x - this.width / 2) - 1;
+            if (y)
+                this.y = Math.floor(y - this.height / 2) - 1;
+            if (level && players)
+                this.updateView(level, players);
+        };
+
+        Camera.prototype.translate = function (x, y) {
+            this.x += x;
+            this.y += y;
+        };
+
+        Camera.prototype.updateView = function (level, entities) {
+            var map = this.getMapView(level.map);
+            if (entities)
+                this._view = this.addEntities(map, entities);
+            else
+                this._view = this.addEntities(map, level.entities);
+        };
+
+        Camera.prototype.sees = function (x, y) {
+            return x >= this.x && y >= this.y && x < this.x + this.width && y < this.y + this.height;
+        };
+
+        Camera.prototype.getMapView = function (map) {
+            var matrix = new Array();
+            for (var i = 0; i < this.width; i++) {
+                matrix[i] = new Array();
+                for (var j = 0; j < this.height; j++) {
+                    matrix[i][j] = { symbol: " " };
+                }
+            }
+
+            for (var key in map) {
+                var parts = key.split(",");
+                var x = parseInt(parts[0]);
+                var y = parseInt(parts[1]);
+
+                if (isNaN(x) || isNaN(y)) {
+                    continue;
+                }
+                if (x < this.x || y < this.y || x > this.x + this.width - 1 || y > this.y + this.height - 1) {
+                    continue;
+                }
+
+                switch (map[key]) {
+                    case " ":
+                        matrix[x - this.x][y - this.y] = {
+                            symbol: map[key],
+                            color: "white",
+                            bgColor: "gray"
+                        };
+                        break;
+                    default:
+                        matrix[x - this.x][y - this.y] = {
+                            symbol: map[key],
+                            color: "white"
+                        };
+                        break;
+                }
+            }
+            return new ConsoleGame.DrawMatrix(this.xOffset, this.yOffset, matrix);
+        };
+
+        Camera.prototype.addEntities = function (matrix, entities) {
+            var _this = this;
+            entities.forEach(function (e) {
+                //ConsoleGame.log(e);
+                if (e.x < _this.x || e.y < _this.y || e.x > _this.x + _this.width - 1 || e.y > _this.y + _this.height - 1) {
+                } else {
+                    var d = ConsoleGame.getDrawable(e);
+                    matrix.matrix[e.x - _this.x][e.y - _this.y].symbol = d.symbol;
+                    matrix.matrix[e.x - _this.x][e.y - _this.y].color = d.color;
+                    if (matrix.matrix[e.x + e.dir.x - _this.x])
+                        matrix.matrix[e.x + e.dir.x - _this.x][e.y + e.dir.y - _this.y].bgColor = "pink";
+                }
+            });
+            return matrix;
+        };
+        return Camera;
+    })();
+    ConsoleGame.Camera = Camera;
+})(ConsoleGame || (ConsoleGame = {}));
+var ConsoleGame;
+(function (ConsoleGame) {
+    var Entities = Common.Entities;
+
+    function symbolO(item) {
+        throw ("TODO");
+    }
+    ConsoleGame.symbolO = symbolO;
+
+    function colorO(item) {
+        throw ("TODO");
+    }
+    ConsoleGame.colorO = colorO;
+
+    function symbolE(entity) {
+        throw ("TODO");
+    }
+    ConsoleGame.symbolE = symbolE;
+
+    function colorE(entity) {
+        throw ("TODO");
+    }
+    ConsoleGame.colorE = colorE;
+
+    function getDrawable(entity) {
+        if (entity instanceof Entities.PlayerChar) {
+            return { symbol: "@" };
+        } else {
+            return { symbol: "e" };
+        }
+    }
+    ConsoleGame.getDrawable = getDrawable;
+})(ConsoleGame || (ConsoleGame = {}));
+var ConsoleGame;
+(function (ConsoleGame) {
+    (function (Core) {
+        (function (Control) {
+            var lastDownTarget;
+            var lastMouseX = 0;
+            var lastMouseY = 0;
+            var mouseDown = false;
+
+            function init(game) {
+                var display = game.display;
+                var canvas = display.getContainer();
+
+                document.addEventListener("mousedown", function (event) {
+                    mouseDown = true;
+                    lastDownTarget = event.target;
+                    if (lastDownTarget != canvas)
+                        return;
+
+                    var pos = display.eventToPosition(event);
+                    var x = pos[0];
+                    var y = pos[1];
+                    if (x >= 0 && y >= 1) {
+                        //ConsoleGame.log(x + "," + y);
+                        if (x >= ConsoleGame.Settings.CamXOffset && x < ConsoleGame.Settings.CamXOffset + ConsoleGame.Settings.CamWidth && y >= ConsoleGame.Settings.CamYOffset && y < ConsoleGame.Settings.CamYOffset + ConsoleGame.Settings.CamHeight) {
+                            game.gameScreen.acceptMousedown(x, y);
+                        }
+                    }
+                }, false);
+
+                document.addEventListener("mouseup", function (event) {
+                    mouseDown = false;
+                }, false);
+
+                document.addEventListener("mousemove", function (event) {
+                    if (lastDownTarget != canvas)
+                        return;
+                    if (Math.abs(event.x - lastMouseX) < 5 && Math.abs(event.y - lastMouseY) < 8)
+                        return;
+
+                    //ConsoleGame.log(event.x +","+ event.y)
+                    lastMouseX = event.x;
+                    lastMouseY = event.y;
+
+                    var pos = display.eventToPosition(event);
+                    var x = pos[0];
+                    var y = pos[1];
+                    if (x >= 0 && y >= 1) {
+                        if (x >= ConsoleGame.Settings.CamXOffset && x < ConsoleGame.Settings.CamXOffset + ConsoleGame.Settings.CamWidth && y >= ConsoleGame.Settings.CamYOffset && y < ConsoleGame.Settings.CamYOffset + ConsoleGame.Settings.CamHeight) {
+                            if (mouseDown) {
+                                game.gameScreen.acceptMousedrag(x, y);
+                            } else {
+                                game.gameScreen.acceptMousemove(x, y);
+                            }
+                        }
+                    }
+                }, false);
+
+                document.addEventListener("keydown", function (event) {
+                    if (lastDownTarget != canvas)
+                        return;
+
+                    var code = event.keyCode;
+                    var vk;
+                    for (var name in ROT) {
+                        if (ROT[name] == code && name.indexOf("VK_") == 0) {
+                            vk = name;
+                            break;
+                        }
+                    }
+                    game.gameScreen.acceptKeydown(vk);
+                }, false);
+                /*document.addEventListener("keypress", (event) => {
+                if (lastDownTarget != canvas) return;
+                
+                var code = event.charCode;
+                var ch = String.fromCharCode(code);
+                
+                //ConsoleGame.log("Keypress: char is " + ch);
+                }, false);*/
+            }
+            Control.init = init;
+            ;
+        })(Core.Control || (Core.Control = {}));
+        var Control = Core.Control;
+    })(ConsoleGame.Core || (ConsoleGame.Core = {}));
+    var Core = ConsoleGame.Core;
+})(ConsoleGame || (ConsoleGame = {}));
+var ConsoleGame;
+(function (ConsoleGame) {
+    (function (Core) {
+        var Game = (function () {
+            function Game() {
+                var _this = this;
+                this.display = new ROT.Display({ width: ConsoleGame.Settings.DisplayWidth, height: ConsoleGame.Settings.DisplayHeight });
+                this.gameScreen = new ConsoleGame.GameScreen();
+                this.gameScreen.nextFrame.attach(function () {
+                    _this.draw(_this.gameScreen.nextFrame.unwrap);
+                });
+                this.screen = this.gameScreen;
+                Core.Control.init(this);
+
+                var resize = function () {
+                    var size = _this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight);
+                    _this.display.setOptions({ fontSize: size });
+
+                    while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) >= size) {
+                        _this.display.setOptions({ width: _this.display.getOptions().width + 1 });
+                    }
+                    while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) < size) {
+                        _this.display.setOptions({ width: _this.display.getOptions().width - 1 });
+                    }
+
+                    ConsoleGame.Settings.DisplayWidth = _this.display.getOptions().width;
+                    _this.gameScreen.camera.width = ConsoleGame.Settings.DisplayWidth - ConsoleGame.Settings.SidebarWidth * 2;
+                    _this.gameScreen.manager.changed.notify();
+                    console.log((window.innerWidth / window.innerHeight).toFixed(2));
+                    console.log(_this.display.getOptions().width);
+                };
+                window.onresize = resize;
+                resize();
+            }
+            Game.prototype.draw = function (matrix) {
+                this.display.clear();
+                matrix.draw(this.display);
+                //Eventual goal: the game logic should be a web worker,
+                //with control sending string messages of DOM events to it
+                //and it sending JSON:ed DrawMatrixes to this
+            };
+            return Game;
+        })();
+        Core.Game = Game;
+    })(ConsoleGame.Core || (ConsoleGame.Core = {}));
+    var Core = ConsoleGame.Core;
+})(ConsoleGame || (ConsoleGame = {}));
+
+window.onload = function () {
+    document.getElementById("content").appendChild(new ConsoleGame.Core.Game().display.getContainer());
+};
+var ConsoleGame;
+(function (ConsoleGame) {
+    var DrawMatrix = (function () {
+        function DrawMatrix(xOffset, yOffset, matrix, width, height, bgColor) {
+            this.xOffset = xOffset;
+            this.yOffset = yOffset;
+
+            if (matrix) {
+                this.matrix = matrix;
+            } else {
+                this.matrix = new Array();
+                for (var i = 0; i < width; i++) {
+                    this.matrix[i] = new Array();
+                    for (var j = 0; j < height; j++) {
+                        this.matrix[i][j] = { symbol: " ", bgColor: bgColor };
+                    }
+                }
+            }
+        }
+        DrawMatrix.prototype.addString = function (x, y, str, wrapAt, color, bgColor) {
+            if (!str)
+                return this;
+
+            var limit = this.matrix.length;
+            if (wrapAt) {
+                limit = wrapAt;
+            }
+            var bgc;
+
+            for (var i = 0; i < str.length; i++) {
+                if (this.matrix[i + x] && this.matrix[i + x][y]) {
+                    if (!bgColor)
+                        bgc = this.matrix[i + x][y].bgColor;
+                    else
+                        bgc = bgColor;
+                    this.matrix[i + x][y] = { symbol: str[i], color: color, bgColor: bgc };
+                } else {
+                    //Add wrapping
+                }
+            }
+            return this;
+        };
+
+        DrawMatrix.prototype.addPath = function (path, offsetX, offsetY, maxAP, excludeFirst, color) {
+            var _this = this;
+            if (!path)
+                return this;
+
+            var nodes = path._nodes;
+            var limited = path.limitedNodes();
+            if (!color)
+                color = "slateblue";
+            if (excludeFirst) {
+                nodes.shift();
+            }
+            nodes.forEach(function (node) {
+                if (_this.matrix[node.x - offsetX] && _this.matrix[node.x - offsetX][node.y - offsetY]) {
+                    var bg = _this.matrix[node.x - offsetX][node.y - offsetY].bgColor;
+                    if (!bg)
+                        bg = "black";
+                    _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString("purple"), 0.33)));
+                }
+            });
+            limited.forEach(function (node) {
+                if (_this.matrix[node.x - offsetX] && _this.matrix[node.x - offsetX][node.y - offsetY]) {
+                    var bg = _this.matrix[node.x - offsetX][node.y - offsetY].bgColor;
+                    if (!bg)
+                        bg = "black";
+                    _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString(color), 0.5)));
+                }
+            });
+            var p = path.pointer;
+            if (this.matrix[p.x - offsetX] && this.matrix[p.x - offsetX][p.y - offsetY]) {
+                var bg = this.matrix[p.x - offsetX][p.y - offsetY].bgColor;
+                if (!bg)
+                    bg = "black";
+                if (limited[limited.length - 1] && p.x == limited[limited.length - 1].x && p.y == limited[limited.length - 1].y)
+                    this.matrix[p.x - offsetX][p.y - offsetY].bgColor = color;
+                else
+                    this.matrix[p.x - offsetX][p.y - offsetY].bgColor = "purple";
+            }
+            return this;
+        };
+
+        DrawMatrix.prototype.addOverlay = function (other) {
+            var newXOff = Math.min(this.xOffset, other.xOffset);
+            var newYOff = Math.min(this.yOffset, other.yOffset);
+
+            if (newXOff < this.xOffset) {
+                var ext = new Array();
+                for (var i = 0; i < newXOff - this.xOffset; i++) {
+                    ext[i] = new Array();
+                    for (var j = 0; j < this.matrix[0].length; j++) {
+                        ext[i][j] = { symbol: " " };
+                    }
+                }
+                this.matrix = ext.concat(this.matrix);
+                this.xOffset = newXOff;
+            }
+            if (newYOff < this.yOffset) {
+                for (var i = 0; i < this.matrix.length; i++) {
+                    var ext2 = new Array();
+                    for (var j = 0; j < newYOff - this.yOffset; j++) {
+                        ext2[j] = { symbol: " " };
+                    }
+                    this.matrix[i] = ext2.concat(this.matrix[i]);
+                }
+                this.yOffset = newYOff;
+            }
+
+            for (var i = 0; i < other.matrix.length; i++) {
+                for (var j = 0; j < other.matrix[0].length; j++) {
+                    if (other.matrix[i][j].symbol && other.matrix[i][j].symbol !== " ") {
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].symbol = other.matrix[i][j].symbol;
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = other.matrix[i][j].color;
+                    } else {
+                        var c1 = this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color;
+                        var c2 = other.matrix[i][j].bgColor;
+                        if (!c1)
+                            c1 = "black";
+                        if (!c2)
+                            c2 = "black";
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(c1), ROT.Color.fromString(c2), 0.75)));
+                    }
+                    var bg1 = this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor;
+                    var bg2 = other.matrix[i][j].bgColor;
+                    if (!bg1)
+                        bg1 = "black";
+                    if (!bg2)
+                        bg2 = "black";
+
+                    this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg1), ROT.Color.fromString(bg2), 0.75)));
+                }
+            }
+
+            return this;
+        };
+
+        DrawMatrix.prototype.draw = function (display) {
+            for (var i = 0; i < this.matrix.length; i++) {
+                for (var j = 0; j < this.matrix[0].length; j++) {
+                    if (!this.matrix[i][j])
+                        continue;
+
+                    display.draw(i + this.xOffset, j + this.yOffset, this.matrix[i][j].symbol, this.matrix[i][j].color, this.matrix[i][j].bgColor);
+                }
+            }
+        };
+        return DrawMatrix;
+    })();
+    ConsoleGame.DrawMatrix = DrawMatrix;
+})(ConsoleGame || (ConsoleGame = {}));
+var ConsoleGame;
+(function (ConsoleGame) {
+    var Dungeon = Common.Dungeon;
+
+    var Controllers = Common.Controllers;
+    var C = Common;
+
+    var GameScreen = (function () {
+        function GameScreen() {
+            var _this = this;
+            this.dungeon = new Array(new Dungeon.Level(0 /* Mines */));
+            this.currLevel = 0;
+            this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
+            this.nextFrame = new C.ObservableProperty();
+            this.camera = new ConsoleGame.Camera(ConsoleGame.Settings.SidebarWidth, ConsoleGame.Settings.DisplayWidth - ConsoleGame.Settings.SidebarWidth * 2, 0, ConsoleGame.Settings.DisplayHeight - ConsoleGame.Settings.BottomBarHeight);
+            this.textBox = new ConsoleGame.TextBox(ConsoleGame.Settings.SidebarWidth, 0, 7);
+            Controllers.Player.initialize(this.textBox, this.manager);
+
+            var update = function () {
+                var middle = _this.manager.characters.map(function (c) {
+                    return c.x;
+                }).reduce(function (x1, x2) {
+                    return x1 + x2;
+                }) / _this.manager.characters.length;
+                _this.camera.centerOn(middle);
+                _this.advanceFrame();
+            };
+            this.manager.currEntity.attach(update);
+            this.manager.changed.attach(update);
+            this.manager.currPath.attach(function () {
+                return _this.advanceFrame();
+            });
+            this.manager.start();
+            update();
+        }
+        GameScreen.prototype.advanceFrame = function () {
+            var _this = this;
+            this.manager.engine.lock();
+
+            this.camera.updateView(this.manager.level);
+            var matrix = new ConsoleGame.DrawMatrix(0, 0, null, ConsoleGame.Settings.DisplayWidth, ConsoleGame.Settings.DisplayHeight).addOverlay(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap)).addOverlay(this.textBox.getMatrix(this.camera.width)).addOverlay(ConsoleGame.GameUI.getLeftBar(this.manager.characters)).addOverlay(ConsoleGame.GameUI.getDPad()).addOverlay(ConsoleGame.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.unwrap, this.manager.level.entities.filter(function (e) {
+                return _this.camera.sees(e.x, e.y);
+            }))).addOverlay(ConsoleGame.GameUI.getBottomBar());
+            this.nextFrame.unwrap = matrix;
+
+            this.manager.engine.unlock();
+        };
+
+        GameScreen.prototype.acceptMousedown = function (tileX, tileY) {
+            Controllers.Player.updateClick(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
+        };
+
+        GameScreen.prototype.acceptMousedrag = function (tileX, tileY) {
+            Controllers.Player.updateMousedrag(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
+        };
+
+        GameScreen.prototype.acceptMousemove = function (tileX, tileY) {
+            Controllers.Player.updateMousemove(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
+        };
+
+        GameScreen.prototype.acceptKeydown = function (keyCode) {
+            Controllers.Player.update(keyCode);
+        };
+        return GameScreen;
+    })();
+    ConsoleGame.GameScreen = GameScreen;
+})(ConsoleGame || (ConsoleGame = {}));
+var ConsoleGame;
+(function (ConsoleGame) {
+    (function (GameUI) {
+        var Cont = Common.Controllers;
+
+        var color1 = "midnightblue";
+        var color2 = "royalblue";
+
+        function getLeftBar(characters) {
+            var p1 = characters[0];
+            var p2 = characters[1];
+            var w = ConsoleGame.Settings.SidebarWidth;
+            var matrix = new ConsoleGame.DrawMatrix(0, 0, null, w, 11);
+
+            for (var i = 0; i < ConsoleGame.Settings.SidebarWidth; i++) {
+                matrix.matrix[i][0] = { symbol: " ", bgColor: color1 };
+            }
+            matrix.addString(4, 0, "LEVEL:1");
+
+            matrix.addString(1, 2, p1.name);
+            matrix.addString(1, 4, "HP: " + p1.stats.hp + "/" + p1.stats.hpMax);
+            matrix.addString(1, 5, "AP: " + p1.stats.ap + "/" + p1.stats.apMax);
+
+            matrix.addString(1, 7, p2.name);
+            matrix.addString(1, 9, "HP: " + p2.stats.hp + "/" + p2.stats.hpMax);
+            matrix.addString(1, 10, "AP: " + p2.stats.ap + "/" + p2.stats.apMax);
+
+            return matrix;
+        }
+        GameUI.getLeftBar = getLeftBar;
+
+        function getRightBar(scheduler, current, seen, baseTime) {
+            var w = ConsoleGame.Settings.SidebarWidth;
+            var wDisp = ConsoleGame.Settings.DisplayWidth;
+            var leftEdge = wDisp - w;
+            var matrix = new ConsoleGame.DrawMatrix(leftEdge, 0, null, w, ConsoleGame.Settings.DisplayHeight - 2);
+            if (!baseTime)
+                baseTime = 0;
+
+            var events = scheduler._queue._events;
+            var times = scheduler._queue._eventTimes;
+            var both = [];
+            for (var i = 0; i < events.length; i++) {
+                both.push({ event: events[i], time: times[i] });
+            }
+            both = both.filter(function (obj) {
+                return obj.event instanceof Cont.ChangeProperty && seen.indexOf(obj.event.target) >= 0;
+            }).map(function (obj) {
+                return { entity: obj.event.target, time: obj.time };
+            }).sort(function (obj1, obj2) {
+                return obj1.time - obj2.time;
+            });
+            both.unshift({ entity: current, time: baseTime });
+
+            for (var i = 0; i < ConsoleGame.Settings.SidebarWidth; i++) {
+                matrix.matrix[i][0] = { symbol: " ", bgColor: color1 };
+            }
+            matrix.addString(5, 0, "QUEUE");
+            for (var i = 0; i < both.length && i < 9; i++) {
+                var drawable = ConsoleGame.getDrawable(both[i].entity);
+                matrix.addString(1, i * 3 + 2, both[i].entity.name, ConsoleGame.Settings.SidebarWidth - 4);
+                matrix.addString(1, i * 3 + 3, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, ConsoleGame.Settings.SidebarWidth - 4);
+
+                //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, "---");
+                //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, "| |");
+                if (i % 2 == 0) {
+                    matrix.addString(ConsoleGame.Settings.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, color2);
+                    matrix.addString(ConsoleGame.Settings.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color2);
+                } else {
+                    matrix.addString(ConsoleGame.Settings.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, color1);
+                    matrix.addString(ConsoleGame.Settings.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color1);
+                }
+
+                //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 4, "---");
+                if (both[i].time === 0) {
+                    matrix.addString(0, i * 3 + 1, "---  ready  ---", null, "green");
+                } else {
+                    matrix.addString(0, i * 3 + 1, "--- +" + both[i].time.toFixed(2) + "tu ---", null, "red");
+                }
+            }
+            matrix.addString(ConsoleGame.Settings.SidebarWidth - 7, 29, "space:");
+            matrix.addString(ConsoleGame.Settings.SidebarWidth - 7, 30, " END  ", null, null, color2);
+            matrix.addString(ConsoleGame.Settings.SidebarWidth - 7, 31, " TURN ", null, null, color2);
+
+            return matrix;
+        }
+        GameUI.getRightBar = getRightBar;
+
+        function getDPad() {
+            var w = ConsoleGame.Settings.SidebarWidth;
+            var hDisp = ConsoleGame.Settings.DisplayHeight;
+            var hThis = 10;
+            var matrix = new ConsoleGame.DrawMatrix(0, hDisp - hThis - ConsoleGame.Settings.BottomBarHeight, null, w, hThis);
+
+            /*
+            matrix.addString(0, 0, "q--- w--- e---");
+            matrix.addString(0, 1, "|NW| | N| |NE|");
+            matrix.addString(0, 2, "---- ---- ----");
+            matrix.addString(0, 3, "a--- f--- d---");
+            matrix.addString(0, 4, "|W | PICK | E|");
+            matrix.addString(0, 5, "---- ---- ----");
+            matrix.addString(0, 6, "z--- x--- c---");
+            matrix.addString(0, 7, "|SW| |S | |SE|");
+            matrix.addString(0, 8, "---- ---- ----");*/
+            matrix.addString(1, 1, "    |    |    ");
+            matrix.addString(1, 2, "    |    |    ");
+            matrix.addString(1, 3, "----+----+----");
+            matrix.addString(1, 4, "    |    |    ");
+            matrix.addString(1, 5, "    |    |    ");
+            matrix.addString(1, 6, "----+----+----");
+            matrix.addString(1, 7, "    |    |    ");
+            matrix.addString(1, 8, "    |    |    ");
+            matrix.addString(1, 1, "q   ", null, null, color1);
+            matrix.addString(1, 2, " NW ", null, null, color1);
+            matrix.addString(6, 1, "w   ", null, null, color2);
+            matrix.addString(6, 2, "  N ", null, null, color2);
+            matrix.addString(11, 1, "e   ", null, null, color1);
+            matrix.addString(11, 2, " NE ", null, null, color1);
+            matrix.addString(1, 4, "a   ", null, null, color2);
+            matrix.addString(1, 5, " W  ", null, null, color2);
+            matrix.addString(6, 4, "f   ", null, null, color1);
+            matrix.addString(6, 5, "PICK", null, null, color1);
+            matrix.addString(11, 4, "d   ", null, null, color2);
+            matrix.addString(11, 5, "  E ", null, null, color2);
+            matrix.addString(1, 7, "z   ", null, null, color1);
+            matrix.addString(1, 8, " SW ", null, null, color1);
+            matrix.addString(6, 7, "x   ", null, null, color2);
+            matrix.addString(6, 8, " S  ", null, null, color2);
+            matrix.addString(11, 7, "c   ", null, null, color1);
+            matrix.addString(11, 8, " SE ", null, null, color1);
+
+            return matrix;
+        }
+        GameUI.getDPad = getDPad;
+
+        function getBottomBar() {
+            var matrix = new ConsoleGame.DrawMatrix(0, ConsoleGame.Settings.DisplayHeight - ConsoleGame.Settings.BottomBarHeight, null, ConsoleGame.Settings.DisplayWidth, ConsoleGame.Settings.BottomBarHeight);
+
+            for (var i = 0; i < matrix.matrix.length; i++) {
+                for (var j = 0; j < matrix.matrix[0].length; j++) {
+                    matrix.matrix[i][j] = { symbol: " ", bgColor: color1 };
+                }
+            }
+            matrix.addString(1, 0, "1");
+            matrix.addString(2, 0, "  MOVE  ", null, null, color2);
+            matrix.addString(11, 0, "2");
+            matrix.addString(12, 0, " ATTACK ", null, null, color2);
+            matrix.addString(21, 0, "3");
+            matrix.addString(22, 0, " SPECIAL ", null, null, color2);
+            matrix.addString(32, 0, "4");
+            matrix.addString(33, 0, " SWITCH ", null, null, color2);
+
+            matrix.addString(ConsoleGame.Settings.DisplayWidth - 32, 0, "CON");
+            matrix.addString(ConsoleGame.Settings.DisplayWidth - 29, 0, " v ", null, null, color2);
+            matrix.addString(ConsoleGame.Settings.DisplayWidth - 25, 0, " ^ ", null, null, color2);
+            matrix.addString(ConsoleGame.Settings.DisplayWidth - 20, 0, "INVENTORY", null, null, color2);
+            matrix.addString(ConsoleGame.Settings.DisplayWidth - 9, 0, "  MENU  ", null, null, color2);
+
+            return matrix;
+        }
+        GameUI.getBottomBar = getBottomBar;
+    })(ConsoleGame.GameUI || (ConsoleGame.GameUI = {}));
+    var GameUI = ConsoleGame.GameUI;
+})(ConsoleGame || (ConsoleGame = {}));
+var ConsoleGame;
+(function (ConsoleGame) {
+    var MainMenuScreen = (function () {
+        function MainMenuScreen() {
+        }
+        return MainMenuScreen;
+    })();
+    ConsoleGame.MainMenuScreen = MainMenuScreen;
+})(ConsoleGame || (ConsoleGame = {}));
+var ConsoleGame;
+(function (ConsoleGame) {
+    var Settings = (function () {
+        function Settings() {
+        }
+        Object.defineProperty(Settings, "SidebarWidth", {
+            get: function () {
+                return 16;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Settings, "BottomBarHeight", {
+            get: function () {
+                return 1;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Settings, "DisplayWidth", {
+            get: function () {
+                return Settings._displayWidth;
+            },
+            set: function (val) {
+                Settings._displayWidth = val;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Settings, "DisplayHeight", {
+            get: function () {
+                return 34;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Settings, "CamXOffset", {
+            get: function () {
+                return Settings.SidebarWidth;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Settings, "CamYOffset", {
+            get: function () {
+                return 0;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Settings, "CamWidth", {
+            get: function () {
+                return Settings.DisplayWidth - Settings.SidebarWidth * 2;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Settings, "CamHeight", {
+            get: function () {
+                return Settings.DisplayHeight - Settings.BottomBarHeight;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Settings._displayWidth = 92;
+        return Settings;
+    })();
+    ConsoleGame.Settings = Settings;
+})(ConsoleGame || (ConsoleGame = {}));
+var ConsoleGame;
+(function (ConsoleGame) {
+    var TextBox = (function () {
+        function TextBox(x, y, height) {
+            this.x = x;
+            this.y = y;
+            this.height = height;
+            this.lines = new Array();
+        }
+        TextBox.prototype.addLine = function (line) {
+            this.lines.push(line);
+            if (this.lines.length > 50) {
+                this.lines.splice(0, 25);
+            }
+            return this;
+        };
+
+        TextBox.prototype.getMatrix = function (width) {
+            var matrix = new ConsoleGame.DrawMatrix(this.x, this.y, null, width, this.height);
+            var used = 0;
+            var index = this.lines.length - 1;
+
+            while (used < this.height && index >= 0) {
+                var nextLine = this.lines[index];
+
+                if (nextLine.length > width - 2) {
+                    var split = this.breakIntoLines(nextLine, width - 2);
+
+                    matrix.addString(1, this.height - used - 1, split[1], width - 1);
+                    used += 1;
+                    if (used >= this.height)
+                        break;
+                    else {
+                        matrix.addString(1, this.height - used - 1, split[0], width - 1);
+                        used += 1;
+                    }
+                } else {
+                    matrix.addString(1, this.height - used - 1, nextLine, width - 1);
+                    used += 1;
+                }
+                index -= 1;
+            }
+            return matrix;
+        };
+
+        TextBox.prototype.breakIntoLines = function (str, limit) {
+            var arr = new Array();
+
+            var words = str.split(" ");
+            var i = 1;
+            var next = words[i];
+            var lt = words[0].length;
+            arr[0] = words[0];
+            while (next && lt + next.length + 1 < limit) {
+                lt += next.length + 1;
+                arr[0] += " " + next;
+                i += 1;
+                next = words[i];
+            }
+            arr[1] = words[i];
+            i += 1;
+            while (i < words.length) {
+                arr[1] += " " + words[i];
+                i += 1;
+            }
+
+            return arr;
+        };
+        return TextBox;
+    })();
+    ConsoleGame.TextBox = TextBox;
+})(ConsoleGame || (ConsoleGame = {}));
 //# sourceMappingURL=game.js.map

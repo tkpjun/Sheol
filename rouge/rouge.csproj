@@ -27,45 +27,48 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="parallel.d.ts" />
-    <TypeScriptCompile Include="src\Console\Camera.ts" />
-    <TypeScriptCompile Include="src\Console\Core\Control.ts" />
-    <TypeScriptCompile Include="src\Console\DrawMatrix.ts" />
-    <TypeScriptCompile Include="src\Console\GameScreen.ts" />
-    <TypeScriptCompile Include="src\Console\GameUI.ts" />
-    <TypeScriptCompile Include="src\Console\MainMenuScreen.ts" />
-    <TypeScriptCompile Include="src\Console\TextBox.ts" />
-    <TypeScriptCompile Include="src\Controllers\AstarPath.ts" />
-    <TypeScriptCompile Include="src\Controllers\BasicAI.ts" />
-    <TypeScriptCompile Include="src\Controllers\Path.ts" />
-    <TypeScriptCompile Include="src\Controllers\Player.ts" />
-    <TypeScriptCompile Include="src\Controllers\StraightPath.ts" />
-    <TypeScriptCompile Include="src\Entities\Attack.ts" />
-    <TypeScriptCompile Include="src\Entities\AttackResult.ts" />
-    <TypeScriptCompile Include="src\Entities\Entities.ts" />
-    <TypeScriptCompile Include="src\Entities\Equipment.ts" />
-    <TypeScriptCompile Include="src\Entities\Skill.ts" />
-    <TypeScriptCompile Include="src\Entities\Skillset.ts" />
-    <TypeScriptCompile Include="src\Entities\Trait.ts" />
-    <TypeScriptCompile Include="src\Console\Console.ts" />
-    <TypeScriptCompile Include="src\Console\Core\Game.ts" />
-    <TypeScriptCompile Include="src\Controllers\ChangeProperty.ts" />
-    <TypeScriptCompile Include="src\Controllers\Controllers.ts" />
-    <TypeScriptCompile Include="src\Controllers\EntityManager.ts" />
-    <TypeScriptCompile Include="src\Dungeon\Dungeon.ts" />
-    <TypeScriptCompile Include="src\Dungeon\Level.ts" />
-    <TypeScriptCompile Include="src\Entities\Enemy.ts" />
-    <TypeScriptCompile Include="src\Entities\Statset.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\Camera.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\Core\Control.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\DrawMatrix.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\GameScreen.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\GameUI.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\MainMenuScreen.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\Settings.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\TextBox.ts" />
+    <TypeScriptCompile Include="src\Common\Controllers\AstarPath.ts" />
+    <TypeScriptCompile Include="src\Common\Controllers\BasicAI.ts" />
+    <TypeScriptCompile Include="src\Common\Controllers\Path.ts" />
+    <TypeScriptCompile Include="src\Common\Controllers\Player.ts" />
+    <TypeScriptCompile Include="src\Common\Controllers\StraightPath.ts" />
+    <TypeScriptCompile Include="src\Common\Entities\Attack.ts" />
+    <TypeScriptCompile Include="src\Common\Entities\AttackResult.ts" />
+    <TypeScriptCompile Include="src\Common\Entities\Entities.ts" />
+    <TypeScriptCompile Include="src\Common\Entities\Equipment.ts" />
+    <TypeScriptCompile Include="src\Common\Entities\Skill.ts" />
+    <TypeScriptCompile Include="src\Common\Entities\Skillset.ts" />
+    <TypeScriptCompile Include="src\Common\Entities\Trait.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\ConsoleGame.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\Core\Game.ts" />
+    <TypeScriptCompile Include="src\Common\Controllers\ChangeProperty.ts" />
+    <TypeScriptCompile Include="src\Common\Controllers\Controllers.ts" />
+    <TypeScriptCompile Include="src\Common\Controllers\EntityManager.ts" />
+    <TypeScriptCompile Include="src\Common\Dungeon\Dungeon.ts" />
+    <TypeScriptCompile Include="src\Common\Dungeon\Level.ts" />
+    <TypeScriptCompile Include="src\Common\Entities\Enemy.ts" />
+    <TypeScriptCompile Include="src\Common\Entities\Statset.ts" />
     <TypeScriptCompile Include="phaser.d.ts" />
     <TypeScriptCompile Include="rot.d.ts" />
-    <TypeScriptCompile Include="src\Entities\Entity.ts" />
-    <TypeScriptCompile Include="src\Entities\PlayerChar.ts" />
-    <TypeScriptCompile Include="src\Items\ArmorPiece.ts" />
-    <TypeScriptCompile Include="src\Items\Consumable.ts" />
-    <TypeScriptCompile Include="src\Dungeon\ItemObject.ts" />
-    <TypeScriptCompile Include="src\Items\Items.ts" />
-    <TypeScriptCompile Include="src\Items\Weapon.ts" />
-    <TypeScriptCompile Include="src\Rouge.ts" />
-    <TypeScriptCompile Include="src\ObservableProperty.ts" />
+    <TypeScriptCompile Include="src\Common\Entities\Entity.ts" />
+    <TypeScriptCompile Include="src\Common\Entities\PlayerChar.ts" />
+    <TypeScriptCompile Include="src\Common\Items\ArmorPiece.ts" />
+    <TypeScriptCompile Include="src\Common\Items\Consumable.ts" />
+    <TypeScriptCompile Include="src\Common\Dungeon\ItemObject.ts" />
+    <TypeScriptCompile Include="src\Common\Items\Items.ts" />
+    <TypeScriptCompile Include="src\Common\Items\Weapon.ts" />
+    <TypeScriptCompile Include="src\Common\Common.ts" />
+    <TypeScriptCompile Include="src\Common\ObservableProperty.ts" />
+    <TypeScriptCompile Include="src\Common\Settings.ts" />
+    <TypeScriptCompile Include="src\Common\Vec.ts" />
   </ItemGroup>
   <ItemGroup>
     <None Include="web.Debug.config">
@@ -76,7 +79,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="src\GUI\" />
+    <Folder Include="src\GUIGame\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">12.0</VisualStudioVersion>
