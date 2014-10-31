@@ -10,9 +10,17 @@
         inventory: IItem[];
         private _x: number;
         private _y: number;
-        private action: () => void;
+        private actionQueue: Array<() => void>;
         dir: IVector2;
         currWeapon: Items.Weapon;
+
+        constructor(name: string) {
+            this.name = name;
+            this.skills = new Skillset();
+            this.traits = new Array<Trait>();
+            this.inventory = new Array<IItem>();
+            this.actionQueue = new Array<() => void>();
+        }
 
         get x(): number {
             return this._x;
@@ -42,12 +50,11 @@
             throw ("Abstract!");
         }
 
-        get nextAction() {
-            return this.action;
-            //this.action = null;
+        getAction() {
+            return this.actionQueue.pop();
         }
-        set nextAction(action: () => void) {
-            this.action = action;
+        addAction(action: () => void) {
+            this.actionQueue.unshift(action);
         }
 
         hasAP(): boolean {

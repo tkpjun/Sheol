@@ -31,8 +31,9 @@
                     var arr = new Array();
                     var cost = 0;
                     for (var i = 0; i < this._nodes.length; i++) {
-                        if (cost + this._costs[i] > this._lengthInAP)
+                        if (cost + this._costs[i] > this._lengthInAP) {
                             break;
+                        }
 
                         arr.push(this._nodes[i]);
                         cost += this._costs[i];
@@ -220,10 +221,10 @@ var Common;
                 Controllers.Player.activate(entity);
             } else if (entity instanceof Common.Entities.Enemy) {
                 var enemy = entity;
-                enemy.nextAction = function () {
-                    enemy.stats.ap = 2;
-                    enemy.active = false;
-                };
+                enemy.addAction(function () {
+                    enemy.stats.ap = 0;
+                    enemy._hasTurn = false;
+                });
             }
         }
         Controllers.planAction = planAction;
@@ -274,7 +275,7 @@ var Common;
                 player2.x = room.getCenter()[0] + 1;
                 player2.y = room.getCenter()[1];
                 this.characters.push(player2);
-                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player2), true, 1.5);
+                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player2), true, 1);
 
                 this.characters.forEach(function (c) {
                     _this.level.entities.push(c);
@@ -290,7 +291,7 @@ var Common;
 
                     //console.log(enemy.x +", "+ enemy.y)
                     this.level.entities.push(enemy);
-                    this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true, 2);
+                    this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true, 1);
                 }
             };
 
@@ -301,17 +302,19 @@ var Common;
 
                 var pollForAction = function () {
                     Controllers.planAction(entity, _this);
-                    var action = entity.nextAction;
+                    var action = entity.getAction();
                     if (action) {
                         action();
-                        entity.nextAction = undefined;
+
+                        //console.log(entity.x + "," + entity.y);
                         _this.changed.notify();
                     }
 
                     if (entity.hasAP() && entity.hasTurn()) {
                         setTimeout(pollForAction, Common.Settings.UpdateRate);
                     } else {
-                        _this.level.scheduler.setDuration(Math.max(0.5, 1 - (entity.stats.ap / entity.stats.apMax)));
+                        //this.level.scheduler.setDuration(Math.max(0.5, 1 - (entity.stats.ap / entity.stats.apMax)));
+                        entity.stats.stamina += Math.max(0, entity.stats.ap);
                         entity.newTurn();
                         _this.changed.notify();
 
@@ -479,11 +482,11 @@ var Common;
             }
 
             function endTurn() {
-                char.nextAction = function () {
+                char.addAction(function () {
                     char._hasTurn = false;
                     state = 2 /* Inactive */;
                     manager.currPath.unwrap = null;
-                };
+                });
             }
 
             function confirm() {
@@ -493,42 +496,51 @@ var Common;
                 switch (state) {
                     case 0 /* Move */:
                         if (char.stats.ap > 1) {
-                            char.nextAction = function () {
-                                var limited = path.trim();
-                                char.x = limited._nodes[path.limitedNodes().length - 1].x;
-                                char.y = limited._nodes[path.limitedNodes().length - 1].y;
-                                char.stats.ap -= limited.cost();
-                                manager.currPath.unwrap = new Controllers.AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
+                            path.trim();
+                            function nextStep(i) {
+                                return function () {
+                                    char.dir = Common.Vec.sub(path._nodes[i], { x: char.x, y: char.y });
+                                    char.x = path._nodes[i].x;
+                                    char.y = path._nodes[i].y;
+                                    manager.currPath.unwrap = new Controllers.AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
 
-                                if (!char.hasAP()) {
-                                    state = 2 /* Inactive */;
-                                }
-                            };
+                                    if (i == path._nodes.length - 1) {
+                                        char.stats.ap -= path.cost();
+                                    }
+                                    if (!char.hasAP()) {
+                                        state = 2 /* Inactive */;
+                                    }
+                                };
+                            }
+                            for (var i = 1; i < path._nodes.length; i++) {
+                                char.addAction(nextStep(i));
+                            }
                         } else {
                             con.addLine("You need at least 2 AP to move! Ending turn...");
                             endTurn();
                         }
                         break;
                     case 1 /* Attack */:
-                        var limited = path.trim();
+                        path.trim();
                         var result;
                         var targets = [];
                         var index = 1;
 
                         while (!targets[0]) {
-                            if (index >= limited._nodes.length)
+                            if (index >= path._nodes.length)
                                 break;
 
                             targets = lvl.entities.filter(function (entity) {
-                                return entity.x === limited._nodes[index].x && entity.y === limited._nodes[index].y;
+                                return entity.x === path._nodes[index].x && entity.y === path._nodes[index].y;
                             });
                             index += 1;
                         }
-                        char.nextAction = function () {
+                        char.addAction(function () {
                             if (targets[0] && char.stats.ap >= char.currWeapon.apCost) {
                                 char.stats.ap -= char.currWeapon.apCost;
                                 char.currWeapon.setDurability(char.currWeapon.durability - 1);
                                 result = targets[0].getStruck(char.getAttack());
+                                console.log(result.attacker);
                                 con.addLine(result.attacker.name + " hit " + result.defender.name + " with a " + result.attacker.currWeapon.name + " for " + result.finalDmg + " damage! - Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) + "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) + "+" + result.defender.skills.evasion.value + " - Armor rolls: " + result.armorRolls.toString() + " -");
                             } else if (char.stats.ap < char.currWeapon.apCost) {
                                 con.addLine("You need " + char.currWeapon.apCost + " AP to attack with a " + char.currWeapon.name + "!");
@@ -540,7 +552,7 @@ var Common;
                             if (!char.hasAP()) {
                                 state = 2 /* Inactive */;
                             }
-                        };
+                        });
                         break;
                     default:
                         throw ("Bad state: " + state);
@@ -804,7 +816,12 @@ var Common;
 (function (Common) {
     (function (Entities) {
         var Entity = (function () {
-            function Entity() {
+            function Entity(name) {
+                this.name = name;
+                this.skills = new Entities.Skillset();
+                this.traits = new Array();
+                this.inventory = new Array();
+                this.actionQueue = new Array();
             }
             Object.defineProperty(Entity.prototype, "x", {
                 get: function () {
@@ -843,17 +860,12 @@ var Common;
                 throw ("Abstract!");
             };
 
-            Object.defineProperty(Entity.prototype, "nextAction", {
-                get: function () {
-                    return this.action;
-                    //this.action = null;
-                },
-                set: function (action) {
-                    this.action = action;
-                },
-                enumerable: true,
-                configurable: true
-            });
+            Entity.prototype.getAction = function () {
+                return this.actionQueue.pop();
+            };
+            Entity.prototype.addAction = function (action) {
+                this.actionQueue.unshift(action);
+            };
 
             Entity.prototype.hasAP = function () {
                 return false;
@@ -879,8 +891,7 @@ var Common;
         var Enemy = (function (_super) {
             __extends(Enemy, _super);
             function Enemy(name, stats, skills, traits) {
-                _super.call(this);
-                this.name = name;
+                _super.call(this, name);
                 if (skills)
                     this.skills = skills;
                 else
@@ -890,21 +901,20 @@ var Common;
                 else
                     this.traits = new Array();
                 this.stats = stats;
-                this.inventory = new Array();
-                this.active = true;
+                this._hasTurn = true;
                 this.dir = Common.Vec.West;
             }
             Enemy.prototype.hasAP = function () {
                 return this.stats.ap > 0;
             };
 
-            Enemy.prototype.didntEnd = function () {
-                return this.active;
+            Enemy.prototype.hasTurn = function () {
+                return this._hasTurn;
             };
 
             Enemy.prototype.newTurn = function () {
                 this.stats.ap = this.stats.apMax;
-                this.active = true;
+                this._hasTurn = true;
             };
             return Enemy;
         })(Entities.Entity);
@@ -929,7 +939,7 @@ var Common;
         function getEnemy(name) {
             switch (name) {
                 default:
-                    return new Entities.Enemy(name, new Entities.Statset(80, 6, 20, 10));
+                    return new Entities.Enemy(name, new Entities.Statset(80, 30, 10, 10));
                     break;
             }
         }
@@ -1057,12 +1067,9 @@ var Common;
         var PlayerChar = (function (_super) {
             __extends(PlayerChar, _super);
             function PlayerChar(name) {
-                _super.call(this);
-                this.name = name;
-                this.skills = new Entities.Skillset().setProwess(5).setEvasion(5);
-                this.traits = new Array();
-                this.stats = new Entities.Statset(30, 10, 100, 30);
-                this.inventory = new Array();
+                _super.call(this, name);
+                this.skills.setProwess(5).setEvasion(5);
+                this.stats = new Entities.Statset(30, 30, 10, 30, 300);
                 this._hasTurn = true;
                 this.equipment = new Entities.Equipment();
                 this.dir = Common.Vec.East;
@@ -1082,6 +1089,13 @@ var Common;
 
             PlayerChar.prototype.getAttack = function () {
                 return new Entities.Attack(this, this.currWeapon.damage, this.currWeapon.multiplier, this.skills.prowess);
+            };
+
+            PlayerChar.prototype.getHitBonus = function () {
+                return this.skills.prowess.value + this.currWeapon.toHit;
+            };
+            PlayerChar.prototype.getDamage = function () {
+                return [this.currWeapon.multiplier, this.currWeapon.damage];
             };
             return PlayerChar;
         })(Entities.Entity);
@@ -1135,11 +1149,13 @@ var Common;
 (function (Common) {
     (function (Entities) {
         var Statset = (function () {
-            function Statset(maxHp, maxAP, maxEnd, eqWt) {
+            function Statset(maxHp, maxStamina, maxAP, eqWt, maxEnd) {
                 this.hp = maxHp;
                 this.hpMax = maxHp;
                 this.ap = maxAP;
                 this.apMax = maxAP;
+                this.stamina = maxStamina;
+                this.staminaMax = maxStamina;
                 this.endurance = maxEnd;
                 this.enduranceMax = maxEnd;
                 this.equipWeight = eqWt;
@@ -1152,6 +1168,11 @@ var Common;
 
             Statset.prototype.setAP = function (val) {
                 this.ap = val;
+                return this;
+            };
+
+            Statset.prototype.setStamina = function (val) {
+                this.stamina = val;
                 return this;
             };
 
@@ -1863,7 +1884,7 @@ var ConsoleGame;
                     matrix.matrix[e.x - _this.x][e.y - _this.y].symbol = d.symbol;
                     matrix.matrix[e.x - _this.x][e.y - _this.y].color = d.color;
                     if (matrix.matrix[e.x + e.dir.x - _this.x])
-                        matrix.matrix[e.x + e.dir.x - _this.x][e.y + e.dir.y - _this.y].bgColor = "pink";
+                        matrix.matrix[e.x + e.dir.x - _this.x][e.y + e.dir.y - _this.y].bgColor = "tan";
                 }
             });
             return matrix;
@@ -2293,19 +2314,21 @@ var ConsoleGame;
             matrix.addString(1, 3, p1.name);
             matrix.addString(1, 4, "Health:");
             matrix.addString(10, 4, p1.stats.hp + "/" + p1.stats.hpMax);
-            matrix.addString(1, 5, "Actions:");
-            matrix.addString(10, 5, p1.stats.ap + "/" + p1.stats.apMax);
-            matrix.addString(1, 6, "Endur:");
-            matrix.addString(5, 7, "(+5, 1x15)");
+            matrix.addString(1, 6, "ActPts:");
+            matrix.addString(10, 6, p1.stats.ap + "/" + p1.stats.apMax);
+            matrix.addString(1, 5, "Stamina:");
+            matrix.addString(10, 5, p1.stats.stamina + "/" + p1.stats.staminaMax);
+            matrix.addString(5, 7, "(+" + p1.getHitBonus() + ", " + p1.getDamage()[0] + "x" + p1.getDamage()[1] + ")");
             matrix.addString(5, 8, "[+5, 0-0]");
 
             matrix.addString(1, 10, p2.name);
             matrix.addString(1, 11, "Health:");
             matrix.addString(10, 11, p2.stats.hp + "/" + p2.stats.hpMax);
-            matrix.addString(1, 12, "Actions:");
-            matrix.addString(10, 12, p2.stats.ap + "/" + p2.stats.apMax);
-            matrix.addString(1, 13, "Endur:");
-            matrix.addString(5, 14, "(+5, 3x7)");
+            matrix.addString(1, 13, "ActPts:");
+            matrix.addString(10, 13, p2.stats.ap + "/" + p2.stats.apMax);
+            matrix.addString(1, 12, "Stamina:");
+            matrix.addString(10, 12, p2.stats.stamina + "/" + p2.stats.staminaMax);
+            matrix.addString(5, 14, "(+" + p2.getHitBonus() + ", " + p2.getDamage()[0] + "x" + p2.getDamage()[1] + ")");
             matrix.addString(5, 15, "[+5, 0-0]");
 
             /*
@@ -2349,6 +2372,7 @@ var ConsoleGame;
                 matrix.matrix[i][0] = { symbol: " ", bgColor: color1 };
             }
             matrix.addString(5, 0, "QUEUE");
+            matrix.addString(0, 1, "---  ready  ---", null, "green");
             for (var i = 0; i < both.length && i < 9; i++) {
                 var drawable = ConsoleGame.getDrawable(both[i].entity);
                 matrix.addString(1, i * 3 + 2, both[i].entity.name, ConsoleGame.Settings.SidebarWidth - 4);
@@ -2363,13 +2387,14 @@ var ConsoleGame;
                     matrix.addString(ConsoleGame.Settings.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, color1);
                     matrix.addString(ConsoleGame.Settings.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color1);
                 }
-
                 //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 4, "---");
+                /*
                 if (both[i].time === 0) {
-                    matrix.addString(0, i * 3 + 1, "---  ready  ---", null, "green");
-                } else {
-                    matrix.addString(0, i * 3 + 1, "--- +" + both[i].time.toFixed(2) + "tu ---", null, "red");
+                matrix.addString(0, i * 3 + 1, "---  ready  ---", null, "green");
                 }
+                else {
+                matrix.addString(0, i * 3 + 1, "--- +" + (<number>both[i].time).toFixed(2) + "tu ---", null, "red");
+                }*/
             }
             matrix.addString(ConsoleGame.Settings.SidebarWidth - 7, 29, "space:");
             matrix.addString(ConsoleGame.Settings.SidebarWidth - 7, 30, " END  ", null, null, color2);

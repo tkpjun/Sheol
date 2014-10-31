@@ -11,7 +11,7 @@
         x: number;
         y: number;
         dir: IVector2;
-        nextAction;
+        getAction(): () => void;
         hasAP(): boolean;
         newTurn();
     }

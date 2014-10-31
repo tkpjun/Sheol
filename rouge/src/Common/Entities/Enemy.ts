@@ -5,11 +5,10 @@ module Common.Entities {
 
         equipment: any;
         effects: any;
-        active: boolean;
+        _hasTurn: boolean;
 
         constructor(name: string, stats: Statset, skills?: Skillset, traits?: Trait[]) {
-            super();
-            this.name = name;
+            super(name);
             if (skills)
                 this.skills = skills;
             else
@@ -19,8 +18,7 @@ module Common.Entities {
             else
                 this.traits = new Array<Trait>();
             this.stats = stats;               
-            this.inventory = new Array<IItem>();
-            this.active = true;
+            this._hasTurn = true;
             this.dir = Vec.West;
         }
 
@@ -28,13 +26,13 @@ module Common.Entities {
             return this.stats.ap > 0;
         }
 
-        didntEnd(): boolean {
-            return this.active;
+        hasTurn(): boolean {
+            return this._hasTurn;
         }
 
         newTurn() {
             this.stats.ap = this.stats.apMax;
-            this.active = true;
+            this._hasTurn = true;
         }
     }
 }

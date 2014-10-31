@@ -24,19 +24,21 @@ module ConsoleGame.GameUI {
         matrix.addString(1, 3, p1.name);
         matrix.addString(1, 4, "Health:");
         matrix.addString(10, 4, p1.stats.hp + "/" + p1.stats.hpMax);
-        matrix.addString(1, 5, "Actions:");
-        matrix.addString(10, 5, p1.stats.ap + "/" + p1.stats.apMax);
-        matrix.addString(1, 6, "Endur:");
-        matrix.addString(5, 7, "(+5, 1x15)");
+        matrix.addString(1, 6, "ActPts:");
+        matrix.addString(10, 6, p1.stats.ap + "/" + p1.stats.apMax);
+        matrix.addString(1, 5, "Stamina:");
+        matrix.addString(10, 5, p1.stats.stamina + "/" + p1.stats.staminaMax);
+        matrix.addString(5, 7, "(+" + p1.getHitBonus() + ", " + p1.getDamage()[0] + "x" + p1.getDamage()[1] + ")");
         matrix.addString(5, 8, "[+5, 0-0]");
 
         matrix.addString(1, 10, p2.name);
         matrix.addString(1, 11, "Health:");
         matrix.addString(10, 11, p2.stats.hp + "/" + p2.stats.hpMax);
-        matrix.addString(1, 12, "Actions:");
-        matrix.addString(10, 12, p2.stats.ap + "/" + p2.stats.apMax);
-        matrix.addString(1, 13, "Endur:");
-        matrix.addString(5, 14, "(+5, 3x7)");
+        matrix.addString(1, 13, "ActPts:");
+        matrix.addString(10, 13, p2.stats.ap + "/" + p2.stats.apMax);
+        matrix.addString(1, 12, "Stamina:");
+        matrix.addString(10, 12, p2.stats.stamina + "/" + p2.stats.staminaMax);
+        matrix.addString(5, 14, "(+" + p2.getHitBonus() + ", " + p2.getDamage()[0] + "x" + p2.getDamage()[1] + ")");
         matrix.addString(5, 15, "[+5, 0-0]");
 
         /*
@@ -83,6 +85,7 @@ module ConsoleGame.GameUI {
             matrix.matrix[i][0] = { symbol: " ", bgColor: color1 }
         }
         matrix.addString(5, 0, "QUEUE");
+        matrix.addString(0, 1, "---  ready  ---", null, "green");
         for (var i = 0; i < both.length && i < 9; i++) {
             var drawable = getDrawable(both[i].entity);
             matrix.addString(1, i * 3 + 2, both[i].entity.name, Settings.SidebarWidth - 4);
@@ -98,12 +101,13 @@ module ConsoleGame.GameUI {
                 matrix.addString(Settings.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color1);
             }
             //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 4, "---");
+            /*
             if (both[i].time === 0) {
                 matrix.addString(0, i * 3 + 1, "---  ready  ---", null, "green");
             }
             else {
                 matrix.addString(0, i * 3 + 1, "--- +" + (<number>both[i].time).toFixed(2) + "tu ---", null, "red");           
-            }
+            }*/
         }
         matrix.addString(Settings.SidebarWidth - 7, 29, "space:");
         matrix.addString(Settings.SidebarWidth - 7, 30, " END  ", null, null, color2);

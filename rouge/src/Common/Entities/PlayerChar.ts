@@ -8,12 +8,9 @@ module Common.Entities {
         _hasTurn: boolean;
 
         constructor(name: string) {
-            super();
-            this.name = name;
-            this.skills = new Skillset().setProwess(5).setEvasion(5);
-            this.traits = new Array<Trait>();
-            this.stats = new Statset(30, 10, 100, 30);
-            this.inventory = new Array<IItem>();
+            super(name);
+            this.skills.setProwess(5).setEvasion(5);
+            this.stats = new Statset(30, 30, 10, 30, 300);
             this._hasTurn = true;
             this.equipment = new Equipment();
             this.dir = Vec.East;
@@ -37,6 +34,13 @@ module Common.Entities {
                 this.currWeapon.damage,
                 this.currWeapon.multiplier,
                 this.skills.prowess);
+        }
+
+        getHitBonus(): number {
+            return this.skills.prowess.value + this.currWeapon.toHit;
+        }
+        getDamage(): number[] {
+            return [this.currWeapon.multiplier, this.currWeapon.damage];
         }
     }
 } 

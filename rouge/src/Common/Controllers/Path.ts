@@ -36,7 +36,9 @@
                 var arr = new Array<IVector2>();
                 var cost = 0;
                 for (var i = 0; i < this._nodes.length; i++) {
-                    if (cost + this._costs[i] > this._lengthInAP) break;
+                    if (cost + this._costs[i] > this._lengthInAP) {
+                        break;
+                    }
 
                     arr.push(this._nodes[i]);
                     cost += this._costs[i];

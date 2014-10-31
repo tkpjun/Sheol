@@ -48,7 +48,7 @@
             player2.y = room.getCenter()[1];
             this.characters.push(player2);
             this.level.scheduler.add(
-                new Controllers.ChangeProperty(this.currEntity, player2), true, 1.5);
+                new Controllers.ChangeProperty(this.currEntity, player2), true, 1);
 
             this.characters.forEach((c) => { this.level.entities.push(c) });
 
@@ -60,7 +60,7 @@
                 enemy.y = rooms[i].getBottom();
                 //console.log(enemy.x +", "+ enemy.y)
                 this.level.entities.push(enemy);
-                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true, 2);
+                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true, 1);
             }
         }
 
@@ -70,10 +70,10 @@
 
             var pollForAction = () => {
                 planAction(entity, this);
-                var action = entity.nextAction;
+                var action = entity.getAction();
                 if (action) {
                     action();
-                    entity.nextAction = undefined;
+                    //console.log(entity.x + "," + entity.y);
                     this.changed.notify();
                 }
 
@@ -81,7 +81,8 @@
                     setTimeout(pollForAction, Settings.UpdateRate);
                 }
                 else {
-                    this.level.scheduler.setDuration(Math.max(0.5, 1 - (entity.stats.ap / entity.stats.apMax)));
+                    //this.level.scheduler.setDuration(Math.max(0.5, 1 - (entity.stats.ap / entity.stats.apMax)));
+                    entity.stats.stamina += Math.max(0, entity.stats.ap);
                     entity.newTurn();
                     this.changed.notify();
 

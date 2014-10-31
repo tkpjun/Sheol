@@ -109,7 +109,7 @@ module ConsoleGame {
                     matrix.matrix[e.x - this.x][e.y - this.y].symbol = d.symbol;
                     matrix.matrix[e.x - this.x][e.y - this.y].color = d.color;
                     if (matrix.matrix[e.x + e.dir.x - this.x])
-                        matrix.matrix[e.x + e.dir.x - this.x][e.y + e.dir.y - this.y].bgColor = "pink";
+                        matrix.matrix[e.x + e.dir.x - this.x][e.y + e.dir.y - this.y].bgColor = "tan";
                 }
             })
             return matrix;

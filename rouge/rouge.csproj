@@ -79,6 +79,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="src\ConsoleGame\UI\" />
     <Folder Include="src\GUIGame\" />
   </ItemGroup>
   <PropertyGroup>

@@ -134,11 +134,11 @@
     }
 
     function endTurn() {
-        char.nextAction = () => {
+        char.addAction(() => {
             char._hasTurn = false;
             state = States.Inactive;
             manager.currPath.unwrap = null;
-        }
+        });
     }
 
     function confirm() {
@@ -148,16 +148,24 @@
         switch (state){
             case States.Move:
                 if (char.stats.ap > 1) {
-                    char.nextAction = () => {
-                        var limited = path.trim();
-                        char.x = limited._nodes[path.limitedNodes().length - 1].x;
-                        char.y = limited._nodes[path.limitedNodes().length - 1].y;
-                        char.stats.ap -= limited.cost();
-                        manager.currPath.unwrap = new AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
+                    path.trim();
+                    function nextStep(i) {
+                        return () => {
+                            char.dir = Vec.sub(path._nodes[i], {x:char.x, y:char.y});
+                            char.x = path._nodes[i].x;
+                            char.y = path._nodes[i].y;
+                            manager.currPath.unwrap = new AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
 
-                        if (!char.hasAP()) {
-                            state = States.Inactive;
+                            if (i == path._nodes.length - 1) {
+                                char.stats.ap -= path.cost();
+                            }
+                            if (!char.hasAP()) {
+                                state = States.Inactive;
+                            }
                         }
+                    }
+                    for (var i = 1; i < path._nodes.length; i++) {
+                        char.addAction(nextStep(i));
                     }
                 }
                 else {
@@ -166,26 +174,27 @@
                 }
                 break;
             case States.Attack:
-                var limited = path.trim();
+                path.trim();
                 var result;
                 var targets = [];
                 var index = 1;
 
                 while (!targets[0]) {
-                    if (index >= limited._nodes.length)
+                    if (index >= path._nodes.length)
                         break;
 
                     targets = lvl.entities.filter((entity) => {
-                        return entity.x === limited._nodes[index].x && entity.y === limited._nodes[index].y;
+                        return entity.x === path._nodes[index].x && entity.y === path._nodes[index].y;
                     });
                     index += 1;
                 }
-                char.nextAction = () => {                  
+                char.addAction(() => {
                     if (targets[0] && char.stats.ap >= char.currWeapon.apCost) {
                         char.stats.ap -= char.currWeapon.apCost;
                         char.currWeapon.setDurability(char.currWeapon.durability - 1);
                         result = (<Entities.Entity>targets[0]).getStruck(char.getAttack());
-                        con.addLine(result.attacker.name + " hit " + result.defender.name + " with a "+ result.attacker.currWeapon.name +" for " +
+                        console.log(result.attacker)
+                        con.addLine(result.attacker.name + " hit " + result.defender.name + " with a " + result.attacker.currWeapon.name + " for " +
                             result.finalDmg + " damage! - Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) +
                             "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) +
                             "+" + result.defender.skills.evasion.value + " - Armor rolls: " + result.armorRolls.toString() + " -");
@@ -200,7 +209,7 @@
                     if (!char.hasAP()) {
                         state = States.Inactive;
                     }
-                }
+                });
                 break;
             default:
                 throw ("Bad state: " + state);
