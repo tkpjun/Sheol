@@ -26,12 +26,18 @@
                 return this._nodes.length > 1;
             };
 
-            Path.prototype.limitedNodes = function () {
-                if (this._lengthInAP) {
+            Path.prototype.limitedNodes = function (ap) {
+                var newAP;
+                if (ap)
+                    newAP = ap;
+                else
+                    newAP = this._lengthInAP;
+
+                if (newAP) {
                     var arr = new Array();
                     var cost = 0;
                     for (var i = 0; i < this._nodes.length; i++) {
-                        if (cost + this._costs[i] > this._lengthInAP) {
+                        if (cost + this._costs[i] > newAP) {
                             break;
                         }
 
@@ -43,8 +49,8 @@
                     return this._nodes;
             };
 
-            Path.prototype.trim = function () {
-                this._nodes = this.limitedNodes();
+            Path.prototype.trim = function (ap) {
+                this._nodes = this.limitedNodes(ap);
                 this._costs.length = this._nodes.length;
                 if (this._nodes.length > 0) {
                     this.pointer.x = this._nodes[this._nodes.length - 1].x;
@@ -222,7 +228,6 @@ var Common;
             } else if (entity instanceof Common.Entities.Enemy) {
                 var enemy = entity;
                 enemy.addAction(function () {
-                    enemy.stats.ap = 0;
                     enemy._hasTurn = false;
                 });
             }
@@ -310,14 +315,12 @@ var Common;
                         _this.changed.notify();
                     }
 
-                    if (entity.hasAP() && entity.hasTurn()) {
+                    if (entity.hasTurn()) {
                         setTimeout(pollForAction, Common.Settings.UpdateRate);
                     } else {
-                        //this.level.scheduler.setDuration(Math.max(0.5, 1 - (entity.stats.ap / entity.stats.apMax)));
-                        entity.stats.stamina += Math.max(0, entity.stats.ap);
                         entity.newTurn();
-                        _this.changed.notify();
 
+                        //this.changed.notify();
                         var unlock = function () {
                             _this.engine.unlock();
                         };
@@ -495,28 +498,37 @@ var Common;
 
                 switch (state) {
                     case 0 /* Move */:
-                        if (char.stats.ap > 1) {
-                            path.trim();
-                            function nextStep(i) {
+                        var moves = char.requestMoves(2, path.cost() / 2);
+                        if (moves > 0) {
+                            path.trim(moves * 2);
+                            function nextStep(i, last) {
                                 return function () {
                                     char.dir = Common.Vec.sub(path._nodes[i], { x: char.x, y: char.y });
                                     char.x = path._nodes[i].x;
                                     char.y = path._nodes[i].y;
-                                    manager.currPath.unwrap = new Controllers.AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
 
+                                    //manager.currPath.unwrap = new AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
+                                    /*
                                     if (i == path._nodes.length - 1) {
-                                        char.stats.ap -= path.cost();
-                                    }
-                                    if (!char.hasAP()) {
-                                        state = 2 /* Inactive */;
+                                    char.stats.ap -= path.cost();
+                                    }*/
+                                    if (last) {
+                                        manager.currPath.unwrap = new Controllers.AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
+                                        //endTurn();
                                     }
                                 };
                             }
-                            for (var i = 1; i < path._nodes.length; i++) {
-                                char.addAction(nextStep(i));
+                            function bool(i) {
+                                return i < path._nodes.length && i <= moves;
+                            }
+                            for (var i = 1; bool(i); i++) {
+                                if (!bool(i + 1)) {
+                                    char.addAction(nextStep(i, true));
+                                } else
+                                    char.addAction(nextStep(i));
                             }
                         } else {
-                            con.addLine("You need at least 2 AP to move! Ending turn...");
+                            con.addLine("Out of usable stamina! Ending turn...");
                             endTurn();
                         }
                         break;
@@ -536,22 +548,25 @@ var Common;
                             index += 1;
                         }
                         char.addAction(function () {
-                            if (targets[0] && char.stats.ap >= char.currWeapon.apCost) {
-                                char.stats.ap -= char.currWeapon.apCost;
-                                char.currWeapon.setDurability(char.currWeapon.durability - 1);
-                                result = targets[0].getStruck(char.getAttack());
-                                console.log(result.attacker);
-                                con.addLine(result.attacker.name + " hit " + result.defender.name + " with a " + result.attacker.currWeapon.name + " for " + result.finalDmg + " damage! - Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) + "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) + "+" + result.defender.skills.evasion.value + " - Armor rolls: " + result.armorRolls.toString() + " -");
-                            } else if (char.stats.ap < char.currWeapon.apCost) {
-                                con.addLine("You need " + char.currWeapon.apCost + " AP to attack with a " + char.currWeapon.name + "!");
+                            if (targets[0]) {
+                                var moves = char.requestMoves(char.currWeapon.apCost, 1);
+                                if (moves == 1) {
+                                    char.currWeapon.setDurability(char.currWeapon.durability - 1);
+                                    result = targets[0].getStruck(char.getAttack());
+                                    con.addLine(result.attacker.name + " hit " + result.defender.name + " with a " + result.attacker.currWeapon.name + " for " + result.finalDmg + " damage! - Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) + "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) + "+" + result.defender.skills.evasion.value + " - Armor rolls: " + result.armorRolls.toString() + " -");
+                                } else {
+                                    con.addLine("Out of usable stamina! Ending turn...");
+                                    endTurn();
+                                }
                             }
 
                             path.pointer = ptr;
                             path.connect(callback);
                             manager.currPath.unwrap = path;
+                            /*
                             if (!char.hasAP()) {
-                                state = 2 /* Inactive */;
-                            }
+                            state = States.Inactive;
+                            }*/
                         });
                         break;
                     default:
@@ -1069,7 +1084,8 @@ var Common;
             function PlayerChar(name) {
                 _super.call(this, name);
                 this.skills.setProwess(5).setEvasion(5);
-                this.stats = new Entities.Statset(30, 30, 10, 30, 300);
+                this.stats = new Entities.Statset(30, 15, 8, 30);
+                this.spirit = 1000;
                 this._hasTurn = true;
                 this.equipment = new Entities.Equipment();
                 this.dir = Common.Vec.East;
@@ -1082,8 +1098,43 @@ var Common;
                 return this._hasTurn;
             };
 
+            PlayerChar.prototype.requestMoves = function (cost, times) {
+                var moves = 0;
+                for (var i = 0; i < times; i++) {
+                    if (this.stats.ap - cost >= 0) {
+                        moves += 1;
+                        this.stats.ap -= cost;
+                    } else
+                        break;
+                }
+                if (moves < times) {
+                    moves += this.movesFromStamina(cost, times - moves);
+                }
+                return moves;
+            };
+
+            PlayerChar.prototype.movesFromStamina = function (cost, times) {
+                var moves = 0;
+                for (var i = 0; i < times; i++) {
+                    var nextCost = 0;
+                    for (var j = 0; j < cost; j++) {
+                        nextCost += Math.ceil((-this.stats.ap + j) / 2) + 1;
+                    }
+                    if (this.stats.stamina >= nextCost) {
+                        moves += 1;
+                        this.stats.stamina -= nextCost;
+                        this.stats.ap -= cost;
+                    } else
+                        break;
+                }
+                return moves;
+            };
+
             PlayerChar.prototype.newTurn = function () {
+                if (this.stats.ap > 0)
+                    this.stats.setStamina(Math.min(this.stats.stamina + this.stats.ap, this.stats.staminaMax));
                 this.stats.ap = this.stats.apMax;
+                this.stats.setStamina(Math.min(this.stats.stamina + 3, this.stats.staminaMax));
                 this._hasTurn = true;
             };
 
@@ -1149,15 +1200,13 @@ var Common;
 (function (Common) {
     (function (Entities) {
         var Statset = (function () {
-            function Statset(maxHp, maxStamina, maxAP, eqWt, maxEnd) {
+            function Statset(maxHp, maxStamina, maxAP, eqWt) {
                 this.hp = maxHp;
                 this.hpMax = maxHp;
                 this.ap = maxAP;
                 this.apMax = maxAP;
                 this.stamina = maxStamina;
                 this.staminaMax = maxStamina;
-                this.endurance = maxEnd;
-                this.enduranceMax = maxEnd;
                 this.equipWeight = eqWt;
                 this.exp = 0;
             }
@@ -1173,11 +1222,6 @@ var Common;
 
             Statset.prototype.setStamina = function (val) {
                 this.stamina = val;
-                return this;
-            };
-
-            Statset.prototype.setEndurance = function (val) {
-                this.endurance = val;
                 return this;
             };
             return Statset;
@@ -1927,6 +1971,35 @@ var ConsoleGame;
         }
     }
     ConsoleGame.getDrawable = getDrawable;
+
+    function wrapString(str, limit) {
+        var arr = new Array();
+        var split = str.split(" ");
+        function nextLine(words, startIndex) {
+            var line = words[startIndex];
+            var lt = words[startIndex].length;
+            var i = startIndex + 1;
+            var next = words[i];
+            while (next && lt + next.length + 1 < limit) {
+                lt += next.length + 1;
+                line += " " + next;
+                i += 1;
+                next = words[i];
+            }
+
+            return [line, i];
+        }
+
+        var wordsUsed = 0;
+        while (wordsUsed < split.length) {
+            var line = nextLine(split, wordsUsed);
+            arr.push(line[0]);
+            wordsUsed = line[1];
+        }
+
+        return arr;
+    }
+    ConsoleGame.wrapString = wrapString;
 })(ConsoleGame || (ConsoleGame = {}));
 var ConsoleGame;
 (function (ConsoleGame) {
@@ -2090,22 +2163,30 @@ var ConsoleGame;
         DrawMatrix.prototype.addString = function (x, y, str, wrapAt, color, bgColor) {
             if (!str)
                 return this;
+            var lines = new Array();
+            var bgc;
 
             var limit = this.matrix.length;
             if (wrapAt) {
                 limit = wrapAt;
             }
-            var bgc;
 
-            for (var i = 0; i < str.length; i++) {
-                if (this.matrix[i + x] && this.matrix[i + x][y]) {
-                    if (!bgColor)
-                        bgc = this.matrix[i + x][y].bgColor;
-                    else
-                        bgc = bgColor;
-                    this.matrix[i + x][y] = { symbol: str[i], color: color, bgColor: bgc };
-                } else {
-                    //Add wrapping
+            if (x + str.length > limit) {
+                lines = ConsoleGame.wrapString(str, limit - x);
+            } else {
+                lines.push(str);
+            }
+
+            for (var h = 0; h < lines.length; h++) {
+                var line = lines[h];
+                for (var i = 0; i < line.length; i++) {
+                    if (this.matrix[i + x] && this.matrix[i + x][h + y]) {
+                        if (!bgColor)
+                            bgc = this.matrix[i + x][h + y].bgColor;
+                        else
+                            bgc = bgColor;
+                        this.matrix[i + x][h + y] = { symbol: line[i], color: color, bgColor: bgc };
+                    }
                 }
             }
             return this;
@@ -2236,7 +2317,7 @@ var ConsoleGame;
             this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
             this.nextFrame = new C.ObservableProperty();
             this.camera = new ConsoleGame.Camera(ConsoleGame.Settings.SidebarWidth, ConsoleGame.Settings.DisplayWidth - ConsoleGame.Settings.SidebarWidth * 2, 0, ConsoleGame.Settings.DisplayHeight - ConsoleGame.Settings.BottomBarHeight);
-            this.textBox = new ConsoleGame.TextBox(ConsoleGame.Settings.SidebarWidth, 0, 7);
+            this.textBox = new ConsoleGame.UI.TextBox(ConsoleGame.Settings.SidebarWidth, 0, 7);
             Controllers.Player.initialize(this.textBox, this.manager);
 
             var update = function () {
@@ -2372,7 +2453,7 @@ var ConsoleGame;
                 matrix.matrix[i][0] = { symbol: " ", bgColor: color1 };
             }
             matrix.addString(5, 0, "QUEUE");
-            matrix.addString(0, 1, "---  ready  ---", null, "green");
+            matrix.addString(0, 1, "--- current ---", null, "green");
             for (var i = 0; i < both.length && i < 9; i++) {
                 var drawable = ConsoleGame.getDrawable(both[i].entity);
                 matrix.addString(1, i * 3 + 2, both[i].entity.name, ConsoleGame.Settings.SidebarWidth - 4);
@@ -2560,74 +2641,59 @@ var ConsoleGame;
 })(ConsoleGame || (ConsoleGame = {}));
 var ConsoleGame;
 (function (ConsoleGame) {
-    var TextBox = (function () {
-        function TextBox(x, y, height) {
-            this.x = x;
-            this.y = y;
-            this.height = height;
-            this.lines = new Array();
-        }
-        TextBox.prototype.addLine = function (line) {
-            this.lines.push(line);
-            if (this.lines.length > 50) {
-                this.lines.splice(0, 25);
+    (function (UI) {
+        var TextBox = (function () {
+            function TextBox(x, y, height) {
+                this.x = x;
+                this.y = y;
+                this.height = height;
+                this.lines = new Array();
             }
-            return this;
-        };
+            TextBox.prototype.addLine = function (line) {
+                this.lines.push(line);
+                if (this.lines.length > 50) {
+                    this.lines.splice(0, 25);
+                }
+                return this;
+            };
 
-        TextBox.prototype.getMatrix = function (width) {
-            var matrix = new ConsoleGame.DrawMatrix(this.x, this.y, null, width, this.height);
-            var used = 0;
-            var index = this.lines.length - 1;
+            TextBox.prototype.getMatrix = function (width) {
+                var matrix = new ConsoleGame.DrawMatrix(this.x, this.y, null, width, this.height);
+                var used = 0;
+                var index = this.lines.length - 1;
 
-            while (used < this.height && index >= 0) {
-                var nextLine = this.lines[index];
+                while (used < this.height && index >= 0) {
+                    var nextLine = this.lines[index];
 
-                if (nextLine.length > width - 2) {
-                    var split = this.breakIntoLines(nextLine, width - 2);
+                    if (nextLine.length > width - 2) {
+                        var split = ConsoleGame.wrapString(nextLine, width - 2);
 
-                    matrix.addString(1, this.height - used - 1, split[1], width - 1);
-                    used += 1;
-                    if (used >= this.height)
+                        while (split.length > 0 && used < this.height) {
+                            var line = split.pop();
+                            matrix.addString(1, this.height - used - 1, line, width - 1);
+                            used += 1;
+                        }
+                        /*
+                        matrix.addString(1, this.height - used - 1, split[1], width - 1);
+                        used += 1;
+                        if (used >= this.height)
                         break;
-                    else {
+                        else {
                         matrix.addString(1, this.height - used - 1, split[0], width - 1);
                         used += 1;
+                        }    */
+                    } else {
+                        matrix.addString(1, this.height - used - 1, nextLine, width - 1);
+                        used += 1;
                     }
-                } else {
-                    matrix.addString(1, this.height - used - 1, nextLine, width - 1);
-                    used += 1;
+                    index -= 1;
                 }
-                index -= 1;
-            }
-            return matrix;
-        };
-
-        TextBox.prototype.breakIntoLines = function (str, limit) {
-            var arr = new Array();
-
-            var words = str.split(" ");
-            var i = 1;
-            var next = words[i];
-            var lt = words[0].length;
-            arr[0] = words[0];
-            while (next && lt + next.length + 1 < limit) {
-                lt += next.length + 1;
-                arr[0] += " " + next;
-                i += 1;
-                next = words[i];
-            }
-            arr[1] = words[i];
-            i += 1;
-            while (i < words.length) {
-                arr[1] += " " + words[i];
-                i += 1;
-            }
-
-            return arr;
-        };
-        return TextBox;
-    })();
-    ConsoleGame.TextBox = TextBox;
+                return matrix;
+            };
+            return TextBox;
+        })();
+        UI.TextBox = TextBox;
+    })(ConsoleGame.UI || (ConsoleGame.UI = {}));
+    var UI = ConsoleGame.UI;
 })(ConsoleGame || (ConsoleGame = {}));
 //# sourceMappingURL=game.js.map

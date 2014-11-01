@@ -34,4 +34,32 @@ module ConsoleGame {
             return { symbol: "e" };
         }
     }
+
+    export function wrapString(str: string, limit: number): string[]{
+        var arr = new Array<string>();
+        var split = str.split(" ");
+        function nextLine(words: string[], startIndex: number): any[] {
+            var line = words[startIndex];
+            var lt = words[startIndex].length;
+            var i = startIndex + 1;
+            var next = words[i];
+            while (next && lt + next.length + 1 < limit) {
+                lt += next.length + 1;
+                line += " " + next;
+                i += 1;
+                next = words[i];
+            }
+
+            return [line, i];
+        }
+
+        var wordsUsed = 0;
+        while (wordsUsed < split.length) {
+            var line = nextLine(split, wordsUsed);
+            arr.push(line[0]);
+            wordsUsed = line[1];
+        }
+
+        return arr;
+    }
 }

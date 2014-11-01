@@ -28,21 +28,29 @@ module ConsoleGame {
 
         addString(x: number, y: number, str: string, wrapAt?: number, color?: string, bgColor?: string): DrawMatrix {
             if (!str) return this;
+            var lines = new Array<string>();
+            var bgc;
 
             var limit = this.matrix.length;
             if (wrapAt) {
                 limit = wrapAt;
             }
-            var bgc;
 
-            for (var i = 0; i < str.length; i++) {
-                if (this.matrix[i + x] && this.matrix[i + x][y]) {
-                    if (!bgColor) bgc = this.matrix[i + x][y].bgColor;
-                    else bgc = bgColor;
-                    this.matrix[i + x][y] = { symbol: str[i], color: color, bgColor: bgc };
-                }
-                else {
-                    //Add wrapping
+            if (x + str.length > limit) {
+                lines = wrapString(str, limit - x)
+            }
+            else {
+                lines.push(str);
+            }
+
+            for (var h = 0; h < lines.length; h++) {
+                var line = lines[h];
+                for (var i = 0; i < line.length; i++) {
+                    if (this.matrix[i + x] && this.matrix[i + x][h + y]) {
+                        if (!bgColor) bgc = this.matrix[i + x][h + y].bgColor;
+                        else bgc = bgColor;
+                        this.matrix[i + x][h + y] = { symbol: line[i], color: color, bgColor: bgc };
+                    }
                 }
             }
             return this;

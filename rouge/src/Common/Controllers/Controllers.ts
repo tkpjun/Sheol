@@ -54,7 +54,7 @@
         }
         else if (entity instanceof Entities.Enemy) {
             var enemy = <Entities.Enemy>entity;
-            enemy.addAction(() => { enemy.stats.ap = 0; enemy._hasTurn = false; });
+            enemy.addAction(() => { enemy._hasTurn = false; });
         }
     }
 }

@@ -12,7 +12,7 @@ module ConsoleGame {
         manager: Controllers.EntityManager;
         camera: Camera;
         nextFrame: C.ObservableProperty<DrawMatrix>;
-        textBox: TextBox;
+        textBox: UI.TextBox;
 
         constructor() {
             this.dungeon = new Array<Dungeon.Level>(new Dungeon.Level(Dungeon.MapTypes.Mines));
@@ -23,7 +23,7 @@ module ConsoleGame {
                 Settings.DisplayWidth - Settings.SidebarWidth * 2,
                 0,
                 Settings.DisplayHeight - Settings.BottomBarHeight);
-            this.textBox = new TextBox(Settings.SidebarWidth, 0, 7);
+            this.textBox = new UI.TextBox(Settings.SidebarWidth, 0, 7);
             Controllers.Player.initialize(this.textBox, this.manager);
 
             var update = () => {

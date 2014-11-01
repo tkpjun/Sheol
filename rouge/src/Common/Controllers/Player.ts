@@ -147,29 +147,38 @@
 
         switch (state){
             case States.Move:
-                if (char.stats.ap > 1) {
-                    path.trim();
-                    function nextStep(i) {
+                var moves = char.requestMoves(2, path.cost() / 2);
+                if (moves > 0) {
+                    path.trim(moves * 2);
+                    function nextStep(i, last?) {
                         return () => {
                             char.dir = Vec.sub(path._nodes[i], {x:char.x, y:char.y});
                             char.x = path._nodes[i].x;
                             char.y = path._nodes[i].y;
-                            manager.currPath.unwrap = new AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
-
+                            //manager.currPath.unwrap = new AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
+                            /*
                             if (i == path._nodes.length - 1) {
                                 char.stats.ap -= path.cost();
-                            }
-                            if (!char.hasAP()) {
-                                state = States.Inactive;
+                            }*/
+                            if (last) {
+                                manager.currPath.unwrap = new AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
+                                //endTurn();
                             }
                         }
                     }
-                    for (var i = 1; i < path._nodes.length; i++) {
-                        char.addAction(nextStep(i));
+                    function bool(i) {
+                        return i < path._nodes.length && i <= moves
+                    }
+                    for (var i = 1; bool(i); i++) {
+                        if (!bool(i + 1)) {
+                            char.addAction(nextStep(i, true))
+                        }
+                        else
+                            char.addAction(nextStep(i));
                     }
                 }
                 else {
-                    con.addLine("You need at least 2 AP to move! Ending turn...");
+                    con.addLine("Out of usable stamina! Ending turn...");
                     endTurn();
                 }
                 break;
@@ -189,26 +198,29 @@
                     index += 1;
                 }
                 char.addAction(() => {
-                    if (targets[0] && char.stats.ap >= char.currWeapon.apCost) {
-                        char.stats.ap -= char.currWeapon.apCost;
-                        char.currWeapon.setDurability(char.currWeapon.durability - 1);
-                        result = (<Entities.Entity>targets[0]).getStruck(char.getAttack());
-                        console.log(result.attacker)
-                        con.addLine(result.attacker.name + " hit " + result.defender.name + " with a " + result.attacker.currWeapon.name + " for " +
-                            result.finalDmg + " damage! - Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) +
-                            "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) +
-                            "+" + result.defender.skills.evasion.value + " - Armor rolls: " + result.armorRolls.toString() + " -");
-                    }
-                    else if (char.stats.ap < char.currWeapon.apCost) {
-                        con.addLine("You need " + char.currWeapon.apCost + " AP to attack with a " + char.currWeapon.name + "!")
+                    if (targets[0]) {
+                        var moves = char.requestMoves(char.currWeapon.apCost, 1);
+                        if (moves == 1) {
+                            char.currWeapon.setDurability(char.currWeapon.durability - 1);
+                            result = (<Entities.Entity>targets[0]).getStruck(char.getAttack());
+                            con.addLine(result.attacker.name + " hit " + result.defender.name + " with a " + result.attacker.currWeapon.name + " for " +
+                                result.finalDmg + " damage! - Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) +
+                                "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) +
+                                "+" + result.defender.skills.evasion.value + " - Armor rolls: " + result.armorRolls.toString() + " -");
+                        }
+                        else {
+                            con.addLine("Out of usable stamina! Ending turn...");
+                            endTurn();
+                        }
                     }
 
                     path.pointer = ptr;
                     path.connect(callback);
                     manager.currPath.unwrap = path;
+                    /*
                     if (!char.hasAP()) {
                         state = States.Inactive;
-                    }
+                    }*/
                 });
                 break;
             default:

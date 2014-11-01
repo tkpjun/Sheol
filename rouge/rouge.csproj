@@ -34,7 +34,7 @@
     <TypeScriptCompile Include="src\ConsoleGame\GameUI.ts" />
     <TypeScriptCompile Include="src\ConsoleGame\MainMenuScreen.ts" />
     <TypeScriptCompile Include="src\ConsoleGame\Settings.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\TextBox.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\UI\TextBox.ts" />
     <TypeScriptCompile Include="src\Common\Controllers\AstarPath.ts" />
     <TypeScriptCompile Include="src\Common\Controllers\BasicAI.ts" />
     <TypeScriptCompile Include="src\Common\Controllers\Path.ts" />
@@ -79,7 +79,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="src\ConsoleGame\UI\" />
     <Folder Include="src\GUIGame\" />
   </ItemGroup>
   <PropertyGroup>

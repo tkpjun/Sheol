@@ -85,7 +85,7 @@ module ConsoleGame.GameUI {
             matrix.matrix[i][0] = { symbol: " ", bgColor: color1 }
         }
         matrix.addString(5, 0, "QUEUE");
-        matrix.addString(0, 1, "---  ready  ---", null, "green");
+        matrix.addString(0, 1, "--- current ---", null, "green");
         for (var i = 0; i < both.length && i < 9; i++) {
             var drawable = getDrawable(both[i].entity);
             matrix.addString(1, i * 3 + 2, both[i].entity.name, Settings.SidebarWidth - 4);

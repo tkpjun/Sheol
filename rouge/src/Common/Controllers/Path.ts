@@ -31,12 +31,16 @@
             return this._nodes.length > 1;
         }
 
-        limitedNodes(): Array<IVector2> {
-            if (this._lengthInAP) {
+        limitedNodes(ap?: number): Array<IVector2> {
+            var newAP;
+            if (ap) newAP = ap;
+            else newAP = this._lengthInAP;
+
+            if (newAP) {
                 var arr = new Array<IVector2>();
                 var cost = 0;
                 for (var i = 0; i < this._nodes.length; i++) {
-                    if (cost + this._costs[i] > this._lengthInAP) {
+                    if (cost + this._costs[i] > newAP) {
                         break;
                     }
 
@@ -48,8 +52,8 @@
             else return this._nodes;
         }
 
-        trim(): Path {
-            this._nodes = this.limitedNodes();
+        trim(ap?: number): Path {
+            this._nodes = this.limitedNodes(ap);
             this._costs.length = this._nodes.length;
             if (this._nodes.length > 0) {
                 this.pointer.x = this._nodes[this._nodes.length - 1].x;

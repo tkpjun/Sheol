@@ -77,14 +77,12 @@
                     this.changed.notify();
                 }
 
-                if (entity.hasAP() && entity.hasTurn()) {
+                if (entity.hasTurn()) {
                     setTimeout(pollForAction, Settings.UpdateRate);
                 }
                 else {
-                    //this.level.scheduler.setDuration(Math.max(0.5, 1 - (entity.stats.ap / entity.stats.apMax)));
-                    entity.stats.stamina += Math.max(0, entity.stats.ap);
                     entity.newTurn();
-                    this.changed.notify();
+                    //this.changed.notify();
 
                     var unlock = () => { this.engine.unlock() };
                     setTimeout(unlock, Settings.UpdateRate * 4);
