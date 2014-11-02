@@ -17,10 +17,11 @@
     }
 
     export interface IObject {
+        name: string;
         x: number;
         y: number;
         isPassable: boolean;
-        pick(): any;
+        pick(who: IEntity): string;
     }
 
     export interface IItem {

@@ -372,6 +372,8 @@ var Common;
                 var path = manager.currPath.unwrap;
                 if (path && path.isConnected() && x == path.pointer.x && y == path.pointer.y) {
                     confirm();
+                } else if (path && path.pointer.x == path.begin.x && path.pointer.y == path.begin.y) {
+                    confirm();
                 } else if (state == 0 /* Move */ || state == 1 /* Attack */) {
                     var newLoc = { x: x, y: y };
 
@@ -495,10 +497,18 @@ var Common;
             function confirm() {
                 var path = manager.currPath.unwrap;
                 var ptr = { x: path.pointer.x, y: path.pointer.y };
+                var moves;
+                console.log(path._nodes);
+                if (path._nodes.length == 1) {
+                    con.addLine(lvl.objects.filter(function (obj) {
+                        return obj.x == path.begin.x && obj.y == path.begin.y;
+                    })[0].pick(char));
+                    return;
+                }
 
                 switch (state) {
                     case 0 /* Move */:
-                        var moves = char.requestMoves(2, path.cost() / 2);
+                        moves = char.requestMoves(2, path.cost() / 2);
                         if (moves > 0) {
                             path.trim(moves * 2);
                             function nextStep(i, last) {
@@ -527,15 +537,12 @@ var Common;
                                 } else
                                     char.addAction(nextStep(i));
                             }
-                        } else {
-                            con.addLine("Out of usable stamina! Ending turn...");
-                            endTurn();
                         }
                         break;
                     case 1 /* Attack */:
                         path.trim();
                         var result;
-                        var targets = [];
+                        var targets = new Array();
                         var index = 1;
 
                         while (!targets[0]) {
@@ -549,14 +556,21 @@ var Common;
                         }
                         char.addAction(function () {
                             if (targets[0]) {
-                                var moves = char.requestMoves(char.currWeapon.apCost, 1);
+                                moves = char.requestMoves(char.currWeapon.apCost, 1);
                                 if (moves == 1) {
                                     char.currWeapon.setDurability(char.currWeapon.durability - 1);
                                     result = targets[0].getStruck(char.getAttack());
-                                    con.addLine(result.attacker.name + " hit " + result.defender.name + " with a " + result.attacker.currWeapon.name + " for " + result.finalDmg + " damage! - Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) + "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) + "+" + result.defender.skills.evasion.value + " - Armor rolls: " + result.armorRolls.toString() + " -");
-                                } else {
-                                    con.addLine("Out of usable stamina! Ending turn...");
-                                    endTurn();
+                                    var attacks = result.armorRolls.map(function (roll) {
+                                        return result.attackDmg + result.critDmg - roll;
+                                    });
+                                    var str = attacks.toString().replace(",", "+");
+                                    if (str === "")
+                                        str = "0";
+                                    con.addLine(result.attacker.name + " hit " + result.defender.name + " for " + str + "=" + result.finalDmg + " damage! Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) + "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) + "+" + result.defender.skills.evasion.value);
+                                    if (result.fatal) {
+                                        con.addLine(result.defender.name.substring(0, 1).toUpperCase() + result.defender.name.substring(1) + " was struck down!");
+                                        lvl.kill(result.defender);
+                                    }
                                 }
                             }
 
@@ -572,6 +586,10 @@ var Common;
                     default:
                         throw ("Bad state: " + state);
                         break;
+                }
+                if (moves === 0) {
+                    con.addLine("Out of usable stamina! Ending turn...");
+                    endTurn();
                 }
             }
         })(Controllers.Player || (Controllers.Player = {}));
@@ -738,6 +756,14 @@ var Common;
                 configurable: true
             });
 
+            Object.defineProperty(ItemObject.prototype, "name", {
+                get: function () {
+                    return this.item.name;
+                },
+                enumerable: true,
+                configurable: true
+            });
+
             Object.defineProperty(ItemObject.prototype, "isPassable", {
                 get: function () {
                     return true;
@@ -746,8 +772,9 @@ var Common;
                 configurable: true
             });
 
-            ItemObject.prototype.pick = function () {
-                return this.item;
+            ItemObject.prototype.pick = function (who) {
+                who.inventory.push(this.item);
+                return null;
             };
             return ItemObject;
         })();
@@ -763,8 +790,20 @@ var Common;
                 this.scheduler = new ROT.Scheduler.Action();
                 this.map = Dungeon.createMap(type);
                 this.entities = new Array();
-                this.items = new Array();
+                this.objects = new Array();
             }
+            Level.prototype.kill = function (entity) {
+                this.entities.splice(this.entities.indexOf(entity));
+                this.objects.push({
+                    name: entity.name + " corpse",
+                    isPassable: true,
+                    x: entity.x,
+                    y: entity.y,
+                    pick: function (who) {
+                        return who.name.substr(0, 1).toUpperCase() + who.name.substr(1) + " gives the " + entity.name + " corpse" + " a hearty stomp!";
+                    }
+                });
+            };
             return Level;
         })();
         Dungeon.Level = Level;
@@ -792,8 +831,10 @@ var Common;
     (function (Entities) {
         var AttackResult = (function () {
             function AttackResult(attack, defender, evadeSkill, armorMin, armorMax) {
+                this.fatal = false;
                 this.attacker = attack.user;
                 this.attackDmg = attack.damage;
+                this.critDmg = 0;
                 this.attackMul = attack.multiplier;
                 this.hitRoll = Math.ceil(ROT.RNG.getUniform() * 20) + attack.hitSkill.value;
                 this.defender = defender;
@@ -806,8 +847,9 @@ var Common;
                     modMul -= 1;
                     modEvd -= 7;
                 }
-                while (modHit >= modEvd + 7) {
+                while (modHit >= this.evadeRoll + 7) {
                     modDmg += 2;
+                    this.critDmg += 2;
                     modHit -= 7;
                 }
 
@@ -819,6 +861,9 @@ var Common;
                 this.finalDmg = 0;
                 for (var j = 0; j < modMul; j++) {
                     this.finalDmg += Math.max(0, modDmg - this.armorRolls[j]);
+                }
+                if (this.finalDmg >= this.defender.stats.hp) {
+                    this.fatal = true;
                 }
             }
             return AttackResult;
@@ -954,7 +999,7 @@ var Common;
         function getEnemy(name) {
             switch (name) {
                 default:
-                    return new Entities.Enemy(name, new Entities.Statset(80, 30, 10, 10));
+                    return new Entities.Enemy(name, new Entities.Statset(30, 30, 10, 10));
                     break;
             }
         }
@@ -1868,10 +1913,11 @@ var ConsoleGame;
 
         Camera.prototype.updateView = function (level, entities) {
             var map = this.getMapView(level.map);
+            this._view = this.addObjects(map, level.objects);
             if (entities)
-                this._view = this.addEntities(map, entities);
+                this._view = this.addEntities(this._view, entities);
             else
-                this._view = this.addEntities(map, level.entities);
+                this._view = this.addEntities(this._view, level.entities);
         };
 
         Camera.prototype.sees = function (x, y) {
@@ -1916,6 +1962,20 @@ var ConsoleGame;
                 }
             }
             return new ConsoleGame.DrawMatrix(this.xOffset, this.yOffset, matrix);
+        };
+
+        Camera.prototype.addObjects = function (matrix, objects) {
+            var _this = this;
+            objects.forEach(function (o) {
+                //ConsoleGame.log(e);
+                if (o.x < _this.x || o.y < _this.y || o.x > _this.x + _this.width - 1 || o.y > _this.y + _this.height - 1) {
+                } else {
+                    var d = { symbol: "%", color: "red" };
+                    matrix.matrix[o.x - _this.x][o.y - _this.y].symbol = d.symbol;
+                    matrix.matrix[o.x - _this.x][o.y - _this.y].color = d.color;
+                }
+            });
+            return matrix;
         };
 
         Camera.prototype.addEntities = function (matrix, entities) {
@@ -2209,7 +2269,7 @@ var ConsoleGame;
                     var bg = _this.matrix[node.x - offsetX][node.y - offsetY].bgColor;
                     if (!bg)
                         bg = "black";
-                    _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString("purple"), 0.33)));
+                    _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString("tan"), 0.5)));
                 }
             });
             limited.forEach(function (node) {
@@ -2217,7 +2277,7 @@ var ConsoleGame;
                     var bg = _this.matrix[node.x - offsetX][node.y - offsetY].bgColor;
                     if (!bg)
                         bg = "black";
-                    _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString(color), 0.5)));
+                    _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString(color), 0.75)));
                 }
             });
             var p = path.pointer;
@@ -2228,7 +2288,7 @@ var ConsoleGame;
                 if (limited[limited.length - 1] && p.x == limited[limited.length - 1].x && p.y == limited[limited.length - 1].y)
                     this.matrix[p.x - offsetX][p.y - offsetY].bgColor = color;
                 else
-                    this.matrix[p.x - offsetX][p.y - offsetY].bgColor = "purple";
+                    this.matrix[p.x - offsetX][p.y - offsetY].bgColor = "sandybrown";
             }
             return this;
         };

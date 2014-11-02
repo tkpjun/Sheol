@@ -13,7 +13,7 @@
     export function getEnemy(name: string) {
         switch (name) {
             default:
-                return new Enemy(name, new Statset(80, 30, 10, 10));
+                return new Enemy(name, new Statset(30, 30, 10, 10));
                 break;
         }
     }

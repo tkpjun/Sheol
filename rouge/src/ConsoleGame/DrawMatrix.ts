@@ -70,7 +70,7 @@ module ConsoleGame {
                     var bg = this.matrix[node.x - offsetX][node.y - offsetY].bgColor;
                     if (!bg) bg = "black"
                     this.matrix[node.x - offsetX][node.y - offsetY].bgColor =
-                    ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString("purple"), 0.33)));
+                    ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString("tan"), 0.5)));
                 }
             });
             limited.forEach((node) => {
@@ -78,7 +78,7 @@ module ConsoleGame {
                     var bg = this.matrix[node.x - offsetX][node.y - offsetY].bgColor;
                     if (!bg) bg = "black"
                     this.matrix[node.x - offsetX][node.y - offsetY].bgColor =
-                        ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString(color), 0.5)));
+                        ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString(color), 0.75)));
                 }
             });
             var p = path.pointer;
@@ -88,7 +88,7 @@ module ConsoleGame {
                 if (limited[limited.length - 1] && p.x == limited[limited.length - 1].x && p.y == limited[limited.length - 1].y)
                     this.matrix[p.x - offsetX][p.y - offsetY].bgColor = color;
                 else
-                    this.matrix[p.x - offsetX][p.y - offsetY].bgColor = "purple";
+                    this.matrix[p.x - offsetX][p.y - offsetY].bgColor = "sandybrown";
             }
             return this;
         }

@@ -30,7 +30,10 @@
         var path = manager.currPath.unwrap;
         if (path && path.isConnected() && x == path.pointer.x && y == path.pointer.y) {
             confirm();
-        }  
+        }
+        else if (path && path.pointer.x == path.begin.x && path.pointer.y == path.begin.y) {
+            confirm();
+        }
         else if (state == States.Move || state == States.Attack) {
             var newLoc = { x: x, y: y };
             //if (newLoc.x != path.pointer.x || newLoc.y != path.pointer.y) {
@@ -144,10 +147,16 @@
     function confirm() {
         var path = manager.currPath.unwrap;
         var ptr = { x: path.pointer.x, y: path.pointer.y };
+        var moves;
+        console.log(path._nodes);
+        if (path._nodes.length == 1) {
+            con.addLine( lvl.objects.filter((obj) => { return obj.x == path.begin.x && obj.y == path.begin.y; })[0].pick(char));
+            return;
+        }
 
         switch (state){
             case States.Move:
-                var moves = char.requestMoves(2, path.cost() / 2);
+                moves = char.requestMoves(2, path.cost() / 2);
                 if (moves > 0) {
                     path.trim(moves * 2);
                     function nextStep(i, last?) {
@@ -177,15 +186,11 @@
                             char.addAction(nextStep(i));
                     }
                 }
-                else {
-                    con.addLine("Out of usable stamina! Ending turn...");
-                    endTurn();
-                }
                 break;
             case States.Attack:
                 path.trim();
-                var result;
-                var targets = [];
+                var result: Entities.AttackResult;
+                var targets = new Array<IEntity>();
                 var index = 1;
 
                 while (!targets[0]) {
@@ -199,18 +204,21 @@
                 }
                 char.addAction(() => {
                     if (targets[0]) {
-                        var moves = char.requestMoves(char.currWeapon.apCost, 1);
+                        moves = char.requestMoves(char.currWeapon.apCost, 1);
                         if (moves == 1) {
                             char.currWeapon.setDurability(char.currWeapon.durability - 1);
                             result = (<Entities.Entity>targets[0]).getStruck(char.getAttack());
-                            con.addLine(result.attacker.name + " hit " + result.defender.name + " with a " + result.attacker.currWeapon.name + " for " +
-                                result.finalDmg + " damage! - Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) +
+                            var attacks = result.armorRolls.map((roll) => { return result.attackDmg + result.critDmg - roll })
+                            var str = attacks.toString().replace(",", "+");
+                            if (str === "") str = "0";
+                            con.addLine(result.attacker.name + " hit " + result.defender.name + " for " + str +
+                                "=" + result.finalDmg + " damage! Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) +
                                 "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) +
-                                "+" + result.defender.skills.evasion.value + " - Armor rolls: " + result.armorRolls.toString() + " -");
-                        }
-                        else {
-                            con.addLine("Out of usable stamina! Ending turn...");
-                            endTurn();
+                                "+" + result.defender.skills.evasion.value);
+                            if (result.fatal) {
+                                con.addLine(result.defender.name.substring(0, 1).toUpperCase() + result.defender.name.substring(1) + " was struck down!");
+                                lvl.kill(result.defender);
+                            }
                         }
                     }
 
@@ -226,6 +234,10 @@
             default:
                 throw ("Bad state: " + state);
                 break;
+        }
+        if(moves === 0) {
+            con.addLine("Out of usable stamina! Ending turn...");
+            endTurn();
         }
     }
 } 

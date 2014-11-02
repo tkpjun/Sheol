@@ -46,10 +46,11 @@ module ConsoleGame {
 
         updateView(level: Dungeon.Level, entities?: Array<C.IEntity>) {
             var map = this.getMapView(level.map);
+            this._view = this.addObjects(map, level.objects);
             if (entities)
-                this._view = this.addEntities(map, entities);
+                this._view = this.addEntities(this._view, entities);
             else
-                this._view = this.addEntities(map, level.entities);
+                this._view = this.addEntities(this._view, level.entities);
         }
 
         sees(x: number, y: number): boolean {
@@ -95,6 +96,21 @@ module ConsoleGame {
                 }
             }
             return new DrawMatrix(this.xOffset, this.yOffset, matrix);
+        }
+
+        private addObjects(matrix: DrawMatrix, objects: Array<C.IObject>): DrawMatrix {
+            objects.forEach((o) => {
+                //ConsoleGame.log(e);
+                if (o.x < this.x || o.y < this.y || o.x > this.x + this.width - 1 || o.y > this.y + this.height - 1) {
+
+                }
+                else {
+                    var d = { symbol: "%", color: "red" };
+                    matrix.matrix[o.x - this.x][o.y - this.y].symbol = d.symbol;
+                    matrix.matrix[o.x - this.x][o.y - this.y].color = d.color;
+                }
+            })
+            return matrix;
         }
 
         private addEntities(matrix: DrawMatrix, entities: Array<C.IEntity>): DrawMatrix {

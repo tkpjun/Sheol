@@ -26,10 +26,13 @@
             this._y = value;
         }
 
+        get name(): string { return this.item.name; }
+
         get isPassable(): boolean { return true }
 
-        pick(): IItem {
-            return this.item;
+        pick(who: Entities.Entity): string {
+            who.inventory.push(this.item);
+            return null;
         }
     }
 }  
