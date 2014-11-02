@@ -249,7 +249,6 @@ var Common;
                 });
                 this.currPath = new Common.ObservableProperty();
                 this.engine = new ROT.Engine(this.level.scheduler);
-                this.changed = new Common.Observable();
                 this.characters = new Array();
 
                 this.init();
@@ -310,9 +309,7 @@ var Common;
                     var action = entity.getAction();
                     if (action) {
                         action();
-
                         //console.log(entity.x + "," + entity.y);
-                        _this.changed.notify();
                     }
 
                     if (entity.hasTurn()) {
@@ -320,7 +317,6 @@ var Common;
                     } else {
                         entity.newTurn();
 
-                        //this.changed.notify();
                         var unlock = function () {
                             _this.engine.unlock();
                         };
@@ -372,7 +368,7 @@ var Common;
                 var path = manager.currPath.unwrap;
                 if (path && path.isConnected() && x == path.pointer.x && y == path.pointer.y) {
                     confirm();
-                } else if (path && path.pointer.x == path.begin.x && path.pointer.y == path.begin.y) {
+                } else if (path && x == path.begin.x && y == path.begin.y) {
                     confirm();
                 } else if (state == 0 /* Move */ || state == 1 /* Attack */) {
                     var newLoc = { x: x, y: y };
@@ -498,11 +494,15 @@ var Common;
                 var path = manager.currPath.unwrap;
                 var ptr = { x: path.pointer.x, y: path.pointer.y };
                 var moves;
-                console.log(path._nodes);
                 if (path._nodes.length == 1) {
-                    con.addLine(lvl.objects.filter(function (obj) {
+                    var obj = lvl.objects.filter(function (obj) {
                         return obj.x == path.begin.x && obj.y == path.begin.y;
-                    })[0].pick(char));
+                    })[0];
+                    if (obj) {
+                        con.addLine(obj.pick(char));
+                    } else {
+                        con.addLine("Nothing of interest here!");
+                    }
                     return;
                 }
 
@@ -516,6 +516,7 @@ var Common;
                                     char.dir = Common.Vec.sub(path._nodes[i], { x: char.x, y: char.y });
                                     char.x = path._nodes[i].x;
                                     char.y = path._nodes[i].y;
+                                    manager.currPath.unwrap = path; //dumb way to redraw screen
 
                                     //manager.currPath.unwrap = new AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
                                     /*
@@ -554,9 +555,9 @@ var Common;
                             });
                             index += 1;
                         }
-                        char.addAction(function () {
-                            if (targets[0]) {
-                                moves = char.requestMoves(char.currWeapon.apCost, 1);
+                        if (targets[0]) {
+                            moves = char.requestMoves(char.currWeapon.apCost, 1);
+                            char.addAction(function () {
                                 if (moves == 1) {
                                     char.currWeapon.setDurability(char.currWeapon.durability - 1);
                                     result = targets[0].getStruck(char.getAttack());
@@ -572,16 +573,12 @@ var Common;
                                         lvl.kill(result.defender);
                                     }
                                 }
-                            }
-
-                            path.pointer = ptr;
-                            path.connect(callback);
-                            manager.currPath.unwrap = path;
-                            /*
-                            if (!char.hasAP()) {
-                            state = States.Inactive;
-                            }*/
-                        });
+                                path.pointer = ptr;
+                                path.connect(callback);
+                                manager.currPath.unwrap = path;
+                            });
+                        }
+                        ;
                         break;
                     default:
                         throw ("Bad state: " + state);
@@ -2176,7 +2173,7 @@ var ConsoleGame;
 
                     ConsoleGame.Settings.DisplayWidth = _this.display.getOptions().width;
                     _this.gameScreen.camera.width = ConsoleGame.Settings.DisplayWidth - ConsoleGame.Settings.SidebarWidth * 2;
-                    _this.gameScreen.manager.changed.notify();
+                    _this.gameScreen.update();
                     //console.log((window.innerWidth / window.innerHeight).toFixed(2));
                     //console.log(this.display.getOptions().width);
                 };
@@ -2380,7 +2377,7 @@ var ConsoleGame;
             this.textBox = new ConsoleGame.UI.TextBox(ConsoleGame.Settings.SidebarWidth, 0, 7);
             Controllers.Player.initialize(this.textBox, this.manager);
 
-            var update = function () {
+            this.update = function () {
                 var middle = _this.manager.characters.map(function (c) {
                     return c.x;
                 }).reduce(function (x1, x2) {
@@ -2389,13 +2386,15 @@ var ConsoleGame;
                 _this.camera.centerOn(middle);
                 _this.advanceFrame();
             };
-            this.manager.currEntity.attach(update);
-            this.manager.changed.attach(update);
+            this.manager.currEntity.attach(this.update);
             this.manager.currPath.attach(function () {
                 return _this.advanceFrame();
             });
+            this.textBox.attach(function () {
+                return _this.advanceFrame();
+            });
             this.manager.start();
-            update();
+            this.update();
         }
         GameScreen.prototype.advanceFrame = function () {
             var _this = this;
@@ -2701,9 +2700,12 @@ var ConsoleGame;
 })(ConsoleGame || (ConsoleGame = {}));
 var ConsoleGame;
 (function (ConsoleGame) {
+    /// <reference path="../../Common/ObservableProperty.ts" />
     (function (UI) {
-        var TextBox = (function () {
+        var TextBox = (function (_super) {
+            __extends(TextBox, _super);
             function TextBox(x, y, height) {
+                _super.call(this);
                 this.x = x;
                 this.y = y;
                 this.height = height;
@@ -2714,6 +2716,7 @@ var ConsoleGame;
                 if (this.lines.length > 50) {
                     this.lines.splice(0, 25);
                 }
+                this.notify();
                 return this;
             };
 
@@ -2751,7 +2754,7 @@ var ConsoleGame;
                 return matrix;
             };
             return TextBox;
-        })();
+        })(Common.Observable);
         UI.TextBox = TextBox;
     })(ConsoleGame.UI || (ConsoleGame.UI = {}));
     var UI = ConsoleGame.UI;

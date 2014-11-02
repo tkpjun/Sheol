@@ -7,7 +7,6 @@
         currPath: ObservableProperty<Path>;
         characters: Entities.PlayerChar[];
         engine: ROT.Engine;
-        changed: IObservable;
 
         constructor(level: Dungeon.Level) {
             this.level = level;
@@ -15,7 +14,6 @@
             this.currEntity.attach(() => this.update());
             this.currPath = new ObservableProperty<Path>();
             this.engine = new ROT.Engine(this.level.scheduler);
-            this.changed = new Observable();
             this.characters = new Array<Entities.PlayerChar>();
 
             this.init();
@@ -74,7 +72,6 @@
                 if (action) {
                     action();
                     //console.log(entity.x + "," + entity.y);
-                    this.changed.notify();
                 }
 
                 if (entity.hasTurn()) {
@@ -82,7 +79,6 @@
                 }
                 else {
                     entity.newTurn();
-                    //this.changed.notify();
 
                     var unlock = () => { this.engine.unlock() };
                     setTimeout(unlock, Settings.UpdateRate * 4);

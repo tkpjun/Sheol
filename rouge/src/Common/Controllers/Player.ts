@@ -31,7 +31,7 @@
         if (path && path.isConnected() && x == path.pointer.x && y == path.pointer.y) {
             confirm();
         }
-        else if (path && path.pointer.x == path.begin.x && path.pointer.y == path.begin.y) {
+        else if (path && x == path.begin.x && y == path.begin.y) {
             confirm();
         }
         else if (state == States.Move || state == States.Attack) {
@@ -148,9 +148,14 @@
         var path = manager.currPath.unwrap;
         var ptr = { x: path.pointer.x, y: path.pointer.y };
         var moves;
-        console.log(path._nodes);
         if (path._nodes.length == 1) {
-            con.addLine( lvl.objects.filter((obj) => { return obj.x == path.begin.x && obj.y == path.begin.y; })[0].pick(char));
+            var obj = lvl.objects.filter((obj) => { return obj.x == path.begin.x && obj.y == path.begin.y; })[0]
+            if (obj) {
+                con.addLine(obj.pick(char));
+            }
+            else {
+                con.addLine("Nothing of interest here!");
+            }
             return;
         }
 
@@ -164,6 +169,7 @@
                             char.dir = Vec.sub(path._nodes[i], {x:char.x, y:char.y});
                             char.x = path._nodes[i].x;
                             char.y = path._nodes[i].y;
+                            manager.currPath.unwrap = path; //dumb way to redraw screen
                             //manager.currPath.unwrap = new AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
                             /*
                             if (i == path._nodes.length - 1) {
@@ -202,9 +208,9 @@
                     });
                     index += 1;
                 }
-                char.addAction(() => {
-                    if (targets[0]) {
-                        moves = char.requestMoves(char.currWeapon.apCost, 1);
+                if (targets[0]) {
+                    moves = char.requestMoves(char.currWeapon.apCost, 1);
+                    char.addAction(() => {                       
                         if (moves == 1) {
                             char.currWeapon.setDurability(char.currWeapon.durability - 1);
                             result = (<Entities.Entity>targets[0]).getStruck(char.getAttack());
@@ -220,16 +226,11 @@
                                 lvl.kill(result.defender);
                             }
                         }
+                        path.pointer = ptr;
+                        path.connect(callback);
+                        manager.currPath.unwrap = path;
                     }
-
-                    path.pointer = ptr;
-                    path.connect(callback);
-                    manager.currPath.unwrap = path;
-                    /*
-                    if (!char.hasAP()) {
-                        state = States.Inactive;
-                    }*/
-                });
+                    )};
                 break;
             default:
                 throw ("Bad state: " + state);

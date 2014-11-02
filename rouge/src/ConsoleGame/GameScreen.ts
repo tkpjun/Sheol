@@ -13,6 +13,7 @@ module ConsoleGame {
         camera: Camera;
         nextFrame: C.ObservableProperty<DrawMatrix>;
         textBox: UI.TextBox;
+        update: () => void
 
         constructor() {
             this.dungeon = new Array<Dungeon.Level>(new Dungeon.Level(Dungeon.MapTypes.Mines));
@@ -26,7 +27,7 @@ module ConsoleGame {
             this.textBox = new UI.TextBox(Settings.SidebarWidth, 0, 7);
             Controllers.Player.initialize(this.textBox, this.manager);
 
-            var update = () => {
+            this.update = () => {
                 var middle = this.manager.characters.map((c) => { 
                     return c.x
                 }).reduce((x1, x2) => {
@@ -35,11 +36,11 @@ module ConsoleGame {
                 this.camera.centerOn(middle);
                 this.advanceFrame();
             }
-            this.manager.currEntity.attach(update);
-            this.manager.changed.attach(update);
+            this.manager.currEntity.attach(this.update);
             this.manager.currPath.attach(() => this.advanceFrame());
+            this.textBox.attach(() => this.advanceFrame());
             this.manager.start();
-            update();
+            this.update();
         }
 
         advanceFrame() {

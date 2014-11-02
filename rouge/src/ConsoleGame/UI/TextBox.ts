@@ -1,13 +1,15 @@
-﻿module ConsoleGame.UI {
+﻿/// <reference path="../../Common/ObservableProperty.ts" />
+module ConsoleGame.UI {
 
-    export class TextBox {
+    export class TextBox extends Common.Observable {
 
         private lines: string[];
         height: number;
         x: number;
         y: number;
 
-        constructor(x: number, y:number, height: number) {
+        constructor(x: number, y: number, height: number) {
+            super();
             this.x = x;
             this.y = y;
             this.height = height;
@@ -19,6 +21,7 @@
             if (this.lines.length > 50) {
                 this.lines.splice(0, 25);
             }
+            this.notify();
             return this;
         }
 
