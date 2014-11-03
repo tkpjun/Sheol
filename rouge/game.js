@@ -2700,6 +2700,54 @@ var ConsoleGame;
 })(ConsoleGame || (ConsoleGame = {}));
 var ConsoleGame;
 (function (ConsoleGame) {
+    (function (UI) {
+        var Button = (function () {
+            function Button() {
+            }
+            return Button;
+        })();
+        UI.Button = Button;
+    })(ConsoleGame.UI || (ConsoleGame.UI = {}));
+    var UI = ConsoleGame.UI;
+})(ConsoleGame || (ConsoleGame = {}));
+var ConsoleGame;
+(function (ConsoleGame) {
+    (function (UI) {
+        var ContextContainer = (function () {
+            function ContextContainer() {
+            }
+            return ContextContainer;
+        })();
+        UI.ContextContainer = ContextContainer;
+    })(ConsoleGame.UI || (ConsoleGame.UI = {}));
+    var UI = ConsoleGame.UI;
+})(ConsoleGame || (ConsoleGame = {}));
+var ConsoleGame;
+(function (ConsoleGame) {
+    (function (UI) {
+        var Description = (function () {
+            function Description() {
+            }
+            return Description;
+        })();
+        UI.Description = Description;
+    })(ConsoleGame.UI || (ConsoleGame.UI = {}));
+    var UI = ConsoleGame.UI;
+})(ConsoleGame || (ConsoleGame = {}));
+var ConsoleGame;
+(function (ConsoleGame) {
+    (function (UI) {
+        var HoriList = (function () {
+            function HoriList() {
+            }
+            return HoriList;
+        })();
+        UI.HoriList = HoriList;
+    })(ConsoleGame.UI || (ConsoleGame.UI = {}));
+    var UI = ConsoleGame.UI;
+})(ConsoleGame || (ConsoleGame = {}));
+var ConsoleGame;
+(function (ConsoleGame) {
     /// <reference path="../../Common/ObservableProperty.ts" />
     (function (UI) {
         var TextBox = (function (_super) {
@@ -2756,6 +2804,19 @@ var ConsoleGame;
             return TextBox;
         })(Common.Observable);
         UI.TextBox = TextBox;
+    })(ConsoleGame.UI || (ConsoleGame.UI = {}));
+    var UI = ConsoleGame.UI;
+})(ConsoleGame || (ConsoleGame = {}));
+/// <reference path="../../Common/Common.ts" />
+var ConsoleGame;
+(function (ConsoleGame) {
+    (function (UI) {
+        var VertList = (function () {
+            function VertList() {
+            }
+            return VertList;
+        })();
+        UI.VertList = VertList;
     })(ConsoleGame.UI || (ConsoleGame.UI = {}));
     var UI = ConsoleGame.UI;
 })(ConsoleGame || (ConsoleGame = {}));

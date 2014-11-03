@@ -34,6 +34,10 @@
     <TypeScriptCompile Include="src\ConsoleGame\GameUI.ts" />
     <TypeScriptCompile Include="src\ConsoleGame\MainMenuScreen.ts" />
     <TypeScriptCompile Include="src\ConsoleGame\Settings.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\UI\Button.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\UI\ContextContainer.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\UI\Description.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\UI\HoriList.ts" />
     <TypeScriptCompile Include="src\ConsoleGame\UI\TextBox.ts" />
     <TypeScriptCompile Include="src\Common\Controllers\AstarPath.ts" />
     <TypeScriptCompile Include="src\Common\Controllers\BasicAI.ts" />
@@ -69,6 +73,8 @@
     <TypeScriptCompile Include="src\Common\ObservableProperty.ts" />
     <TypeScriptCompile Include="src\Common\Settings.ts" />
     <TypeScriptCompile Include="src\Common\Vec.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\UI\UI.ts" />
+    <TypeScriptCompile Include="src\ConsoleGame\UI\VertList.ts" />
   </ItemGroup>
   <ItemGroup>
     <None Include="web.Debug.config">
@@ -78,14 +84,15 @@
       <DependentUpon>web.config</DependentUpon>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="src\GUIGame\" />
-  </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">12.0</VisualStudioVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <RootNamespace>rouge</RootNamespace>
+    <RootNamespace>sheol</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyName>sheol</AssemblyName>
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\WebApplications\Microsoft.WebApplication.targets" Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\WebApplications\Microsoft.WebApplication.targets')" />
