@@ -223,7 +223,7 @@
                                 "+" + result.defender.skills.evasion.value);
                             if (result.fatal) {
                                 con.addLine(result.defender.name.substring(0, 1).toUpperCase() + result.defender.name.substring(1) + " was struck down!");
-                                lvl.kill(result.defender);
+                                manager.kill(result.defender);
                             }
                         }
                         path.pointer = ptr;

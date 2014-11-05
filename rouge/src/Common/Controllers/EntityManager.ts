@@ -86,5 +86,24 @@
             }
             pollForAction();           
         }
+
+        kill(entity: IEntity) {
+            this.level.entities.splice(this.level.entities.indexOf(entity), 1);
+            var actor = this.level.scheduler._queue._events.filter(x => { 
+                return x instanceof ChangeProperty
+            }).filter(x => { 
+                return x.target == entity
+            })[0]
+            this.level.scheduler.remove(actor);
+            this.level.objects.push({
+                name: entity.name + " corpse",
+                isPassable: true,
+                x: entity.x,
+                y: entity.y,
+                pick: (who: IEntity) => {
+                    return who.name.substr(0, 1).toUpperCase() + who.name.substr(1) + " gives the " + entity.name + " corpse" + " a hearty stomp!";
+                }
+            });
+        }
     }
 } 

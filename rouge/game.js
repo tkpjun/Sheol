@@ -325,6 +325,25 @@ var Common;
                 };
                 pollForAction();
             };
+
+            EntityManager.prototype.kill = function (entity) {
+                this.level.entities.splice(this.level.entities.indexOf(entity), 1);
+                var actor = this.level.scheduler._queue._events.filter(function (x) {
+                    return x instanceof Controllers.ChangeProperty;
+                }).filter(function (x) {
+                    return x.target == entity;
+                })[0];
+                this.level.scheduler.remove(actor);
+                this.level.objects.push({
+                    name: entity.name + " corpse",
+                    isPassable: true,
+                    x: entity.x,
+                    y: entity.y,
+                    pick: function (who) {
+                        return who.name.substr(0, 1).toUpperCase() + who.name.substr(1) + " gives the " + entity.name + " corpse" + " a hearty stomp!";
+                    }
+                });
+            };
             return EntityManager;
         })();
         Controllers.EntityManager = EntityManager;
@@ -570,7 +589,7 @@ var Common;
                                     con.addLine(result.attacker.name + " hit " + result.defender.name + " for " + str + "=" + result.finalDmg + " damage! Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) + "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) + "+" + result.defender.skills.evasion.value);
                                     if (result.fatal) {
                                         con.addLine(result.defender.name.substring(0, 1).toUpperCase() + result.defender.name.substring(1) + " was struck down!");
-                                        lvl.kill(result.defender);
+                                        manager.kill(result.defender);
                                     }
                                 }
                                 path.pointer = ptr;
@@ -789,18 +808,6 @@ var Common;
                 this.entities = new Array();
                 this.objects = new Array();
             }
-            Level.prototype.kill = function (entity) {
-                this.entities.splice(this.entities.indexOf(entity));
-                this.objects.push({
-                    name: entity.name + " corpse",
-                    isPassable: true,
-                    x: entity.x,
-                    y: entity.y,
-                    pick: function (who) {
-                        return who.name.substr(0, 1).toUpperCase() + who.name.substr(1) + " gives the " + entity.name + " corpse" + " a hearty stomp!";
-                    }
-                });
-            };
             return Level;
         })();
         Dungeon.Level = Level;
