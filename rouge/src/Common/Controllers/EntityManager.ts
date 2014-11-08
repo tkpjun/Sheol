@@ -7,6 +7,7 @@
         currPath: ObservableProperty<Path>;
         characters: Entities.PlayerChar[];
         engine: ROT.Engine;
+        player: Player;
 
         constructor(level: Dungeon.Level) {
             this.level = level;
@@ -14,8 +15,6 @@
             this.currPath = new ObservableProperty<Path>();
             this.engine = new ROT.Engine(this.level.scheduler);
             this.characters = new Array<Entities.PlayerChar>();
-
-            this.init();
         }
 
         pause() {
@@ -26,7 +25,8 @@
             this.engine.start();
         }
 
-        private init() {
+        init(player: Player) {
+            this.player = player;
             var rooms = (<ROT.Map.Dungeon>this.level.map).getRooms()
             var room = rooms[0];
             var player1 = new Entities.PlayerChar("char1");
@@ -66,7 +66,7 @@
             var entity = this.currEntity.unwrap;
 
             var pollForAction = () => {
-                planAction(entity, this);
+                this.planAction(entity);
                 var action = entity.getAction();
                 if (action) {
                     action();
@@ -103,6 +103,17 @@
                     return who.name.substr(0, 1).toUpperCase() + who.name.substr(1) + " gives the " + entity.name + " corpse" + " a hearty stomp!";
                 }
             });
+        }
+
+        planAction(entity: IEntity) {
+
+            if (entity instanceof Entities.PlayerChar) {
+                this.player.activate(<Entities.PlayerChar>entity);
+            }
+            else if (entity instanceof Entities.Enemy) {
+                var enemy = <Entities.Enemy>entity;
+                enemy.addAction(() => { enemy._hasTurn = false; });
+            }
         }
     }
 } 

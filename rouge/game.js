@@ -432,18 +432,6 @@ var Common;
                 return false;
         }
         Controllers.diagonal = diagonal;
-
-        function planAction(entity, manager) {
-            if (entity instanceof Common.Entities.PlayerChar) {
-                Controllers.Player.activate(entity);
-            } else if (entity instanceof Common.Entities.Enemy) {
-                var enemy = entity;
-                enemy.addAction(function () {
-                    enemy._hasTurn = false;
-                });
-            }
-        }
-        Controllers.planAction = planAction;
     })(Common.Controllers || (Common.Controllers = {}));
     var Controllers = Common.Controllers;
 })(Common || (Common = {}));
@@ -620,14 +608,14 @@ var AsciiGame;
             var _this = this;
             this.dungeon = new Array(new Dungeon.Level(0 /* Mines */));
             this.currLevel = 0;
-            this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
-
-            //this.nextToDraw = new C.ObservableProperty<DrawMatrix>();
-            this.camera = new AsciiGame.Camera(AsciiGame.Settings.SidebarWidth, AsciiGame.Settings.DisplayWidth - AsciiGame.Settings.SidebarWidth * 2, 0, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight);
             this.textBox = new AsciiGame.UI.TextBox(AsciiGame.Settings.SidebarWidth, 0, 7, function () {
                 return _this.advanceFrame();
             });
-            Controllers.Player.initialize(this.textBox, this.manager);
+            this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
+            this.manager.init(new Controllers.Player(this.textBox, this.manager));
+
+            //this.nextToDraw = new C.ObservableProperty<DrawMatrix>();
+            this.camera = new AsciiGame.Camera(AsciiGame.Settings.SidebarWidth, AsciiGame.Settings.DisplayWidth - AsciiGame.Settings.SidebarWidth * 2, 0, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight);
 
             this.draw = drawCallback;
             this.update = function () {
@@ -680,7 +668,7 @@ var AsciiGame;
         GameScreen.prototype.acceptMousedown = function (tileX, tileY) {
             var hitUiContext = AsciiGame.GameUI.updateMouseDown(tileX, tileY);
             if (!hitUiContext && tileX >= AsciiGame.Settings.CamXOffset && tileX < AsciiGame.Settings.CamXOffset + AsciiGame.Settings.CamWidth && tileY >= AsciiGame.Settings.CamYOffset && tileY < AsciiGame.Settings.CamYOffset + AsciiGame.Settings.CamHeight) {
-                Controllers.Player.updateClick(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
+                this.manager.player.updateClick(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
             }
         };
 
@@ -690,19 +678,19 @@ var AsciiGame;
 
         GameScreen.prototype.acceptMousedrag = function (tileX, tileY) {
             if (tileX >= AsciiGame.Settings.CamXOffset && tileX < AsciiGame.Settings.CamXOffset + AsciiGame.Settings.CamWidth && tileY >= AsciiGame.Settings.CamYOffset && tileY < AsciiGame.Settings.CamYOffset + AsciiGame.Settings.CamHeight) {
-                Controllers.Player.updateMousedrag(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
+                this.manager.player.updateMousedrag(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
             }
         };
 
         GameScreen.prototype.acceptMousemove = function (tileX, tileY) {
             var hitUiContext = AsciiGame.GameUI.updateMousemove(tileX, tileY);
             if (!hitUiContext && tileX >= AsciiGame.Settings.CamXOffset && tileX < AsciiGame.Settings.CamXOffset + AsciiGame.Settings.CamWidth && tileY >= AsciiGame.Settings.CamYOffset && tileY < AsciiGame.Settings.CamYOffset + AsciiGame.Settings.CamHeight) {
-                Controllers.Player.updateMousemove(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
+                this.manager.player.updateMousemove(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
             }
         };
 
         GameScreen.prototype.acceptKeydown = function (keyCode) {
-            Controllers.Player.update(keyCode);
+            this.manager.player.update(keyCode);
         };
         return GameScreen;
     })();
@@ -1421,8 +1409,6 @@ var Common;
                 this.currPath = new Common.ObservableProperty();
                 this.engine = new ROT.Engine(this.level.scheduler);
                 this.characters = new Array();
-
-                this.init();
             }
             EntityManager.prototype.pause = function () {
                 this.engine.lock();
@@ -1432,8 +1418,9 @@ var Common;
                 this.engine.start();
             };
 
-            EntityManager.prototype.init = function () {
+            EntityManager.prototype.init = function (player) {
                 var _this = this;
+                this.player = player;
                 var rooms = this.level.map.getRooms();
                 var room = rooms[0];
                 var player1 = new Common.Entities.PlayerChar("char1");
@@ -1476,7 +1463,7 @@ var Common;
                 var entity = this.currEntity.unwrap;
 
                 var pollForAction = function () {
-                    Controllers.planAction(entity, _this);
+                    _this.planAction(entity);
                     var action = entity.getAction();
                     if (action) {
                         action();
@@ -1515,6 +1502,17 @@ var Common;
                     }
                 });
             };
+
+            EntityManager.prototype.planAction = function (entity) {
+                if (entity instanceof Common.Entities.PlayerChar) {
+                    this.player.activate(entity);
+                } else if (entity instanceof Common.Entities.Enemy) {
+                    var enemy = entity;
+                    enemy.addAction(function () {
+                        enemy._hasTurn = false;
+                    });
+                }
+            };
             return EntityManager;
         })();
         Controllers.EntityManager = EntityManager;
@@ -1524,189 +1522,181 @@ var Common;
 var Common;
 (function (Common) {
     (function (Controllers) {
-        (function (Player) {
-            var char;
-            var lvl;
-            var state = 2 /* Inactive */;
-            var manager;
-            var con;
-            var callback;
-
-            function initialize(console, entityManager) {
-                manager = entityManager;
-                con = console;
+        var Player = (function () {
+            function Player(console, entityManager) {
+                this.state = 2 /* Inactive */;
+                this.manager = entityManager;
+                this.con = console;
             }
-            Player.initialize = initialize;
-
-            function activate(character) {
-                if (state == 2 /* Inactive */) {
-                    char = character;
-                    callback = function (x, y) {
-                        return Controllers.isPassable(char, { x: x, y: y }, manager.level);
+            Player.prototype.activate = function (character) {
+                var _this = this;
+                if (this.state == 2 /* Inactive */) {
+                    this.char = character;
+                    this.callback = function (x, y) {
+                        return Controllers.isPassable(_this.char, { x: x, y: y }, _this.manager.level);
                     };
-                    lvl = manager.level;
-                    state = 0 /* Move */;
-                    manager.currPath.unwrap = new Controllers.AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
+                    this.lvl = this.manager.level;
+                    this.state = 0 /* Move */;
+                    this.manager.currPath.unwrap = new Controllers.AstarPath({ x: this.char.x, y: this.char.y }, null, this.char.stats.ap);
                 }
-            }
-            Player.activate = activate;
+            };
 
-            function updateClick(x, y) {
-                if (state == 2 /* Inactive */)
+            Player.prototype.updateClick = function (x, y) {
+                if (this.state == 2 /* Inactive */)
                     return;
 
-                var path = manager.currPath.unwrap;
+                var path = this.manager.currPath.unwrap;
                 if (path && path.isConnected() && x == path.pointer.x && y == path.pointer.y) {
-                    confirm();
+                    this.confirm();
                 } else if (path && x == path.begin.x && y == path.begin.y) {
-                    confirm();
-                } else if (state == 0 /* Move */ || state == 1 /* Attack */) {
+                    this.confirm();
+                } else if (this.state == 0 /* Move */ || this.state == 1 /* Attack */) {
                     var newLoc = { x: x, y: y };
 
                     //if (newLoc.x != path.pointer.x || newLoc.y != path.pointer.y) {
                     path.pointer = newLoc;
-                    path.connect(callback);
-                    manager.currPath.unwrap = path;
+                    path.connect(this.callback);
+                    this.manager.currPath.unwrap = path;
                     //}
                 }
-            }
-            Player.updateClick = updateClick;
+            };
 
-            function updateMousedrag(x, y) {
-                if (state == 2 /* Inactive */)
+            Player.prototype.updateMousedrag = function (x, y) {
+                if (this.state == 2 /* Inactive */)
                     return;
-                var path = manager.currPath.unwrap;
+                var path = this.manager.currPath.unwrap;
 
                 var newLoc = { x: x, y: y };
                 if (newLoc.x != path.pointer.x || newLoc.y != path.pointer.y) {
                     path.pointer = newLoc;
-                    path.connect(callback);
-                    manager.currPath.unwrap = path;
+                    path.connect(this.callback);
+                    this.manager.currPath.unwrap = path;
                 }
-            }
-            Player.updateMousedrag = updateMousedrag;
+            };
 
-            function updateMousemove(x, y) {
-                if (state == 2 /* Inactive */)
+            Player.prototype.updateMousemove = function (x, y) {
+                if (this.state == 2 /* Inactive */)
                     return;
-                var path = manager.currPath.unwrap;
+                var path = this.manager.currPath.unwrap;
 
                 if (x != path.pointer.x || y != path.pointer.y) {
                     path.disconnect();
 
                     path.pointer = { x: x, y: y };
-                    manager.currPath.unwrap = path;
+                    this.manager.currPath.unwrap = path;
                 }
-            }
-            Player.updateMousemove = updateMousemove;
+            };
 
-            function update(key) {
-                if (state == 2 /* Inactive */)
+            Player.prototype.update = function (key) {
+                if (this.state == 2 /* Inactive */)
                     return;
 
                 switch (key) {
                     case "VK_Q":
-                        alterPath(Common.Vec.Northwest);
+                        this.alterPath(Common.Vec.Northwest);
                         break;
                     case "VK_W":
-                        alterPath(Common.Vec.North);
+                        this.alterPath(Common.Vec.North);
                         break;
                     case "VK_E":
-                        alterPath(Common.Vec.Northeast);
+                        this.alterPath(Common.Vec.Northeast);
                         break;
                     case "VK_A":
-                        alterPath(Common.Vec.West);
+                        this.alterPath(Common.Vec.West);
                         break;
                     case "VK_D":
-                        alterPath(Common.Vec.East);
+                        this.alterPath(Common.Vec.East);
                         break;
                     case "VK_Z":
-                        alterPath(Common.Vec.Southwest);
+                        this.alterPath(Common.Vec.Southwest);
                         break;
                     case "VK_X":
-                        alterPath(Common.Vec.South);
+                        this.alterPath(Common.Vec.South);
                         break;
                     case "VK_C":
-                        alterPath(Common.Vec.Southeast);
+                        this.alterPath(Common.Vec.Southeast);
                         break;
                     case "VK_SPACE":
-                        endTurn();
+                        this.endTurn();
                         break;
                     case "VK_F":
-                        confirm();
+                        this.confirm();
                         break;
                     case "VK_1":
-                        state = 0 /* Move */;
-                        var old = manager.currPath.unwrap;
-                        manager.currPath.unwrap = new Controllers.AstarPath(old.begin, null, char.stats.ap);
+                        this.state = 0 /* Move */;
+                        var old = this.manager.currPath.unwrap;
+                        this.manager.currPath.unwrap = new Controllers.AstarPath(old.begin, null, this.char.stats.ap);
                         break;
                     case "VK_2":
-                        state = 1 /* Attack */;
-                        var old = manager.currPath.unwrap;
-                        manager.currPath.unwrap = new Controllers.StraightPath(old.begin, null, char.currWeapon.maxRange);
+                        this.state = 1 /* Attack */;
+                        var old = this.manager.currPath.unwrap;
+                        this.manager.currPath.unwrap = new Controllers.StraightPath(old.begin, null, this.char.currWeapon.maxRange);
                         break;
                     default:
                         break;
                 }
-            }
-            Player.update = update;
+            };
 
-            function alterPath(dir) {
-                var oldPath = manager.currPath.unwrap;
+            Player.prototype.alterPath = function (dir) {
+                var oldPath = this.manager.currPath.unwrap;
                 var location = Common.Vec.add(oldPath.pointer, dir);
                 if (location.x < 0)
                     location.x = 0;
                 if (location.y < 0)
                     location.y = 0;
-                if (location.x > lvl.map._width - 1)
-                    location.x = lvl.map._width - 1;
-                if (location.y > lvl.map._height - 1)
-                    location.y = lvl.map._height - 1;
+                if (location.x > this.lvl.map._width - 1)
+                    location.x = this.lvl.map._width - 1;
+                if (location.y > this.lvl.map._height - 1)
+                    location.y = this.lvl.map._height - 1;
 
-                var path = manager.currPath.unwrap;
-                if (state == 0 /* Move */ || state == 1 /* Attack */) {
+                var path = this.manager.currPath.unwrap;
+                if (this.state == 0 /* Move */ || this.state == 1 /* Attack */) {
                     path.pointer = location;
-                    path.connect(callback);
-                    manager.currPath.unwrap = path;
+                    path.connect(this.callback);
+                    this.manager.currPath.unwrap = path;
                 } else
                     throw ("Unimplemented state!");
-            }
+            };
 
-            function endTurn() {
-                char.addAction(function () {
-                    char._hasTurn = false;
-                    state = 2 /* Inactive */;
-                    manager.currPath.unwrap = null;
+            Player.prototype.endTurn = function () {
+                var _this = this;
+                this.char.addAction(function () {
+                    _this.char._hasTurn = false;
+                    _this.state = 2 /* Inactive */;
+                    _this.manager.currPath.unwrap = null;
                 });
-            }
+            };
 
-            function confirm() {
-                var path = manager.currPath.unwrap;
+            Player.prototype.confirm = function () {
+                var _this = this;
+                var path = this.manager.currPath.unwrap;
                 var ptr = { x: path.pointer.x, y: path.pointer.y };
                 var moves;
                 if (path._nodes.length == 1) {
-                    var obj = lvl.objects.filter(function (obj) {
+                    var obj = this.lvl.objects.filter(function (obj) {
                         return obj.x == path.begin.x && obj.y == path.begin.y;
                     })[0];
                     if (obj) {
-                        con.addLine(obj.pick(char));
+                        this.con.addLine(obj.pick(this.char));
                     } else {
-                        con.addLine("Nothing of interest here!");
+                        this.con.addLine("Nothing of interest here!");
                     }
                     return;
                 }
 
-                switch (state) {
+                switch (this.state) {
                     case 0 /* Move */:
-                        moves = char.requestMoves(2, path.cost() / 2);
+                        moves = this.char.requestMoves(2, path.cost() / 2);
+                        var c = this.char;
+                        var m = this.manager;
                         if (moves > 0) {
                             path.trim(moves * 2);
                             function nextStep(i, last) {
                                 return function () {
-                                    char.dir = Common.Vec.sub(path._nodes[i], { x: char.x, y: char.y });
-                                    char.x = path._nodes[i].x;
-                                    char.y = path._nodes[i].y;
-                                    manager.currPath.unwrap = path; //dumb way to redraw screen
+                                    c.dir = Common.Vec.sub(path._nodes[i], { x: c.x, y: c.y });
+                                    c.x = path._nodes[i].x;
+                                    c.y = path._nodes[i].y;
+                                    m.currPath.unwrap = path; //dumb way to redraw screen
 
                                     //manager.currPath.unwrap = new AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
                                     /*
@@ -1714,7 +1704,7 @@ var Common;
                                     char.stats.ap -= path.cost();
                                     }*/
                                     if (last) {
-                                        manager.currPath.unwrap = new Controllers.AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
+                                        m.currPath.unwrap = new Controllers.AstarPath({ x: c.x, y: c.y }, null, c.stats.ap);
                                         //endTurn();
                                     }
                                 };
@@ -1724,9 +1714,9 @@ var Common;
                             }
                             for (var i = 1; bool(i); i++) {
                                 if (!bool(i + 1)) {
-                                    char.addAction(nextStep(i, true));
+                                    this.char.addAction(nextStep(i, true));
                                 } else
-                                    char.addAction(nextStep(i));
+                                    this.char.addAction(nextStep(i));
                             }
                         }
                         break;
@@ -1740,47 +1730,48 @@ var Common;
                             if (index >= path._nodes.length)
                                 break;
 
-                            targets = lvl.entities.filter(function (entity) {
+                            targets = this.lvl.entities.filter(function (entity) {
                                 return entity.x === path._nodes[index].x && entity.y === path._nodes[index].y;
                             });
                             index += 1;
                         }
                         if (targets[0]) {
-                            moves = char.requestMoves(char.currWeapon.apCost, 1);
-                            char.addAction(function () {
+                            moves = this.char.requestMoves(this.char.currWeapon.apCost, 1);
+                            this.char.addAction(function () {
                                 if (moves == 1) {
-                                    char.currWeapon.setDurability(char.currWeapon.durability - 1);
-                                    result = targets[0].getStruck(char.getAttack());
+                                    _this.char.currWeapon.setDurability(_this.char.currWeapon.durability - 1);
+                                    result = targets[0].getStruck(_this.char.getAttack());
                                     var attacks = result.armorRolls.map(function (roll) {
                                         return result.attackDmg + result.critDmg - roll;
                                     });
                                     var str = attacks.toString().replace(",", "+");
                                     if (str === "")
                                         str = "0";
-                                    con.addLine(result.attacker.name + " hit " + result.defender.name + " for " + str + "=" + result.finalDmg + " damage! Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) + "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) + "+" + result.defender.skills.evasion.value);
+                                    _this.con.addLine(result.attacker.name + " hit " + result.defender.name + " for " + str + "=" + result.finalDmg + " damage! Hit roll: " + (result.hitRoll - result.attacker.skills.prowess.value) + "+" + result.attacker.skills.prowess.value + " vs " + (result.evadeRoll - result.defender.skills.evasion.value) + "+" + result.defender.skills.evasion.value);
                                     if (result.fatal) {
-                                        con.addLine(result.defender.name.substring(0, 1).toUpperCase() + result.defender.name.substring(1) + " was struck down!");
-                                        manager.kill(result.defender);
+                                        _this.con.addLine(result.defender.name.substring(0, 1).toUpperCase() + result.defender.name.substring(1) + " was struck down!");
+                                        _this.manager.kill(result.defender);
                                     }
                                 }
                                 path.pointer = ptr;
-                                path.connect(callback);
-                                manager.currPath.unwrap = path;
+                                path.connect(_this.callback);
+                                _this.manager.currPath.unwrap = path;
                             });
                         }
                         ;
                         break;
                     default:
-                        throw ("Bad state: " + state);
+                        throw ("Bad state: " + this.state);
                         break;
                 }
                 if (moves === 0) {
-                    con.addLine("Out of usable stamina! Ending turn...");
-                    endTurn();
+                    this.con.addLine("Out of usable stamina! Ending turn...");
+                    this.endTurn();
                 }
-            }
-        })(Controllers.Player || (Controllers.Player = {}));
-        var Player = Controllers.Player;
+            };
+            return Player;
+        })();
+        Controllers.Player = Player;
     })(Common.Controllers || (Common.Controllers = {}));
     var Controllers = Common.Controllers;
 })(Common || (Common = {}));

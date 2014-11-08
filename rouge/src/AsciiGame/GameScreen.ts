@@ -19,14 +19,14 @@ module AsciiGame {
         constructor(drawCallback: (DrawMatrix) => void) {
             this.dungeon = new Array<Dungeon.Level>(new Dungeon.Level(Dungeon.MapTypes.Mines));
             this.currLevel = 0;
+            this.textBox = new UI.TextBox(Settings.SidebarWidth, 0, 7, () => this.advanceFrame());
             this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
+            this.manager.init(new Controllers.Player(this.textBox, this.manager));
             //this.nextToDraw = new C.ObservableProperty<DrawMatrix>();
             this.camera = new Camera(Settings.SidebarWidth,
                 Settings.DisplayWidth - Settings.SidebarWidth * 2,
                 0,
                 Settings.DisplayHeight - Settings.BottomBarHeight);
-            this.textBox = new UI.TextBox(Settings.SidebarWidth, 0, 7, () => this.advanceFrame());
-            Controllers.Player.initialize(this.textBox, this.manager);
 
             this.draw = drawCallback;
             this.update = () => {
@@ -87,7 +87,7 @@ module AsciiGame {
             if (!hitUiContext &&
                 tileX >= Settings.CamXOffset && tileX < Settings.CamXOffset + Settings.CamWidth &&
                 tileY >= Settings.CamYOffset && tileY < Settings.CamYOffset + Settings.CamHeight) {
-                Controllers.Player.updateClick(tileX - this.camera.xOffset + this.camera.x,
+                this.manager.player.updateClick(tileX - this.camera.xOffset + this.camera.x,
                     tileY - this.camera.yOffset + this.camera.y);
             }
         }
@@ -99,7 +99,7 @@ module AsciiGame {
         acceptMousedrag(tileX: number, tileY: number) {
             if (tileX >= Settings.CamXOffset && tileX < Settings.CamXOffset + Settings.CamWidth &&
                 tileY >= Settings.CamYOffset && tileY < Settings.CamYOffset + Settings.CamHeight) {
-                Controllers.Player.updateMousedrag(tileX - this.camera.xOffset + this.camera.x,
+                this.manager.player.updateMousedrag(tileX - this.camera.xOffset + this.camera.x,
                     tileY - this.camera.yOffset + this.camera.y);
             }
         }
@@ -109,13 +109,13 @@ module AsciiGame {
             if (!hitUiContext &&
                 tileX >= Settings.CamXOffset && tileX < Settings.CamXOffset + Settings.CamWidth &&
                 tileY >= Settings.CamYOffset && tileY < Settings.CamYOffset + Settings.CamHeight) {
-                Controllers.Player.updateMousemove(tileX - this.camera.xOffset + this.camera.x,
+                this.manager.player.updateMousemove(tileX - this.camera.xOffset + this.camera.x,
                     tileY - this.camera.yOffset + this.camera.y);
             }
         }
 
         acceptKeydown(keyCode: string) {
-            Controllers.Player.update(keyCode);
+            this.manager.player.update(keyCode);
         }
     }
 }
