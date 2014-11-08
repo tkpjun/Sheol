@@ -1,5 +1,1243 @@
 ﻿var Common;
 (function (Common) {
+    (function (Dungeon) {
+        (function (MapTypes) {
+            MapTypes[MapTypes["Mines"] = 0] = "Mines";
+            MapTypes[MapTypes["Cave"] = 1] = "Cave";
+            MapTypes[MapTypes["Heart"] = 2] = "Heart";
+            MapTypes[MapTypes["Tutorial"] = 3] = "Tutorial";
+        })(Dungeon.MapTypes || (Dungeon.MapTypes = {}));
+        var MapTypes = Dungeon.MapTypes;
+
+        function createMap(type) {
+            var map;
+
+            switch (type) {
+                case 0 /* Mines */:
+                    map = new ROT.Map.Digger(200, Common.Settings.MapHeight, {
+                        dugPercentage: 0.55,
+                        roomWidth: [4, 9],
+                        roomHeight: [3, 7],
+                        corridorLength: [1, 5],
+                        timeLimit: 1000
+                    });
+                    break;
+            }
+
+            var digCallback = function (x, y, value) {
+                var key = x + "," + y;
+
+                if (value)
+                    map[key] = " ";
+                else {
+                    map[key] = ".";
+                }
+            };
+            map.create(digCallback);
+            return map;
+        }
+        Dungeon.createMap = createMap;
+    })(Common.Dungeon || (Common.Dungeon = {}));
+    var Dungeon = Common.Dungeon;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
+    (function (Entities) {
+        (function (Skills) {
+            Skills[Skills["prowess"] = 0] = "prowess";
+            Skills[Skills["perception"] = 1] = "perception";
+            Skills[Skills["wrestling"] = 2] = "wrestling";
+            Skills[Skills["evasion"] = 3] = "evasion";
+            Skills[Skills["fortitude"] = 4] = "fortitude";
+            Skills[Skills["will"] = 5] = "will";
+            Skills[Skills["stealth"] = 6] = "stealth";
+        })(Entities.Skills || (Entities.Skills = {}));
+        var Skills = Entities.Skills;
+
+        function getEnemy(name) {
+            switch (name) {
+                default:
+                    return new Entities.Enemy(name, new Entities.Statset(30, 30, 10, 10));
+                    break;
+            }
+        }
+        Entities.getEnemy = getEnemy;
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+/// <reference path="../Common/Common.ts" />
+/// <reference path="../Common/Dungeon/Dungeon.ts" />
+/// <reference path="../Common/Entities/Entities.ts" />
+var AsciiGame;
+(function (AsciiGame) {
+    var Camera = (function () {
+        function Camera(xOffset, width, yOffset, height) {
+            this.width = width;
+            this.height = height;
+            this.xOffset = xOffset;
+            this.yOffset = yOffset;
+            this.x = 0;
+            this.y = 0;
+        }
+        Object.defineProperty(Camera.prototype, "view", {
+            get: function () {
+                return this._view;
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+        Camera.prototype.centerOn = function (x, y, level, players) {
+            this.x = Math.floor(x - this.width / 2) - 1;
+            if (y)
+                this.y = Math.floor(y - this.height / 2) - 1;
+            if (level && players)
+                this.updateView(level, players);
+        };
+
+        Camera.prototype.translate = function (x, y) {
+            this.x += x;
+            this.y += y;
+        };
+
+        Camera.prototype.updateView = function (level, entities) {
+            var map = this.getMapView(level.map);
+            this._view = this.addObjects(map, level.objects);
+            if (entities)
+                this._view = this.addEntities(this._view, entities);
+            else
+                this._view = this.addEntities(this._view, level.entities);
+        };
+
+        Camera.prototype.sees = function (x, y) {
+            return x >= this.x && y >= this.y && x < this.x + this.width && y < this.y + this.height;
+        };
+
+        Camera.prototype.getMapView = function (map) {
+            var matrix = new Array();
+            for (var i = 0; i < this.width; i++) {
+                matrix[i] = new Array();
+                for (var j = 0; j < this.height; j++) {
+                    matrix[i][j] = { symbol: " " };
+                }
+            }
+
+            for (var key in map) {
+                var parts = key.split(",");
+                var x = parseInt(parts[0]);
+                var y = parseInt(parts[1]);
+
+                if (isNaN(x) || isNaN(y)) {
+                    continue;
+                }
+                if (x < this.x || y < this.y || x > this.x + this.width - 1 || y > this.y + this.height - 1) {
+                    continue;
+                }
+
+                switch (map[key]) {
+                    case " ":
+                        matrix[x - this.x][y - this.y] = {
+                            symbol: map[key],
+                            color: "white",
+                            bgColor: "gray"
+                        };
+                        break;
+                    default:
+                        matrix[x - this.x][y - this.y] = {
+                            symbol: map[key],
+                            color: "white"
+                        };
+                        break;
+                }
+            }
+            return new AsciiGame.DrawMatrix(this.xOffset, this.yOffset, matrix);
+        };
+
+        Camera.prototype.addObjects = function (matrix, objects) {
+            var _this = this;
+            objects.forEach(function (o) {
+                //ConsoleGame.log(e);
+                if (o.x < _this.x || o.y < _this.y || o.x > _this.x + _this.width - 1 || o.y > _this.y + _this.height - 1) {
+                } else {
+                    var d = { symbol: "%", color: "red" };
+                    matrix.matrix[o.x - _this.x][o.y - _this.y].symbol = d.symbol;
+                    matrix.matrix[o.x - _this.x][o.y - _this.y].color = d.color;
+                }
+            });
+            return matrix;
+        };
+
+        Camera.prototype.addEntities = function (matrix, entities) {
+            var _this = this;
+            entities.forEach(function (e) {
+                //ConsoleGame.log(e);
+                if (e.x < _this.x || e.y < _this.y || e.x > _this.x + _this.width - 1 || e.y > _this.y + _this.height - 1) {
+                } else {
+                    var d = AsciiGame.getDrawable(e);
+                    matrix.matrix[e.x - _this.x][e.y - _this.y].symbol = d.symbol;
+                    matrix.matrix[e.x - _this.x][e.y - _this.y].color = d.color;
+                    if (matrix.matrix[e.x + e.dir.x - _this.x])
+                        matrix.matrix[e.x + e.dir.x - _this.x][e.y + e.dir.y - _this.y].bgColor = "tan";
+                }
+            });
+            return matrix;
+        };
+        return Camera;
+    })();
+    AsciiGame.Camera = Camera;
+})(AsciiGame || (AsciiGame = {}));
+/// <reference path="../Common/Common.ts" />
+/// <reference path="../Common/Entities/Entities.ts" />
+var AsciiGame;
+(function (AsciiGame) {
+    var Entities = Common.Entities;
+
+    function symbolO(item) {
+        throw ("TODO");
+    }
+    AsciiGame.symbolO = symbolO;
+
+    function colorO(item) {
+        throw ("TODO");
+    }
+    AsciiGame.colorO = colorO;
+
+    function symbolE(entity) {
+        throw ("TODO");
+    }
+    AsciiGame.symbolE = symbolE;
+
+    function colorE(entity) {
+        throw ("TODO");
+    }
+    AsciiGame.colorE = colorE;
+
+    function getDrawable(entity) {
+        if (entity instanceof Entities.PlayerChar) {
+            return { symbol: "@" };
+        } else {
+            return { symbol: "e" };
+        }
+    }
+    AsciiGame.getDrawable = getDrawable;
+
+    function wrapString(str, limit) {
+        var arr = new Array();
+        var split = str.split(" ");
+        function nextLine(words, startIndex) {
+            var line = words[startIndex];
+            var lt = words[startIndex].length;
+            var i = startIndex + 1;
+            var next = words[i];
+            while (next && lt + next.length + 1 < limit) {
+                lt += next.length + 1;
+                line += " " + next;
+                i += 1;
+                next = words[i];
+            }
+
+            return [line, i];
+        }
+
+        var wordsUsed = 0;
+        while (wordsUsed < split.length) {
+            var line = nextLine(split, wordsUsed);
+            arr.push(line[0]);
+            wordsUsed = line[1];
+        }
+
+        return arr;
+    }
+    AsciiGame.wrapString = wrapString;
+})(AsciiGame || (AsciiGame = {}));
+var AsciiGame;
+(function (AsciiGame) {
+    (function (Core) {
+        (function (Control) {
+            var lastDownTarget;
+            var lastMouseX = 0;
+            var lastMouseY = 0;
+            var mouseDown = false;
+
+            function init(game) {
+                var display = game.display;
+                var canvas = display.getContainer();
+
+                document.addEventListener("mousedown", function (event) {
+                    mouseDown = true;
+                    lastDownTarget = event.target;
+                    if (lastDownTarget != canvas)
+                        return;
+
+                    var pos = display.eventToPosition(event);
+                    game.gameScreen.acceptMousedown(pos[0], pos[1]);
+                }, false);
+
+                document.addEventListener("mouseup", function (event) {
+                    mouseDown = false;
+                    var pos = display.eventToPosition(event);
+                    game.gameScreen.acceptMouseup(pos[0], pos[1]);
+                }, false);
+
+                document.addEventListener("mousemove", function (event) {
+                    if (lastDownTarget != canvas)
+                        return;
+                    if (Math.abs(event.x - lastMouseX) < 5 && Math.abs(event.y - lastMouseY) < 8)
+                        return;
+
+                    //ConsoleGame.log(event.x +","+ event.y)
+                    lastMouseX = event.x;
+                    lastMouseY = event.y;
+
+                    var pos = display.eventToPosition(event);
+                    if (mouseDown) {
+                        game.gameScreen.acceptMousedrag(pos[0], pos[1]);
+                    } else {
+                        game.gameScreen.acceptMousemove(pos[0], pos[1]);
+                    }
+                }, false);
+
+                document.addEventListener("keydown", function (event) {
+                    if (lastDownTarget != canvas)
+                        return;
+
+                    var code = event.keyCode;
+                    var vk;
+                    for (var name in ROT) {
+                        if (ROT[name] == code && name.indexOf("VK_") == 0) {
+                            vk = name;
+                            break;
+                        }
+                    }
+                    game.gameScreen.acceptKeydown(vk);
+                }, false);
+                /*document.addEventListener("keypress", (event) => {
+                if (lastDownTarget != canvas) return;
+                
+                var code = event.charCode;
+                var ch = String.fromCharCode(code);
+                
+                //ConsoleGame.log("Keypress: char is " + ch);
+                }, false);*/
+            }
+            Control.init = init;
+            ;
+        })(Core.Control || (Core.Control = {}));
+        var Control = Core.Control;
+    })(AsciiGame.Core || (AsciiGame.Core = {}));
+    var Core = AsciiGame.Core;
+})(AsciiGame || (AsciiGame = {}));
+var AsciiGame;
+(function (AsciiGame) {
+    (function (Core) {
+        var Game = (function () {
+            function Game() {
+                var _this = this;
+                this.display = new ROT.Display({ width: AsciiGame.Settings.DisplayWidth, height: AsciiGame.Settings.DisplayHeight });
+                this.gameScreen = new AsciiGame.GameScreen();
+                this.gameScreen.nextToDraw.attach(function () {
+                    _this.draw(_this.gameScreen.nextToDraw.unwrap);
+                });
+                this.screen = this.gameScreen;
+                Core.Control.init(this);
+                AsciiGame.GameUI.init();
+
+                var resize = function () {
+                    var size = _this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight);
+                    _this.display.setOptions({ fontSize: size });
+
+                    while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) >= size) {
+                        _this.display.setOptions({ width: _this.display.getOptions().width + 1 });
+                    }
+                    while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) < size) {
+                        _this.display.setOptions({ width: _this.display.getOptions().width - 1 });
+                    }
+
+                    AsciiGame.Settings.DisplayWidth = _this.display.getOptions().width;
+                    _this.gameScreen.camera.width = AsciiGame.Settings.DisplayWidth - AsciiGame.Settings.SidebarWidth * 2;
+                    _this.gameScreen.update();
+                    //console.log((window.innerWidth / window.innerHeight).toFixed(2));
+                    //console.log(this.display.getOptions().width);
+                };
+                window.onresize = resize;
+                resize();
+            }
+            Game.prototype.draw = function (matrix) {
+                //this.display.clear();
+                matrix.draw(this.display);
+                //Eventual goal: the game logic should be a web worker,
+                //with control sending string messages of DOM events to it
+                //and it sending JSON:ed DrawMatrixes to this
+            };
+            return Game;
+        })();
+        Core.Game = Game;
+    })(AsciiGame.Core || (AsciiGame.Core = {}));
+    var Core = AsciiGame.Core;
+})(AsciiGame || (AsciiGame = {}));
+
+window.onload = function () {
+    document.getElementById("content").appendChild(new AsciiGame.Core.Game().display.getContainer());
+};
+var Common;
+(function (Common) {
+    (function (Controllers) {
+        (function (States) {
+            States[States["Move"] = 0] = "Move";
+            States[States["Attack"] = 1] = "Attack";
+            States[States["Inactive"] = 2] = "Inactive";
+        })(Controllers.States || (Controllers.States = {}));
+        var States = Controllers.States;
+
+        function isPassable(user, loc, level, from) {
+            if (loc.x < 1 || loc.y < 1 || loc.x > level.map._width - 2 || loc.y > level.map._height - 2)
+                return false;
+            if (loc.x == user.x && loc.y == user.y)
+                return true;
+
+            var cell = level.map[loc.x + "," + loc.y];
+
+            if (from) {
+                if (diagonalNbors(from, loc)) {
+                    var cell2 = level.map[loc.x + "," + from.y];
+                    var cell3 = level.map[from.x + "," + loc.y];
+                    return cell !== " " && cell2 !== " " && cell3 !== " ";
+                }
+            }
+
+            var entitiesOK = true;
+            level.entities.forEach(function (e) {
+                if (loc.x == e.x && loc.y == e.y)
+                    entitiesOK = false;
+            });
+            return cell !== " " && entitiesOK;
+        }
+        Controllers.isPassable = isPassable;
+
+        function diagonalNbors(loc, neighbor) {
+            if (Math.abs(loc.x - neighbor.x) == 1 && Math.abs(loc.y - neighbor.y) == 1) {
+                return true;
+            } else
+                return false;
+        }
+        Controllers.diagonalNbors = diagonalNbors;
+
+        function diagonal(loc, other) {
+            if (Math.abs(loc.x - other.x) == Math.abs(loc.y - other.y)) {
+                return true;
+            } else
+                return false;
+        }
+        Controllers.diagonal = diagonal;
+
+        function planAction(entity, manager) {
+            if (entity instanceof Common.Entities.PlayerChar) {
+                Controllers.Player.activate(entity);
+            } else if (entity instanceof Common.Entities.Enemy) {
+                var enemy = entity;
+                enemy.addAction(function () {
+                    enemy._hasTurn = false;
+                });
+            }
+        }
+        Controllers.planAction = planAction;
+    })(Common.Controllers || (Common.Controllers = {}));
+    var Controllers = Common.Controllers;
+})(Common || (Common = {}));
+/// <reference path="../Common/Controllers/Controllers.ts" />
+var AsciiGame;
+(function (AsciiGame) {
+    var DrawMatrix = (function () {
+        function DrawMatrix(xOffset, yOffset, matrix, width, height, bgColor) {
+            this.xOffset = xOffset;
+            this.yOffset = yOffset;
+
+            if (matrix) {
+                this.matrix = matrix;
+            } else {
+                this.matrix = new Array();
+                for (var i = 0; i < width; i++) {
+                    this.matrix[i] = new Array();
+                    for (var j = 0; j < height; j++) {
+                        this.matrix[i][j] = { symbol: " ", bgColor: bgColor };
+                    }
+                }
+            }
+        }
+        DrawMatrix.prototype.addString = function (x, y, str, wrapAt, color, bgColor) {
+            if (!str)
+                return this;
+            var lines = new Array();
+            var bgc;
+
+            var limit = this.matrix.length;
+            if (wrapAt) {
+                limit = wrapAt;
+            }
+
+            if (x + str.length > limit) {
+                lines = AsciiGame.wrapString(str, limit - x);
+            } else {
+                lines.push(str);
+            }
+
+            for (var h = 0; h < lines.length; h++) {
+                var line = lines[h];
+                for (var i = 0; i < line.length; i++) {
+                    if (this.matrix[i + x] && this.matrix[i + x][h + y]) {
+                        if (!bgColor)
+                            bgc = this.matrix[i + x][h + y].bgColor;
+                        else
+                            bgc = bgColor;
+                        this.matrix[i + x][h + y] = { symbol: line[i], color: color, bgColor: bgc };
+                    }
+                }
+            }
+            return this;
+        };
+
+        DrawMatrix.prototype.addPath = function (path, offsetX, offsetY, maxAP, excludeFirst, color) {
+            var _this = this;
+            if (!path)
+                return this;
+
+            var nodes = path._nodes;
+            var limited = path.limitedNodes();
+            if (!color)
+                color = "slateblue";
+            if (excludeFirst) {
+                nodes.shift();
+            }
+            nodes.forEach(function (node) {
+                if (_this.matrix[node.x - offsetX] && _this.matrix[node.x - offsetX][node.y - offsetY]) {
+                    var bg = _this.matrix[node.x - offsetX][node.y - offsetY].bgColor;
+                    if (!bg)
+                        bg = "black";
+                    _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString("tan"), 0.5)));
+                }
+            });
+            limited.forEach(function (node) {
+                if (_this.matrix[node.x - offsetX] && _this.matrix[node.x - offsetX][node.y - offsetY]) {
+                    var bg = _this.matrix[node.x - offsetX][node.y - offsetY].bgColor;
+                    if (!bg)
+                        bg = "black";
+                    _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString(color), 0.75)));
+                }
+            });
+            var p = path.pointer;
+            if (this.matrix[p.x - offsetX] && this.matrix[p.x - offsetX][p.y - offsetY]) {
+                var bg = this.matrix[p.x - offsetX][p.y - offsetY].bgColor;
+                if (!bg)
+                    bg = "black";
+                if (limited[limited.length - 1] && p.x == limited[limited.length - 1].x && p.y == limited[limited.length - 1].y)
+                    this.matrix[p.x - offsetX][p.y - offsetY].bgColor = color;
+                else
+                    this.matrix[p.x - offsetX][p.y - offsetY].bgColor = "sandybrown";
+            }
+            return this;
+        };
+
+        DrawMatrix.prototype.addOverlay = function (other) {
+            var newXOff = Math.min(this.xOffset, other.xOffset);
+            var newYOff = Math.min(this.yOffset, other.yOffset);
+
+            if (newXOff < this.xOffset) {
+                var ext = new Array();
+                for (var i = 0; i < newXOff - this.xOffset; i++) {
+                    ext[i] = new Array();
+                    for (var j = 0; j < this.matrix[0].length; j++) {
+                        ext[i][j] = { symbol: " " };
+                    }
+                }
+                this.matrix = ext.concat(this.matrix);
+                this.xOffset = newXOff;
+            }
+            if (newYOff < this.yOffset) {
+                for (var i = 0; i < this.matrix.length; i++) {
+                    var ext2 = new Array();
+                    for (var j = 0; j < newYOff - this.yOffset; j++) {
+                        ext2[j] = { symbol: " " };
+                    }
+                    this.matrix[i] = ext2.concat(this.matrix[i]);
+                }
+                this.yOffset = newYOff;
+            }
+
+            for (var i = 0; i < other.matrix.length; i++) {
+                for (var j = 0; j < other.matrix[0].length; j++) {
+                    if (other.matrix[i][j].symbol && other.matrix[i][j].symbol !== " ") {
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].symbol = other.matrix[i][j].symbol;
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = other.matrix[i][j].color;
+                    } else {
+                        var c1 = this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color;
+                        var c2 = other.matrix[i][j].bgColor;
+                        if (!c1)
+                            c1 = "black";
+                        if (!c2)
+                            c2 = "black";
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(c1), ROT.Color.fromString(c2), 0.75)));
+                    }
+                    var bg1 = this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor;
+                    var bg2 = other.matrix[i][j].bgColor;
+                    if (!bg1)
+                        bg1 = "black";
+                    if (!bg2)
+                        bg2 = "black";
+
+                    this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg1), ROT.Color.fromString(bg2), 0.75)));
+                }
+            }
+
+            return this;
+        };
+
+        DrawMatrix.prototype.draw = function (display) {
+            for (var i = 0; i < this.matrix.length; i++) {
+                for (var j = 0; j < this.matrix[0].length; j++) {
+                    if (!this.matrix[i][j])
+                        continue;
+
+                    display.draw(i + this.xOffset, j + this.yOffset, this.matrix[i][j].symbol, this.matrix[i][j].color, this.matrix[i][j].bgColor);
+                }
+            }
+        };
+        return DrawMatrix;
+    })();
+    AsciiGame.DrawMatrix = DrawMatrix;
+})(AsciiGame || (AsciiGame = {}));
+/// <reference path="../Common/Common.ts" />
+var AsciiGame;
+(function (AsciiGame) {
+    var Dungeon = Common.Dungeon;
+
+    var Controllers = Common.Controllers;
+    var C = Common;
+
+    var GameScreen = (function () {
+        function GameScreen() {
+            var _this = this;
+            this.dungeon = new Array(new Dungeon.Level(0 /* Mines */));
+            this.currLevel = 0;
+            this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
+            this.nextToDraw = new C.ObservableProperty();
+            this.camera = new AsciiGame.Camera(AsciiGame.Settings.SidebarWidth, AsciiGame.Settings.DisplayWidth - AsciiGame.Settings.SidebarWidth * 2, 0, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight);
+            this.textBox = new AsciiGame.UI.TextBox(AsciiGame.Settings.SidebarWidth, 0, 7);
+            Controllers.Player.initialize(this.textBox, this.manager);
+
+            this.update = function () {
+                var middle = _this.manager.characters.map(function (c) {
+                    return c.x;
+                }).reduce(function (x1, x2) {
+                    return x1 + x2;
+                }) / _this.manager.characters.length;
+                _this.camera.centerOn(middle);
+                _this.advanceFrame();
+            };
+            this.manager.currEntity.attach(this.update);
+            this.manager.currPath.attach(function () {
+                return _this.advanceFrame();
+            });
+            this.textBox.attach(function () {
+                return _this.advanceFrame();
+            });
+            this.manager.start();
+            this.update();
+        }
+        GameScreen.prototype.advanceFrame = function () {
+            var _this = this;
+            this.manager.engine.lock();
+
+            this.camera.updateView(this.manager.level);
+            this.nextToDraw.unwrap = this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap).addOverlay(this.textBox.getMatrix(this.camera.width));
+            this.nextToDraw.unwrap = AsciiGame.GameUI.getLeftBar(this.manager.characters);
+            this.nextToDraw.unwrap = AsciiGame.GameUI.getDPad();
+            this.nextToDraw.unwrap = AsciiGame.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.unwrap, this.manager.level.entities.filter(function (e) {
+                return _this.camera.sees(e.x, e.y);
+            }));
+            this.nextToDraw.unwrap = AsciiGame.GameUI.getBottomBar();
+
+            /*
+            var matrix = new DrawMatrix(0, 0, null, Settings.DisplayWidth, Settings.DisplayHeight)
+            .addOverlay(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap))
+            .addOverlay(this.textBox.getMatrix(this.camera.width))
+            .addOverlay(GameUI.getLeftBar(this.manager.characters))
+            .addOverlay(GameUI.getDPad())
+            .addOverlay(GameUI.getRightBar(
+            this.manager.level.scheduler,
+            this.manager.currEntity.unwrap,
+            this.manager.level.entities.filter((e) => {
+            return this.camera.sees(e.x, e.y);
+            }))
+            )
+            .addOverlay(GameUI.getBottomBar())
+            this.nextToDraw.unwrap = matrix;  */
+            this.manager.engine.unlock();
+        };
+
+        GameScreen.prototype.acceptMousedown = function (tileX, tileY) {
+            var hitUiContext = AsciiGame.GameUI.updateMouseDown(tileX, tileY);
+            if (!hitUiContext && tileX >= AsciiGame.Settings.CamXOffset && tileX < AsciiGame.Settings.CamXOffset + AsciiGame.Settings.CamWidth && tileY >= AsciiGame.Settings.CamYOffset && tileY < AsciiGame.Settings.CamYOffset + AsciiGame.Settings.CamHeight) {
+                Controllers.Player.updateClick(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
+            }
+        };
+
+        GameScreen.prototype.acceptMouseup = function (tileX, tileY) {
+            AsciiGame.GameUI.updateMouseUp(tileX, tileY);
+        };
+
+        GameScreen.prototype.acceptMousedrag = function (tileX, tileY) {
+            if (tileX >= AsciiGame.Settings.CamXOffset && tileX < AsciiGame.Settings.CamXOffset + AsciiGame.Settings.CamWidth && tileY >= AsciiGame.Settings.CamYOffset && tileY < AsciiGame.Settings.CamYOffset + AsciiGame.Settings.CamHeight) {
+                Controllers.Player.updateMousedrag(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
+            }
+        };
+
+        GameScreen.prototype.acceptMousemove = function (tileX, tileY) {
+            var hitUiContext = AsciiGame.GameUI.updateMousemove(tileX, tileY);
+            if (!hitUiContext && tileX >= AsciiGame.Settings.CamXOffset && tileX < AsciiGame.Settings.CamXOffset + AsciiGame.Settings.CamWidth && tileY >= AsciiGame.Settings.CamYOffset && tileY < AsciiGame.Settings.CamYOffset + AsciiGame.Settings.CamHeight) {
+                Controllers.Player.updateMousemove(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
+            }
+        };
+
+        GameScreen.prototype.acceptKeydown = function (keyCode) {
+            Controllers.Player.update(keyCode);
+        };
+        return GameScreen;
+    })();
+    AsciiGame.GameScreen = GameScreen;
+})(AsciiGame || (AsciiGame = {}));
+var AsciiGame;
+(function (AsciiGame) {
+    /// <reference path="../Common/Common.ts" />
+    /// <reference path="../Common/Controllers/Controllers.ts" />
+    /// <reference path="../Common/Entities/Entities.ts" />
+    (function (GameUI) {
+        var Controllers = Common.Controllers;
+
+        var color1 = "midnightblue";
+        var color2 = "royalblue";
+        var context;
+
+        function init() {
+            context = new Array();
+        }
+        GameUI.init = init;
+
+        function updateMouseDown(x, y) {
+            return false;
+        }
+        GameUI.updateMouseDown = updateMouseDown;
+        function updateMouseUp(x, y) {
+            return false;
+        }
+        GameUI.updateMouseUp = updateMouseUp;
+        function updateMousemove(x, y) {
+            return false;
+        }
+        GameUI.updateMousemove = updateMousemove;
+
+        function getLeftBar(characters) {
+            var p1 = characters[0];
+            var p2 = characters[1];
+            var w = AsciiGame.Settings.SidebarWidth;
+            var matrix = new AsciiGame.DrawMatrix(0, 0, null, w, 23);
+
+            for (var i = 0; i < AsciiGame.Settings.SidebarWidth; i++) {
+                matrix.matrix[i][0] = { symbol: " ", bgColor: color1 };
+            }
+            matrix.addString(4, 0, "LEVEL:1");
+
+            matrix.addString(1, 1, "EXP:");
+            matrix.addString(1, 3, p1.name);
+            matrix.addString(1, 4, "Health:");
+            matrix.addString(10, 4, p1.stats.hp + "/" + p1.stats.hpMax);
+            matrix.addString(1, 6, "ActPts:");
+            matrix.addString(10, 6, p1.stats.ap + "/" + p1.stats.apMax);
+            matrix.addString(1, 5, "Stamina:");
+            matrix.addString(10, 5, p1.stats.stamina + "/" + p1.stats.staminaMax);
+            matrix.addString(5, 7, "(+" + p1.getHitBonus() + ", " + p1.getDamage()[0] + "x" + p1.getDamage()[1] + ")");
+            matrix.addString(5, 8, "[+5, 0-0]");
+
+            matrix.addString(1, 10, p2.name);
+            matrix.addString(1, 11, "Health:");
+            matrix.addString(10, 11, p2.stats.hp + "/" + p2.stats.hpMax);
+            matrix.addString(1, 13, "ActPts:");
+            matrix.addString(10, 13, p2.stats.ap + "/" + p2.stats.apMax);
+            matrix.addString(1, 12, "Stamina:");
+            matrix.addString(10, 12, p2.stats.stamina + "/" + p2.stats.staminaMax);
+            matrix.addString(5, 14, "(+" + p2.getHitBonus() + ", " + p2.getDamage()[0] + "x" + p2.getDamage()[1] + ")");
+            matrix.addString(5, 15, "[+5, 0-0]");
+
+            /*
+            matrix.addString(1, 17, p2.name);
+            matrix.addString(1, 18, "Health:");
+            matrix.addString(10, 18, p2.stats.hp + "/" + p2.stats.hpMax);
+            matrix.addString(1, 19, "Actions:");
+            matrix.addString(10, 19, p2.stats.ap + "/" + p2.stats.apMax);
+            matrix.addString(1, 20, "Enur:");
+            matrix.addString(5, 21, "(+5, 3x7)");
+            matrix.addString(5, 22, "[+5, 0-0]");
+            */
+            return matrix;
+        }
+        GameUI.getLeftBar = getLeftBar;
+
+        function getRightBar(scheduler, current, seen, baseTime) {
+            var w = AsciiGame.Settings.SidebarWidth;
+            var wDisp = AsciiGame.Settings.DisplayWidth;
+            var leftEdge = wDisp - w;
+            var matrix = new AsciiGame.DrawMatrix(leftEdge, 0, null, w, AsciiGame.Settings.DisplayHeight - 2);
+            if (!baseTime)
+                baseTime = 0;
+
+            var events = scheduler._queue._events;
+            var times = scheduler._queue._eventTimes;
+            var both = [];
+            for (var i = 0; i < events.length; i++) {
+                both.push({ event: events[i], time: times[i] });
+            }
+            both = both.filter(function (obj) {
+                return obj.event instanceof Controllers.ChangeProperty && seen.indexOf(obj.event.target) >= 0;
+            }).map(function (obj) {
+                return { entity: obj.event.target, time: obj.time };
+            }).sort(function (obj1, obj2) {
+                return obj1.time - obj2.time;
+            });
+            both.unshift({ entity: current, time: baseTime });
+
+            for (var i = 0; i < AsciiGame.Settings.SidebarWidth; i++) {
+                matrix.matrix[i][0] = { symbol: " ", bgColor: color1 };
+            }
+            matrix.addString(5, 0, "QUEUE");
+            matrix.addString(0, 1, "--- current ---", null, "green");
+            for (var i = 0; i < both.length && i < 9; i++) {
+                var drawable = AsciiGame.getDrawable(both[i].entity);
+                matrix.addString(1, i * 3 + 2, both[i].entity.name, AsciiGame.Settings.SidebarWidth - 4);
+                matrix.addString(1, i * 3 + 3, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, AsciiGame.Settings.SidebarWidth - 4);
+
+                //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, "---");
+                //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, "| |");
+                if (i % 2 == 0) {
+                    matrix.addString(AsciiGame.Settings.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, color2);
+                    matrix.addString(AsciiGame.Settings.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color2);
+                } else {
+                    matrix.addString(AsciiGame.Settings.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, color1);
+                    matrix.addString(AsciiGame.Settings.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color1);
+                }
+                //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 4, "---");
+                /*
+                if (both[i].time === 0) {
+                matrix.addString(0, i * 3 + 1, "---  ready  ---", null, "green");
+                }
+                else {
+                matrix.addString(0, i * 3 + 1, "--- +" + (<number>both[i].time).toFixed(2) + "tu ---", null, "red");
+                }*/
+            }
+            matrix.addString(AsciiGame.Settings.SidebarWidth - 7, 29, "space:");
+            matrix.addString(AsciiGame.Settings.SidebarWidth - 7, 30, " END  ", null, null, color2);
+            matrix.addString(AsciiGame.Settings.SidebarWidth - 7, 31, " TURN ", null, null, color2);
+
+            return matrix;
+        }
+        GameUI.getRightBar = getRightBar;
+
+        function getDPad() {
+            var w = AsciiGame.Settings.SidebarWidth;
+            var hDisp = AsciiGame.Settings.DisplayHeight;
+            var hThis = 10;
+            var matrix = new AsciiGame.DrawMatrix(0, hDisp - hThis - AsciiGame.Settings.BottomBarHeight, null, w, hThis);
+
+            /*
+            matrix.addString(0, 0, "q--- w--- e---");
+            matrix.addString(0, 1, "|NW| | N| |NE|");
+            matrix.addString(0, 2, "---- ---- ----");
+            matrix.addString(0, 3, "a--- f--- d---");
+            matrix.addString(0, 4, "|W | PICK | E|");
+            matrix.addString(0, 5, "---- ---- ----");
+            matrix.addString(0, 6, "z--- x--- c---");
+            matrix.addString(0, 7, "|SW| |S | |SE|");
+            matrix.addString(0, 8, "---- ---- ----");*/
+            matrix.addString(1, 1, "    |    |    ");
+            matrix.addString(1, 2, "    |    |    ");
+            matrix.addString(1, 3, "----+----+----");
+            matrix.addString(1, 4, "    |    |    ");
+            matrix.addString(1, 5, "    |    |    ");
+            matrix.addString(1, 6, "----+----+----");
+            matrix.addString(1, 7, "    |    |    ");
+            matrix.addString(1, 8, "    |    |    ");
+            matrix.addString(1, 1, "q   ", null, null, color1);
+            matrix.addString(1, 2, " NW ", null, null, color1);
+            matrix.addString(6, 1, "w   ", null, null, color2);
+            matrix.addString(6, 2, "  N ", null, null, color2);
+            matrix.addString(11, 1, "e   ", null, null, color1);
+            matrix.addString(11, 2, " NE ", null, null, color1);
+            matrix.addString(1, 4, "a   ", null, null, color2);
+            matrix.addString(1, 5, " W  ", null, null, color2);
+            matrix.addString(6, 4, "f   ", null, null, color1);
+            matrix.addString(6, 5, "PICK", null, null, color1);
+            matrix.addString(11, 4, "d   ", null, null, color2);
+            matrix.addString(11, 5, "  E ", null, null, color2);
+            matrix.addString(1, 7, "z   ", null, null, color1);
+            matrix.addString(1, 8, " SW ", null, null, color1);
+            matrix.addString(6, 7, "x   ", null, null, color2);
+            matrix.addString(6, 8, " S  ", null, null, color2);
+            matrix.addString(11, 7, "c   ", null, null, color1);
+            matrix.addString(11, 8, " SE ", null, null, color1);
+
+            return matrix;
+        }
+        GameUI.getDPad = getDPad;
+
+        function getBottomBar() {
+            var matrix = new AsciiGame.DrawMatrix(0, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight, null, AsciiGame.Settings.DisplayWidth, AsciiGame.Settings.BottomBarHeight);
+
+            for (var i = 0; i < matrix.matrix.length; i++) {
+                for (var j = 0; j < matrix.matrix[0].length; j++) {
+                    matrix.matrix[i][j] = { symbol: " ", bgColor: color1 };
+                }
+            }
+            matrix.addString(1, 0, "1");
+            matrix.addString(2, 0, "  MOVE  ", null, null, color2);
+            matrix.addString(11, 0, "2");
+            matrix.addString(12, 0, " ATTACK ", null, null, color2);
+            matrix.addString(21, 0, "3");
+            matrix.addString(22, 0, " SPECIAL ", null, null, color2);
+            matrix.addString(32, 0, "4");
+            matrix.addString(33, 0, " SWITCH ", null, null, color2);
+
+            matrix.addString(AsciiGame.Settings.DisplayWidth - 32, 0, "CON");
+            matrix.addString(AsciiGame.Settings.DisplayWidth - 29, 0, " v ", null, null, color2);
+            matrix.addString(AsciiGame.Settings.DisplayWidth - 25, 0, " ^ ", null, null, color2);
+            matrix.addString(AsciiGame.Settings.DisplayWidth - 20, 0, "INVENTORY", null, null, color2);
+            matrix.addString(AsciiGame.Settings.DisplayWidth - 9, 0, "  MENU  ", null, null, color2);
+
+            return matrix;
+        }
+        GameUI.getBottomBar = getBottomBar;
+    })(AsciiGame.GameUI || (AsciiGame.GameUI = {}));
+    var GameUI = AsciiGame.GameUI;
+})(AsciiGame || (AsciiGame = {}));
+var AsciiGame;
+(function (AsciiGame) {
+    var MainMenuScreen = (function () {
+        function MainMenuScreen() {
+        }
+        return MainMenuScreen;
+    })();
+    AsciiGame.MainMenuScreen = MainMenuScreen;
+})(AsciiGame || (AsciiGame = {}));
+var AsciiGame;
+(function (AsciiGame) {
+    var Settings = (function () {
+        function Settings() {
+        }
+        Object.defineProperty(Settings, "SidebarWidth", {
+            get: function () {
+                return 16;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Settings, "BottomBarHeight", {
+            get: function () {
+                return 1;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Settings, "DisplayWidth", {
+            get: function () {
+                return Settings._displayWidth;
+            },
+            set: function (val) {
+                Settings._displayWidth = val;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Settings, "DisplayHeight", {
+            get: function () {
+                return 34;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Settings, "CamXOffset", {
+            get: function () {
+                return Settings.SidebarWidth;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Settings, "CamYOffset", {
+            get: function () {
+                return 0;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Settings, "CamWidth", {
+            get: function () {
+                return Settings.DisplayWidth - Settings.SidebarWidth * 2;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Settings, "CamHeight", {
+            get: function () {
+                return Settings.DisplayHeight - Settings.BottomBarHeight;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Settings._displayWidth = 92;
+        return Settings;
+    })();
+    AsciiGame.Settings = Settings;
+})(AsciiGame || (AsciiGame = {}));
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var Common;
+(function (Common) {
+    var Observable = (function () {
+        function Observable() {
+            this.observers = new Array();
+        }
+        Observable.prototype.attach = function (observer) {
+            this.observers.push(observer);
+        };
+
+        Observable.prototype.detach = function (observer) {
+            var index = this.observers.indexOf(observer);
+            this.observers.splice(index, 1);
+        };
+
+        Observable.prototype.notify = function () {
+            this.observers.forEach(function (o) {
+                o();
+            });
+        };
+        return Observable;
+    })();
+    Common.Observable = Observable;
+
+    var ObservableProperty = (function (_super) {
+        __extends(ObservableProperty, _super);
+        function ObservableProperty() {
+            _super.call(this);
+        }
+        Object.defineProperty(ObservableProperty.prototype, "unwrap", {
+            get: function () {
+                return this._property;
+            },
+            set: function (property) {
+                this._property = property;
+                this.notify();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return ObservableProperty;
+    })(Observable);
+    Common.ObservableProperty = ObservableProperty;
+})(Common || (Common = {}));
+var AsciiGame;
+(function (AsciiGame) {
+    /// <reference path="../../Common/ObservableProperty.ts" />
+    (function (UI) {
+        var Button = (function (_super) {
+            __extends(Button, _super);
+            function Button(corner, label) {
+                _super.call(this);
+                this.corner = corner;
+                this.label = label;
+                this.state = 0 /* Up */;
+            }
+            Button.prototype.getMatrix = function (x, y, width, height) {
+                var color = this.getColor();
+                var matrix = new AsciiGame.DrawMatrix(x, y, null, width, height, this.getColor());
+                if (this.corner) {
+                    matrix.addString(0, 0, this.corner, width - 1);
+                }
+                var labelX, labelY;
+                labelY = Math.floor(height / 2);
+                if (this.label.length >= width) {
+                    labelX = 0;
+                } else {
+                    labelX = Math.floor(width / 2) - Math.floor(this.label.length / 2);
+                }
+                return matrix;
+            };
+
+            Button.prototype.mouseOver = function () {
+                this.state = 2 /* Hover */;
+            };
+            Button.prototype.mouseNotOver = function () {
+                this.state = 0 /* Up */;
+            };
+            Button.prototype.mouseDown = function () {
+                if (this.state !== 1 /* Down */) {
+                    this.notify();
+                }
+                this.state = 1 /* Down */;
+            };
+            Button.prototype.mouseUp = function () {
+                this.state = 0 /* Up */;
+            };
+
+            Button.prototype.getColor = function () {
+                switch (this.state) {
+                    case 0 /* Up */:
+                        return "royalblue";
+                        break;
+                    case 2 /* Hover */:
+                        return "yellow";
+                        break;
+                    default:
+                        return "navy";
+                        break;
+                }
+            };
+            return Button;
+        })(Common.Observable);
+        UI.Button = Button;
+
+        (function (ButtonState) {
+            ButtonState[ButtonState["Up"] = 0] = "Up";
+            ButtonState[ButtonState["Down"] = 1] = "Down";
+            ButtonState[ButtonState["Hover"] = 2] = "Hover";
+        })(UI.ButtonState || (UI.ButtonState = {}));
+        var ButtonState = UI.ButtonState;
+    })(AsciiGame.UI || (AsciiGame.UI = {}));
+    var UI = AsciiGame.UI;
+})(AsciiGame || (AsciiGame = {}));
+var AsciiGame;
+(function (AsciiGame) {
+    (function (UI) {
+        var Container = (function () {
+            function Container(x, y, width, height, element) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.element = element;
+            }
+            Container.prototype.getMatrix = function () {
+                return this.element.getMatrix(this.x, this.y, this.width, this.height);
+            };
+
+            Container.prototype.mouseOver = function () {
+                this.element.mouseOver();
+            };
+            Container.prototype.mouseNotOver = function () {
+                this.element.mouseNotOver();
+            };
+            Container.prototype.mouseDown = function () {
+                this.element.mouseDown();
+            };
+            Container.prototype.mouseUp = function () {
+                this.element.mouseUp();
+            };
+            return Container;
+        })();
+        UI.Container = Container;
+    })(AsciiGame.UI || (AsciiGame.UI = {}));
+    var UI = AsciiGame.UI;
+})(AsciiGame || (AsciiGame = {}));
+var AsciiGame;
+(function (AsciiGame) {
+    (function (UI) {
+        var Description = (function () {
+            function Description() {
+            }
+            return Description;
+        })();
+        UI.Description = Description;
+    })(AsciiGame.UI || (AsciiGame.UI = {}));
+    var UI = AsciiGame.UI;
+})(AsciiGame || (AsciiGame = {}));
+var AsciiGame;
+(function (AsciiGame) {
+    (function (UI) {
+        var HoriList = (function () {
+            function HoriList() {
+            }
+            return HoriList;
+        })();
+        UI.HoriList = HoriList;
+    })(AsciiGame.UI || (AsciiGame.UI = {}));
+    var UI = AsciiGame.UI;
+})(AsciiGame || (AsciiGame = {}));
+var AsciiGame;
+(function (AsciiGame) {
+    /// <reference path="../../Common/ObservableProperty.ts" />
+    (function (UI) {
+        var TextBox = (function (_super) {
+            __extends(TextBox, _super);
+            function TextBox(x, y, height) {
+                _super.call(this);
+                this.x = x;
+                this.y = y;
+                this.height = height;
+                this.lines = new Array();
+            }
+            TextBox.prototype.addLine = function (line) {
+                this.lines.push(line);
+                if (this.lines.length > 50) {
+                    this.lines.splice(0, 25);
+                }
+                this.notify();
+                return this;
+            };
+
+            TextBox.prototype.getMatrix = function (width) {
+                var matrix = new AsciiGame.DrawMatrix(this.x, this.y, null, width, this.height);
+                var used = 0;
+                var index = this.lines.length - 1;
+
+                while (used < this.height && index >= 0) {
+                    var nextLine = this.lines[index];
+
+                    if (nextLine.length > width - 2) {
+                        var split = AsciiGame.wrapString(nextLine, width - 2);
+
+                        while (split.length > 0 && used < this.height) {
+                            var line = split.pop();
+                            matrix.addString(1, this.height - used - 1, line, width - 1);
+                            used += 1;
+                        }
+                    } else {
+                        matrix.addString(1, this.height - used - 1, nextLine, width - 1);
+                        used += 1;
+                    }
+                    index -= 1;
+                }
+                return matrix;
+            };
+            return TextBox;
+        })(Common.Observable);
+        UI.TextBox = TextBox;
+    })(AsciiGame.UI || (AsciiGame.UI = {}));
+    var UI = AsciiGame.UI;
+})(AsciiGame || (AsciiGame = {}));
+/// <reference path="../../Common/Common.ts" />
+var AsciiGame;
+(function (AsciiGame) {
+    (function (UI) {
+        var VertList = (function () {
+            function VertList() {
+            }
+            return VertList;
+        })();
+        UI.VertList = VertList;
+    })(AsciiGame.UI || (AsciiGame.UI = {}));
+    var UI = AsciiGame.UI;
+})(AsciiGame || (AsciiGame = {}));
+var Common;
+(function (Common) {
     (function (Controllers) {
         var Path = (function () {
             function Path() {
@@ -88,12 +1326,6 @@
     })(Common.Controllers || (Common.Controllers = {}));
     var Controllers = Common.Controllers;
 })(Common || (Common = {}));
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
 var Common;
 (function (Common) {
     ///<reference path="Path.ts"/>
@@ -168,71 +1400,6 @@ var Common;
             return ChangeProperty;
         })();
         Controllers.ChangeProperty = ChangeProperty;
-    })(Common.Controllers || (Common.Controllers = {}));
-    var Controllers = Common.Controllers;
-})(Common || (Common = {}));
-var Common;
-(function (Common) {
-    (function (Controllers) {
-        (function (States) {
-            States[States["Move"] = 0] = "Move";
-            States[States["Attack"] = 1] = "Attack";
-            States[States["Inactive"] = 2] = "Inactive";
-        })(Controllers.States || (Controllers.States = {}));
-        var States = Controllers.States;
-
-        function isPassable(user, loc, level, from) {
-            if (loc.x < 1 || loc.y < 1 || loc.x > level.map._width - 2 || loc.y > level.map._height - 2)
-                return false;
-            if (loc.x == user.x && loc.y == user.y)
-                return true;
-
-            var cell = level.map[loc.x + "," + loc.y];
-
-            if (from) {
-                if (diagonalNbors(from, loc)) {
-                    var cell2 = level.map[loc.x + "," + from.y];
-                    var cell3 = level.map[from.x + "," + loc.y];
-                    return cell !== " " && cell2 !== " " && cell3 !== " ";
-                }
-            }
-
-            var entitiesOK = true;
-            level.entities.forEach(function (e) {
-                if (loc.x == e.x && loc.y == e.y)
-                    entitiesOK = false;
-            });
-            return cell !== " " && entitiesOK;
-        }
-        Controllers.isPassable = isPassable;
-
-        function diagonalNbors(loc, neighbor) {
-            if (Math.abs(loc.x - neighbor.x) == 1 && Math.abs(loc.y - neighbor.y) == 1) {
-                return true;
-            } else
-                return false;
-        }
-        Controllers.diagonalNbors = diagonalNbors;
-
-        function diagonal(loc, other) {
-            if (Math.abs(loc.x - other.x) == Math.abs(loc.y - other.y)) {
-                return true;
-            } else
-                return false;
-        }
-        Controllers.diagonal = diagonal;
-
-        function planAction(entity, manager) {
-            if (entity instanceof Common.Entities.PlayerChar) {
-                Controllers.Player.activate(entity);
-            } else if (entity instanceof Common.Entities.Enemy) {
-                var enemy = entity;
-                enemy.addAction(function () {
-                    enemy._hasTurn = false;
-                });
-            }
-        }
-        Controllers.planAction = planAction;
     })(Common.Controllers || (Common.Controllers = {}));
     var Controllers = Common.Controllers;
 })(Common || (Common = {}));
@@ -702,48 +1869,6 @@ var Common;
 var Common;
 (function (Common) {
     (function (Dungeon) {
-        (function (MapTypes) {
-            MapTypes[MapTypes["Mines"] = 0] = "Mines";
-            MapTypes[MapTypes["Cave"] = 1] = "Cave";
-            MapTypes[MapTypes["Heart"] = 2] = "Heart";
-            MapTypes[MapTypes["Tutorial"] = 3] = "Tutorial";
-        })(Dungeon.MapTypes || (Dungeon.MapTypes = {}));
-        var MapTypes = Dungeon.MapTypes;
-
-        function createMap(type) {
-            var map;
-
-            switch (type) {
-                case 0 /* Mines */:
-                    map = new ROT.Map.Digger(200, Common.Settings.MapHeight, {
-                        dugPercentage: 0.55,
-                        roomWidth: [4, 9],
-                        roomHeight: [3, 7],
-                        corridorLength: [1, 5],
-                        timeLimit: 1000
-                    });
-                    break;
-            }
-
-            var digCallback = function (x, y, value) {
-                var key = x + "," + y;
-
-                if (value)
-                    map[key] = " ";
-                else {
-                    map[key] = ".";
-                }
-            };
-            map.create(digCallback);
-            return map;
-        }
-        Dungeon.createMap = createMap;
-    })(Common.Dungeon || (Common.Dungeon = {}));
-    var Dungeon = Common.Dungeon;
-})(Common || (Common = {}));
-var Common;
-(function (Common) {
-    (function (Dungeon) {
         var ItemObject = (function () {
             function ItemObject(item, x, y) {
                 this._x = x;
@@ -983,31 +2108,6 @@ var Common;
             return Enemy;
         })(Entities.Entity);
         Entities.Enemy = Enemy;
-    })(Common.Entities || (Common.Entities = {}));
-    var Entities = Common.Entities;
-})(Common || (Common = {}));
-var Common;
-(function (Common) {
-    (function (Entities) {
-        (function (Skills) {
-            Skills[Skills["prowess"] = 0] = "prowess";
-            Skills[Skills["perception"] = 1] = "perception";
-            Skills[Skills["wrestling"] = 2] = "wrestling";
-            Skills[Skills["evasion"] = 3] = "evasion";
-            Skills[Skills["fortitude"] = 4] = "fortitude";
-            Skills[Skills["will"] = 5] = "will";
-            Skills[Skills["stealth"] = 6] = "stealth";
-        })(Entities.Skills || (Entities.Skills = {}));
-        var Skills = Entities.Skills;
-
-        function getEnemy(name) {
-            switch (name) {
-                default:
-                    return new Entities.Enemy(name, new Entities.Statset(30, 30, 10, 10));
-                    break;
-            }
-        }
-        Entities.getEnemy = getEnemy;
     })(Common.Entities || (Common.Entities = {}));
     var Entities = Common.Entities;
 })(Common || (Common = {}));
@@ -1743,50 +2843,6 @@ var Common;
 })(Common || (Common = {}));
 var Common;
 (function (Common) {
-    var Observable = (function () {
-        function Observable() {
-            this.observers = new Array();
-        }
-        Observable.prototype.attach = function (observer) {
-            this.observers.push(observer);
-        };
-
-        Observable.prototype.detach = function (observer) {
-            var index = this.observers.indexOf(observer);
-            this.observers.splice(index, 1);
-        };
-
-        Observable.prototype.notify = function () {
-            this.observers.forEach(function (o) {
-                o();
-            });
-        };
-        return Observable;
-    })();
-    Common.Observable = Observable;
-
-    var ObservableProperty = (function (_super) {
-        __extends(ObservableProperty, _super);
-        function ObservableProperty() {
-            _super.call(this);
-        }
-        Object.defineProperty(ObservableProperty.prototype, "unwrap", {
-            get: function () {
-                return this._property;
-            },
-            set: function (property) {
-                this._property = property;
-                this.notify();
-            },
-            enumerable: true,
-            configurable: true
-        });
-        return ObservableProperty;
-    })(Observable);
-    Common.ObservableProperty = ObservableProperty;
-})(Common || (Common = {}));
-var Common;
-(function (Common) {
     var Settings = (function () {
         function Settings() {
         }
@@ -1880,951 +2936,4 @@ var Common;
     })();
     Common.Vec = Vec;
 })(Common || (Common = {}));
-/// <reference path="../Common/Common.ts" />
-/// <reference path="../Common/Dungeon/Dungeon.ts" />
-/// <reference path="../Common/Entities/Entities.ts" />
-var ConsoleGame;
-(function (ConsoleGame) {
-    var Camera = (function () {
-        function Camera(xOffset, width, yOffset, height) {
-            this.width = width;
-            this.height = height;
-            this.xOffset = xOffset;
-            this.yOffset = yOffset;
-            this.x = 0;
-            this.y = 0;
-        }
-        Object.defineProperty(Camera.prototype, "view", {
-            get: function () {
-                return this._view;
-            },
-            enumerable: true,
-            configurable: true
-        });
-
-        Camera.prototype.centerOn = function (x, y, level, players) {
-            this.x = Math.floor(x - this.width / 2) - 1;
-            if (y)
-                this.y = Math.floor(y - this.height / 2) - 1;
-            if (level && players)
-                this.updateView(level, players);
-        };
-
-        Camera.prototype.translate = function (x, y) {
-            this.x += x;
-            this.y += y;
-        };
-
-        Camera.prototype.updateView = function (level, entities) {
-            var map = this.getMapView(level.map);
-            this._view = this.addObjects(map, level.objects);
-            if (entities)
-                this._view = this.addEntities(this._view, entities);
-            else
-                this._view = this.addEntities(this._view, level.entities);
-        };
-
-        Camera.prototype.sees = function (x, y) {
-            return x >= this.x && y >= this.y && x < this.x + this.width && y < this.y + this.height;
-        };
-
-        Camera.prototype.getMapView = function (map) {
-            var matrix = new Array();
-            for (var i = 0; i < this.width; i++) {
-                matrix[i] = new Array();
-                for (var j = 0; j < this.height; j++) {
-                    matrix[i][j] = { symbol: " " };
-                }
-            }
-
-            for (var key in map) {
-                var parts = key.split(",");
-                var x = parseInt(parts[0]);
-                var y = parseInt(parts[1]);
-
-                if (isNaN(x) || isNaN(y)) {
-                    continue;
-                }
-                if (x < this.x || y < this.y || x > this.x + this.width - 1 || y > this.y + this.height - 1) {
-                    continue;
-                }
-
-                switch (map[key]) {
-                    case " ":
-                        matrix[x - this.x][y - this.y] = {
-                            symbol: map[key],
-                            color: "white",
-                            bgColor: "gray"
-                        };
-                        break;
-                    default:
-                        matrix[x - this.x][y - this.y] = {
-                            symbol: map[key],
-                            color: "white"
-                        };
-                        break;
-                }
-            }
-            return new ConsoleGame.DrawMatrix(this.xOffset, this.yOffset, matrix);
-        };
-
-        Camera.prototype.addObjects = function (matrix, objects) {
-            var _this = this;
-            objects.forEach(function (o) {
-                //ConsoleGame.log(e);
-                if (o.x < _this.x || o.y < _this.y || o.x > _this.x + _this.width - 1 || o.y > _this.y + _this.height - 1) {
-                } else {
-                    var d = { symbol: "%", color: "red" };
-                    matrix.matrix[o.x - _this.x][o.y - _this.y].symbol = d.symbol;
-                    matrix.matrix[o.x - _this.x][o.y - _this.y].color = d.color;
-                }
-            });
-            return matrix;
-        };
-
-        Camera.prototype.addEntities = function (matrix, entities) {
-            var _this = this;
-            entities.forEach(function (e) {
-                //ConsoleGame.log(e);
-                if (e.x < _this.x || e.y < _this.y || e.x > _this.x + _this.width - 1 || e.y > _this.y + _this.height - 1) {
-                } else {
-                    var d = ConsoleGame.getDrawable(e);
-                    matrix.matrix[e.x - _this.x][e.y - _this.y].symbol = d.symbol;
-                    matrix.matrix[e.x - _this.x][e.y - _this.y].color = d.color;
-                    if (matrix.matrix[e.x + e.dir.x - _this.x])
-                        matrix.matrix[e.x + e.dir.x - _this.x][e.y + e.dir.y - _this.y].bgColor = "tan";
-                }
-            });
-            return matrix;
-        };
-        return Camera;
-    })();
-    ConsoleGame.Camera = Camera;
-})(ConsoleGame || (ConsoleGame = {}));
-/// <reference path="../Common/Common.ts" />
-/// <reference path="../Common/Entities/Entities.ts" />
-var ConsoleGame;
-(function (ConsoleGame) {
-    var Entities = Common.Entities;
-
-    function symbolO(item) {
-        throw ("TODO");
-    }
-    ConsoleGame.symbolO = symbolO;
-
-    function colorO(item) {
-        throw ("TODO");
-    }
-    ConsoleGame.colorO = colorO;
-
-    function symbolE(entity) {
-        throw ("TODO");
-    }
-    ConsoleGame.symbolE = symbolE;
-
-    function colorE(entity) {
-        throw ("TODO");
-    }
-    ConsoleGame.colorE = colorE;
-
-    function getDrawable(entity) {
-        if (entity instanceof Entities.PlayerChar) {
-            return { symbol: "@" };
-        } else {
-            return { symbol: "e" };
-        }
-    }
-    ConsoleGame.getDrawable = getDrawable;
-
-    function wrapString(str, limit) {
-        var arr = new Array();
-        var split = str.split(" ");
-        function nextLine(words, startIndex) {
-            var line = words[startIndex];
-            var lt = words[startIndex].length;
-            var i = startIndex + 1;
-            var next = words[i];
-            while (next && lt + next.length + 1 < limit) {
-                lt += next.length + 1;
-                line += " " + next;
-                i += 1;
-                next = words[i];
-            }
-
-            return [line, i];
-        }
-
-        var wordsUsed = 0;
-        while (wordsUsed < split.length) {
-            var line = nextLine(split, wordsUsed);
-            arr.push(line[0]);
-            wordsUsed = line[1];
-        }
-
-        return arr;
-    }
-    ConsoleGame.wrapString = wrapString;
-})(ConsoleGame || (ConsoleGame = {}));
-var ConsoleGame;
-(function (ConsoleGame) {
-    (function (Core) {
-        (function (Control) {
-            var lastDownTarget;
-            var lastMouseX = 0;
-            var lastMouseY = 0;
-            var mouseDown = false;
-
-            function init(game) {
-                var display = game.display;
-                var canvas = display.getContainer();
-
-                document.addEventListener("mousedown", function (event) {
-                    mouseDown = true;
-                    lastDownTarget = event.target;
-                    if (lastDownTarget != canvas)
-                        return;
-
-                    var pos = display.eventToPosition(event);
-                    var x = pos[0];
-                    var y = pos[1];
-                    if (x >= 0 && y >= 1) {
-                        //ConsoleGame.log(x + "," + y);
-                        if (x >= ConsoleGame.Settings.CamXOffset && x < ConsoleGame.Settings.CamXOffset + ConsoleGame.Settings.CamWidth && y >= ConsoleGame.Settings.CamYOffset && y < ConsoleGame.Settings.CamYOffset + ConsoleGame.Settings.CamHeight) {
-                            game.gameScreen.acceptMousedown(x, y);
-                        }
-                    }
-                }, false);
-
-                document.addEventListener("mouseup", function (event) {
-                    mouseDown = false;
-                }, false);
-
-                document.addEventListener("mousemove", function (event) {
-                    if (lastDownTarget != canvas)
-                        return;
-                    if (Math.abs(event.x - lastMouseX) < 5 && Math.abs(event.y - lastMouseY) < 8)
-                        return;
-
-                    //ConsoleGame.log(event.x +","+ event.y)
-                    lastMouseX = event.x;
-                    lastMouseY = event.y;
-
-                    var pos = display.eventToPosition(event);
-                    var x = pos[0];
-                    var y = pos[1];
-                    if (x >= 0 && y >= 1) {
-                        if (x >= ConsoleGame.Settings.CamXOffset && x < ConsoleGame.Settings.CamXOffset + ConsoleGame.Settings.CamWidth && y >= ConsoleGame.Settings.CamYOffset && y < ConsoleGame.Settings.CamYOffset + ConsoleGame.Settings.CamHeight) {
-                            if (mouseDown) {
-                                game.gameScreen.acceptMousedrag(x, y);
-                            } else {
-                                game.gameScreen.acceptMousemove(x, y);
-                            }
-                        }
-                    }
-                }, false);
-
-                document.addEventListener("keydown", function (event) {
-                    if (lastDownTarget != canvas)
-                        return;
-
-                    var code = event.keyCode;
-                    var vk;
-                    for (var name in ROT) {
-                        if (ROT[name] == code && name.indexOf("VK_") == 0) {
-                            vk = name;
-                            break;
-                        }
-                    }
-                    game.gameScreen.acceptKeydown(vk);
-                }, false);
-                /*document.addEventListener("keypress", (event) => {
-                if (lastDownTarget != canvas) return;
-                
-                var code = event.charCode;
-                var ch = String.fromCharCode(code);
-                
-                //ConsoleGame.log("Keypress: char is " + ch);
-                }, false);*/
-            }
-            Control.init = init;
-            ;
-        })(Core.Control || (Core.Control = {}));
-        var Control = Core.Control;
-    })(ConsoleGame.Core || (ConsoleGame.Core = {}));
-    var Core = ConsoleGame.Core;
-})(ConsoleGame || (ConsoleGame = {}));
-var ConsoleGame;
-(function (ConsoleGame) {
-    (function (Core) {
-        var Game = (function () {
-            function Game() {
-                var _this = this;
-                this.display = new ROT.Display({ width: ConsoleGame.Settings.DisplayWidth, height: ConsoleGame.Settings.DisplayHeight });
-                this.gameScreen = new ConsoleGame.GameScreen();
-                this.gameScreen.nextFrame.attach(function () {
-                    _this.draw(_this.gameScreen.nextFrame.unwrap);
-                });
-                this.screen = this.gameScreen;
-                Core.Control.init(this);
-
-                var resize = function () {
-                    var size = _this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight);
-                    _this.display.setOptions({ fontSize: size });
-
-                    while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) >= size) {
-                        _this.display.setOptions({ width: _this.display.getOptions().width + 1 });
-                    }
-                    while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) < size) {
-                        _this.display.setOptions({ width: _this.display.getOptions().width - 1 });
-                    }
-
-                    ConsoleGame.Settings.DisplayWidth = _this.display.getOptions().width;
-                    _this.gameScreen.camera.width = ConsoleGame.Settings.DisplayWidth - ConsoleGame.Settings.SidebarWidth * 2;
-                    _this.gameScreen.update();
-                    //console.log((window.innerWidth / window.innerHeight).toFixed(2));
-                    //console.log(this.display.getOptions().width);
-                };
-                window.onresize = resize;
-                resize();
-            }
-            Game.prototype.draw = function (matrix) {
-                this.display.clear();
-                matrix.draw(this.display);
-                //Eventual goal: the game logic should be a web worker,
-                //with control sending string messages of DOM events to it
-                //and it sending JSON:ed DrawMatrixes to this
-            };
-            return Game;
-        })();
-        Core.Game = Game;
-    })(ConsoleGame.Core || (ConsoleGame.Core = {}));
-    var Core = ConsoleGame.Core;
-})(ConsoleGame || (ConsoleGame = {}));
-
-window.onload = function () {
-    document.getElementById("content").appendChild(new ConsoleGame.Core.Game().display.getContainer());
-};
-/// <reference path="../Common/Controllers/Controllers.ts" />
-var ConsoleGame;
-(function (ConsoleGame) {
-    var DrawMatrix = (function () {
-        function DrawMatrix(xOffset, yOffset, matrix, width, height, bgColor) {
-            this.xOffset = xOffset;
-            this.yOffset = yOffset;
-
-            if (matrix) {
-                this.matrix = matrix;
-            } else {
-                this.matrix = new Array();
-                for (var i = 0; i < width; i++) {
-                    this.matrix[i] = new Array();
-                    for (var j = 0; j < height; j++) {
-                        this.matrix[i][j] = { symbol: " ", bgColor: bgColor };
-                    }
-                }
-            }
-        }
-        DrawMatrix.prototype.addString = function (x, y, str, wrapAt, color, bgColor) {
-            if (!str)
-                return this;
-            var lines = new Array();
-            var bgc;
-
-            var limit = this.matrix.length;
-            if (wrapAt) {
-                limit = wrapAt;
-            }
-
-            if (x + str.length > limit) {
-                lines = ConsoleGame.wrapString(str, limit - x);
-            } else {
-                lines.push(str);
-            }
-
-            for (var h = 0; h < lines.length; h++) {
-                var line = lines[h];
-                for (var i = 0; i < line.length; i++) {
-                    if (this.matrix[i + x] && this.matrix[i + x][h + y]) {
-                        if (!bgColor)
-                            bgc = this.matrix[i + x][h + y].bgColor;
-                        else
-                            bgc = bgColor;
-                        this.matrix[i + x][h + y] = { symbol: line[i], color: color, bgColor: bgc };
-                    }
-                }
-            }
-            return this;
-        };
-
-        DrawMatrix.prototype.addPath = function (path, offsetX, offsetY, maxAP, excludeFirst, color) {
-            var _this = this;
-            if (!path)
-                return this;
-
-            var nodes = path._nodes;
-            var limited = path.limitedNodes();
-            if (!color)
-                color = "slateblue";
-            if (excludeFirst) {
-                nodes.shift();
-            }
-            nodes.forEach(function (node) {
-                if (_this.matrix[node.x - offsetX] && _this.matrix[node.x - offsetX][node.y - offsetY]) {
-                    var bg = _this.matrix[node.x - offsetX][node.y - offsetY].bgColor;
-                    if (!bg)
-                        bg = "black";
-                    _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString("tan"), 0.5)));
-                }
-            });
-            limited.forEach(function (node) {
-                if (_this.matrix[node.x - offsetX] && _this.matrix[node.x - offsetX][node.y - offsetY]) {
-                    var bg = _this.matrix[node.x - offsetX][node.y - offsetY].bgColor;
-                    if (!bg)
-                        bg = "black";
-                    _this.matrix[node.x - offsetX][node.y - offsetY].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg), ROT.Color.fromString(color), 0.75)));
-                }
-            });
-            var p = path.pointer;
-            if (this.matrix[p.x - offsetX] && this.matrix[p.x - offsetX][p.y - offsetY]) {
-                var bg = this.matrix[p.x - offsetX][p.y - offsetY].bgColor;
-                if (!bg)
-                    bg = "black";
-                if (limited[limited.length - 1] && p.x == limited[limited.length - 1].x && p.y == limited[limited.length - 1].y)
-                    this.matrix[p.x - offsetX][p.y - offsetY].bgColor = color;
-                else
-                    this.matrix[p.x - offsetX][p.y - offsetY].bgColor = "sandybrown";
-            }
-            return this;
-        };
-
-        DrawMatrix.prototype.addOverlay = function (other) {
-            var newXOff = Math.min(this.xOffset, other.xOffset);
-            var newYOff = Math.min(this.yOffset, other.yOffset);
-
-            if (newXOff < this.xOffset) {
-                var ext = new Array();
-                for (var i = 0; i < newXOff - this.xOffset; i++) {
-                    ext[i] = new Array();
-                    for (var j = 0; j < this.matrix[0].length; j++) {
-                        ext[i][j] = { symbol: " " };
-                    }
-                }
-                this.matrix = ext.concat(this.matrix);
-                this.xOffset = newXOff;
-            }
-            if (newYOff < this.yOffset) {
-                for (var i = 0; i < this.matrix.length; i++) {
-                    var ext2 = new Array();
-                    for (var j = 0; j < newYOff - this.yOffset; j++) {
-                        ext2[j] = { symbol: " " };
-                    }
-                    this.matrix[i] = ext2.concat(this.matrix[i]);
-                }
-                this.yOffset = newYOff;
-            }
-
-            for (var i = 0; i < other.matrix.length; i++) {
-                for (var j = 0; j < other.matrix[0].length; j++) {
-                    if (other.matrix[i][j].symbol && other.matrix[i][j].symbol !== " ") {
-                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].symbol = other.matrix[i][j].symbol;
-                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = other.matrix[i][j].color;
-                    } else {
-                        var c1 = this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color;
-                        var c2 = other.matrix[i][j].bgColor;
-                        if (!c1)
-                            c1 = "black";
-                        if (!c2)
-                            c2 = "black";
-                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(c1), ROT.Color.fromString(c2), 0.75)));
-                    }
-                    var bg1 = this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor;
-                    var bg2 = other.matrix[i][j].bgColor;
-                    if (!bg1)
-                        bg1 = "black";
-                    if (!bg2)
-                        bg2 = "black";
-
-                    this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg1), ROT.Color.fromString(bg2), 0.75)));
-                }
-            }
-
-            return this;
-        };
-
-        DrawMatrix.prototype.draw = function (display) {
-            for (var i = 0; i < this.matrix.length; i++) {
-                for (var j = 0; j < this.matrix[0].length; j++) {
-                    if (!this.matrix[i][j])
-                        continue;
-
-                    display.draw(i + this.xOffset, j + this.yOffset, this.matrix[i][j].symbol, this.matrix[i][j].color, this.matrix[i][j].bgColor);
-                }
-            }
-        };
-        return DrawMatrix;
-    })();
-    ConsoleGame.DrawMatrix = DrawMatrix;
-})(ConsoleGame || (ConsoleGame = {}));
-/// <reference path="../Common/Common.ts" />
-var ConsoleGame;
-(function (ConsoleGame) {
-    var Dungeon = Common.Dungeon;
-
-    var Controllers = Common.Controllers;
-    var C = Common;
-
-    var GameScreen = (function () {
-        function GameScreen() {
-            var _this = this;
-            this.dungeon = new Array(new Dungeon.Level(0 /* Mines */));
-            this.currLevel = 0;
-            this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
-            this.nextFrame = new C.ObservableProperty();
-            this.camera = new ConsoleGame.Camera(ConsoleGame.Settings.SidebarWidth, ConsoleGame.Settings.DisplayWidth - ConsoleGame.Settings.SidebarWidth * 2, 0, ConsoleGame.Settings.DisplayHeight - ConsoleGame.Settings.BottomBarHeight);
-            this.textBox = new ConsoleGame.UI.TextBox(ConsoleGame.Settings.SidebarWidth, 0, 7);
-            Controllers.Player.initialize(this.textBox, this.manager);
-
-            this.update = function () {
-                var middle = _this.manager.characters.map(function (c) {
-                    return c.x;
-                }).reduce(function (x1, x2) {
-                    return x1 + x2;
-                }) / _this.manager.characters.length;
-                _this.camera.centerOn(middle);
-                _this.advanceFrame();
-            };
-            this.manager.currEntity.attach(this.update);
-            this.manager.currPath.attach(function () {
-                return _this.advanceFrame();
-            });
-            this.textBox.attach(function () {
-                return _this.advanceFrame();
-            });
-            this.manager.start();
-            this.update();
-        }
-        GameScreen.prototype.advanceFrame = function () {
-            var _this = this;
-            this.manager.engine.lock();
-
-            this.camera.updateView(this.manager.level);
-            var matrix = new ConsoleGame.DrawMatrix(0, 0, null, ConsoleGame.Settings.DisplayWidth, ConsoleGame.Settings.DisplayHeight).addOverlay(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap)).addOverlay(this.textBox.getMatrix(this.camera.width)).addOverlay(ConsoleGame.GameUI.getLeftBar(this.manager.characters)).addOverlay(ConsoleGame.GameUI.getDPad()).addOverlay(ConsoleGame.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.unwrap, this.manager.level.entities.filter(function (e) {
-                return _this.camera.sees(e.x, e.y);
-            }))).addOverlay(ConsoleGame.GameUI.getBottomBar());
-            this.nextFrame.unwrap = matrix;
-
-            this.manager.engine.unlock();
-        };
-
-        GameScreen.prototype.acceptMousedown = function (tileX, tileY) {
-            Controllers.Player.updateClick(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
-        };
-
-        GameScreen.prototype.acceptMousedrag = function (tileX, tileY) {
-            Controllers.Player.updateMousedrag(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
-        };
-
-        GameScreen.prototype.acceptMousemove = function (tileX, tileY) {
-            Controllers.Player.updateMousemove(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
-        };
-
-        GameScreen.prototype.acceptKeydown = function (keyCode) {
-            Controllers.Player.update(keyCode);
-        };
-        return GameScreen;
-    })();
-    ConsoleGame.GameScreen = GameScreen;
-})(ConsoleGame || (ConsoleGame = {}));
-var ConsoleGame;
-(function (ConsoleGame) {
-    /// <reference path="../Common/Common.ts" />
-    /// <reference path="../Common/Controllers/Controllers.ts" />
-    /// <reference path="../Common/Entities/Entities.ts" />
-    (function (GameUI) {
-        var Controllers = Common.Controllers;
-
-        var color1 = "midnightblue";
-        var color2 = "royalblue";
-
-        function getLeftBar(characters) {
-            var p1 = characters[0];
-            var p2 = characters[1];
-            var w = ConsoleGame.Settings.SidebarWidth;
-            var matrix = new ConsoleGame.DrawMatrix(0, 0, null, w, 23);
-
-            for (var i = 0; i < ConsoleGame.Settings.SidebarWidth; i++) {
-                matrix.matrix[i][0] = { symbol: " ", bgColor: color1 };
-            }
-            matrix.addString(4, 0, "LEVEL:1");
-
-            matrix.addString(1, 1, "EXP:");
-            matrix.addString(1, 3, p1.name);
-            matrix.addString(1, 4, "Health:");
-            matrix.addString(10, 4, p1.stats.hp + "/" + p1.stats.hpMax);
-            matrix.addString(1, 6, "ActPts:");
-            matrix.addString(10, 6, p1.stats.ap + "/" + p1.stats.apMax);
-            matrix.addString(1, 5, "Stamina:");
-            matrix.addString(10, 5, p1.stats.stamina + "/" + p1.stats.staminaMax);
-            matrix.addString(5, 7, "(+" + p1.getHitBonus() + ", " + p1.getDamage()[0] + "x" + p1.getDamage()[1] + ")");
-            matrix.addString(5, 8, "[+5, 0-0]");
-
-            matrix.addString(1, 10, p2.name);
-            matrix.addString(1, 11, "Health:");
-            matrix.addString(10, 11, p2.stats.hp + "/" + p2.stats.hpMax);
-            matrix.addString(1, 13, "ActPts:");
-            matrix.addString(10, 13, p2.stats.ap + "/" + p2.stats.apMax);
-            matrix.addString(1, 12, "Stamina:");
-            matrix.addString(10, 12, p2.stats.stamina + "/" + p2.stats.staminaMax);
-            matrix.addString(5, 14, "(+" + p2.getHitBonus() + ", " + p2.getDamage()[0] + "x" + p2.getDamage()[1] + ")");
-            matrix.addString(5, 15, "[+5, 0-0]");
-
-            /*
-            matrix.addString(1, 17, p2.name);
-            matrix.addString(1, 18, "Health:");
-            matrix.addString(10, 18, p2.stats.hp + "/" + p2.stats.hpMax);
-            matrix.addString(1, 19, "Actions:");
-            matrix.addString(10, 19, p2.stats.ap + "/" + p2.stats.apMax);
-            matrix.addString(1, 20, "Enur:");
-            matrix.addString(5, 21, "(+5, 3x7)");
-            matrix.addString(5, 22, "[+5, 0-0]");
-            */
-            return matrix;
-        }
-        GameUI.getLeftBar = getLeftBar;
-
-        function getRightBar(scheduler, current, seen, baseTime) {
-            var w = ConsoleGame.Settings.SidebarWidth;
-            var wDisp = ConsoleGame.Settings.DisplayWidth;
-            var leftEdge = wDisp - w;
-            var matrix = new ConsoleGame.DrawMatrix(leftEdge, 0, null, w, ConsoleGame.Settings.DisplayHeight - 2);
-            if (!baseTime)
-                baseTime = 0;
-
-            var events = scheduler._queue._events;
-            var times = scheduler._queue._eventTimes;
-            var both = [];
-            for (var i = 0; i < events.length; i++) {
-                both.push({ event: events[i], time: times[i] });
-            }
-            both = both.filter(function (obj) {
-                return obj.event instanceof Controllers.ChangeProperty && seen.indexOf(obj.event.target) >= 0;
-            }).map(function (obj) {
-                return { entity: obj.event.target, time: obj.time };
-            }).sort(function (obj1, obj2) {
-                return obj1.time - obj2.time;
-            });
-            both.unshift({ entity: current, time: baseTime });
-
-            for (var i = 0; i < ConsoleGame.Settings.SidebarWidth; i++) {
-                matrix.matrix[i][0] = { symbol: " ", bgColor: color1 };
-            }
-            matrix.addString(5, 0, "QUEUE");
-            matrix.addString(0, 1, "--- current ---", null, "green");
-            for (var i = 0; i < both.length && i < 9; i++) {
-                var drawable = ConsoleGame.getDrawable(both[i].entity);
-                matrix.addString(1, i * 3 + 2, both[i].entity.name, ConsoleGame.Settings.SidebarWidth - 4);
-                matrix.addString(1, i * 3 + 3, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, ConsoleGame.Settings.SidebarWidth - 4);
-
-                //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, "---");
-                //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, "| |");
-                if (i % 2 == 0) {
-                    matrix.addString(ConsoleGame.Settings.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, color2);
-                    matrix.addString(ConsoleGame.Settings.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color2);
-                } else {
-                    matrix.addString(ConsoleGame.Settings.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, color1);
-                    matrix.addString(ConsoleGame.Settings.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color1);
-                }
-                //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 4, "---");
-                /*
-                if (both[i].time === 0) {
-                matrix.addString(0, i * 3 + 1, "---  ready  ---", null, "green");
-                }
-                else {
-                matrix.addString(0, i * 3 + 1, "--- +" + (<number>both[i].time).toFixed(2) + "tu ---", null, "red");
-                }*/
-            }
-            matrix.addString(ConsoleGame.Settings.SidebarWidth - 7, 29, "space:");
-            matrix.addString(ConsoleGame.Settings.SidebarWidth - 7, 30, " END  ", null, null, color2);
-            matrix.addString(ConsoleGame.Settings.SidebarWidth - 7, 31, " TURN ", null, null, color2);
-
-            return matrix;
-        }
-        GameUI.getRightBar = getRightBar;
-
-        function getDPad() {
-            var w = ConsoleGame.Settings.SidebarWidth;
-            var hDisp = ConsoleGame.Settings.DisplayHeight;
-            var hThis = 10;
-            var matrix = new ConsoleGame.DrawMatrix(0, hDisp - hThis - ConsoleGame.Settings.BottomBarHeight, null, w, hThis);
-
-            /*
-            matrix.addString(0, 0, "q--- w--- e---");
-            matrix.addString(0, 1, "|NW| | N| |NE|");
-            matrix.addString(0, 2, "---- ---- ----");
-            matrix.addString(0, 3, "a--- f--- d---");
-            matrix.addString(0, 4, "|W | PICK | E|");
-            matrix.addString(0, 5, "---- ---- ----");
-            matrix.addString(0, 6, "z--- x--- c---");
-            matrix.addString(0, 7, "|SW| |S | |SE|");
-            matrix.addString(0, 8, "---- ---- ----");*/
-            matrix.addString(1, 1, "    |    |    ");
-            matrix.addString(1, 2, "    |    |    ");
-            matrix.addString(1, 3, "----+----+----");
-            matrix.addString(1, 4, "    |    |    ");
-            matrix.addString(1, 5, "    |    |    ");
-            matrix.addString(1, 6, "----+----+----");
-            matrix.addString(1, 7, "    |    |    ");
-            matrix.addString(1, 8, "    |    |    ");
-            matrix.addString(1, 1, "q   ", null, null, color1);
-            matrix.addString(1, 2, " NW ", null, null, color1);
-            matrix.addString(6, 1, "w   ", null, null, color2);
-            matrix.addString(6, 2, "  N ", null, null, color2);
-            matrix.addString(11, 1, "e   ", null, null, color1);
-            matrix.addString(11, 2, " NE ", null, null, color1);
-            matrix.addString(1, 4, "a   ", null, null, color2);
-            matrix.addString(1, 5, " W  ", null, null, color2);
-            matrix.addString(6, 4, "f   ", null, null, color1);
-            matrix.addString(6, 5, "PICK", null, null, color1);
-            matrix.addString(11, 4, "d   ", null, null, color2);
-            matrix.addString(11, 5, "  E ", null, null, color2);
-            matrix.addString(1, 7, "z   ", null, null, color1);
-            matrix.addString(1, 8, " SW ", null, null, color1);
-            matrix.addString(6, 7, "x   ", null, null, color2);
-            matrix.addString(6, 8, " S  ", null, null, color2);
-            matrix.addString(11, 7, "c   ", null, null, color1);
-            matrix.addString(11, 8, " SE ", null, null, color1);
-
-            return matrix;
-        }
-        GameUI.getDPad = getDPad;
-
-        function getBottomBar() {
-            var matrix = new ConsoleGame.DrawMatrix(0, ConsoleGame.Settings.DisplayHeight - ConsoleGame.Settings.BottomBarHeight, null, ConsoleGame.Settings.DisplayWidth, ConsoleGame.Settings.BottomBarHeight);
-
-            for (var i = 0; i < matrix.matrix.length; i++) {
-                for (var j = 0; j < matrix.matrix[0].length; j++) {
-                    matrix.matrix[i][j] = { symbol: " ", bgColor: color1 };
-                }
-            }
-            matrix.addString(1, 0, "1");
-            matrix.addString(2, 0, "  MOVE  ", null, null, color2);
-            matrix.addString(11, 0, "2");
-            matrix.addString(12, 0, " ATTACK ", null, null, color2);
-            matrix.addString(21, 0, "3");
-            matrix.addString(22, 0, " SPECIAL ", null, null, color2);
-            matrix.addString(32, 0, "4");
-            matrix.addString(33, 0, " SWITCH ", null, null, color2);
-
-            matrix.addString(ConsoleGame.Settings.DisplayWidth - 32, 0, "CON");
-            matrix.addString(ConsoleGame.Settings.DisplayWidth - 29, 0, " v ", null, null, color2);
-            matrix.addString(ConsoleGame.Settings.DisplayWidth - 25, 0, " ^ ", null, null, color2);
-            matrix.addString(ConsoleGame.Settings.DisplayWidth - 20, 0, "INVENTORY", null, null, color2);
-            matrix.addString(ConsoleGame.Settings.DisplayWidth - 9, 0, "  MENU  ", null, null, color2);
-
-            return matrix;
-        }
-        GameUI.getBottomBar = getBottomBar;
-    })(ConsoleGame.GameUI || (ConsoleGame.GameUI = {}));
-    var GameUI = ConsoleGame.GameUI;
-})(ConsoleGame || (ConsoleGame = {}));
-var ConsoleGame;
-(function (ConsoleGame) {
-    var MainMenuScreen = (function () {
-        function MainMenuScreen() {
-        }
-        return MainMenuScreen;
-    })();
-    ConsoleGame.MainMenuScreen = MainMenuScreen;
-})(ConsoleGame || (ConsoleGame = {}));
-var ConsoleGame;
-(function (ConsoleGame) {
-    var Settings = (function () {
-        function Settings() {
-        }
-        Object.defineProperty(Settings, "SidebarWidth", {
-            get: function () {
-                return 16;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Settings, "BottomBarHeight", {
-            get: function () {
-                return 1;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Settings, "DisplayWidth", {
-            get: function () {
-                return Settings._displayWidth;
-            },
-            set: function (val) {
-                Settings._displayWidth = val;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Settings, "DisplayHeight", {
-            get: function () {
-                return 34;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Settings, "CamXOffset", {
-            get: function () {
-                return Settings.SidebarWidth;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Settings, "CamYOffset", {
-            get: function () {
-                return 0;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Settings, "CamWidth", {
-            get: function () {
-                return Settings.DisplayWidth - Settings.SidebarWidth * 2;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Settings, "CamHeight", {
-            get: function () {
-                return Settings.DisplayHeight - Settings.BottomBarHeight;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Settings._displayWidth = 92;
-        return Settings;
-    })();
-    ConsoleGame.Settings = Settings;
-})(ConsoleGame || (ConsoleGame = {}));
-var ConsoleGame;
-(function (ConsoleGame) {
-    (function (UI) {
-        var Button = (function () {
-            function Button() {
-            }
-            return Button;
-        })();
-        UI.Button = Button;
-    })(ConsoleGame.UI || (ConsoleGame.UI = {}));
-    var UI = ConsoleGame.UI;
-})(ConsoleGame || (ConsoleGame = {}));
-var ConsoleGame;
-(function (ConsoleGame) {
-    (function (UI) {
-        var ContextContainer = (function () {
-            function ContextContainer() {
-            }
-            return ContextContainer;
-        })();
-        UI.ContextContainer = ContextContainer;
-    })(ConsoleGame.UI || (ConsoleGame.UI = {}));
-    var UI = ConsoleGame.UI;
-})(ConsoleGame || (ConsoleGame = {}));
-var ConsoleGame;
-(function (ConsoleGame) {
-    (function (UI) {
-        var Description = (function () {
-            function Description() {
-            }
-            return Description;
-        })();
-        UI.Description = Description;
-    })(ConsoleGame.UI || (ConsoleGame.UI = {}));
-    var UI = ConsoleGame.UI;
-})(ConsoleGame || (ConsoleGame = {}));
-var ConsoleGame;
-(function (ConsoleGame) {
-    (function (UI) {
-        var HoriList = (function () {
-            function HoriList() {
-            }
-            return HoriList;
-        })();
-        UI.HoriList = HoriList;
-    })(ConsoleGame.UI || (ConsoleGame.UI = {}));
-    var UI = ConsoleGame.UI;
-})(ConsoleGame || (ConsoleGame = {}));
-var ConsoleGame;
-(function (ConsoleGame) {
-    /// <reference path="../../Common/ObservableProperty.ts" />
-    (function (UI) {
-        var TextBox = (function (_super) {
-            __extends(TextBox, _super);
-            function TextBox(x, y, height) {
-                _super.call(this);
-                this.x = x;
-                this.y = y;
-                this.height = height;
-                this.lines = new Array();
-            }
-            TextBox.prototype.addLine = function (line) {
-                this.lines.push(line);
-                if (this.lines.length > 50) {
-                    this.lines.splice(0, 25);
-                }
-                this.notify();
-                return this;
-            };
-
-            TextBox.prototype.getMatrix = function (width) {
-                var matrix = new ConsoleGame.DrawMatrix(this.x, this.y, null, width, this.height);
-                var used = 0;
-                var index = this.lines.length - 1;
-
-                while (used < this.height && index >= 0) {
-                    var nextLine = this.lines[index];
-
-                    if (nextLine.length > width - 2) {
-                        var split = ConsoleGame.wrapString(nextLine, width - 2);
-
-                        while (split.length > 0 && used < this.height) {
-                            var line = split.pop();
-                            matrix.addString(1, this.height - used - 1, line, width - 1);
-                            used += 1;
-                        }
-                        /*
-                        matrix.addString(1, this.height - used - 1, split[1], width - 1);
-                        used += 1;
-                        if (used >= this.height)
-                        break;
-                        else {
-                        matrix.addString(1, this.height - used - 1, split[0], width - 1);
-                        used += 1;
-                        }    */
-                    } else {
-                        matrix.addString(1, this.height - used - 1, nextLine, width - 1);
-                        used += 1;
-                    }
-                    index -= 1;
-                }
-                return matrix;
-            };
-            return TextBox;
-        })(Common.Observable);
-        UI.TextBox = TextBox;
-    })(ConsoleGame.UI || (ConsoleGame.UI = {}));
-    var UI = ConsoleGame.UI;
-})(ConsoleGame || (ConsoleGame = {}));
-/// <reference path="../../Common/Common.ts" />
-var ConsoleGame;
-(function (ConsoleGame) {
-    (function (UI) {
-        var VertList = (function () {
-            function VertList() {
-            }
-            return VertList;
-        })();
-        UI.VertList = VertList;
-    })(ConsoleGame.UI || (ConsoleGame.UI = {}));
-    var UI = ConsoleGame.UI;
-})(ConsoleGame || (ConsoleGame = {}));
 //# sourceMappingURL=game.js.map

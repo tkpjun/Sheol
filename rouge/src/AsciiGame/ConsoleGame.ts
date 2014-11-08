@@ -1,6 +1,6 @@
 ﻿/// <reference path="../Common/Common.ts" />
 /// <reference path="../Common/Entities/Entities.ts" />
-module ConsoleGame {
+module AsciiGame {
     import Entities = Common.Entities;
     import C = Common;
 

@@ -1,4 +1,4 @@
-﻿module ConsoleGame.Core.Control {
+﻿module AsciiGame.Core.Control {
 
     var lastDownTarget;
     var lastMouseX = 0;
@@ -16,19 +16,14 @@
             if (lastDownTarget != canvas) return;
 
             var pos = display.eventToPosition(event);
-            var x = pos[0];
-            var y = pos[1];
-            if (x >= 0 && y >= 1) {
-                //ConsoleGame.log(x + "," + y);
-                if (x >= Settings.CamXOffset && x < Settings.CamXOffset + Settings.CamWidth &&
-                    y >= Settings.CamYOffset && y < Settings.CamYOffset + Settings.CamHeight) {
-                    game.gameScreen.acceptMousedown(x, y);
-                }
-            }
+            game.gameScreen.acceptMousedown(pos[0], pos[1]);
+            
         }, false);
 
         document.addEventListener("mouseup", (event) => {
             mouseDown = false;
+            var pos = display.eventToPosition(event);
+            game.gameScreen.acceptMouseup(pos[0], pos[1]);
         }, false);
 
         document.addEventListener("mousemove", (event) => {
@@ -40,20 +35,13 @@
             lastMouseX = event.x;
             lastMouseY = event.y;
 
-            var pos = display.eventToPosition(event);
-            var x = pos[0];
-            var y = pos[1];
-            if (x >= 0 && y >= 1) {
-                if (x >= Settings.CamXOffset && x < Settings.CamXOffset + Settings.CamWidth &&
-                    y >= Settings.CamYOffset && y < Settings.CamYOffset + Settings.CamHeight) {
-                    if (mouseDown) {
-                        game.gameScreen.acceptMousedrag(x, y);
-                    }
-                    else {
-                        game.gameScreen.acceptMousemove(x, y);
-                    }
-                }
+            var pos = display.eventToPosition(event);            
+            if (mouseDown) {
+                game.gameScreen.acceptMousedrag(pos[0], pos[1]);
             }
+            else {
+                game.gameScreen.acceptMousemove(pos[0], pos[1]);
+            }           
         }, false);
 
         document.addEventListener("keydown", (event) => {

@@ -1,5 +1,5 @@
 ﻿/// <reference path="../Common/Common.ts" />
-module ConsoleGame {
+module AsciiGame {
     import Dungeon = Common.Dungeon;
     import Entities = Common.Entities;
     import Controllers = Common.Controllers;
@@ -11,7 +11,7 @@ module ConsoleGame {
         currLevel: number;
         manager: Controllers.EntityManager;
         camera: Camera;
-        nextFrame: C.ObservableProperty<DrawMatrix>;
+        nextToDraw: C.ObservableProperty<DrawMatrix>;
         textBox: UI.TextBox;
         update: () => void
 
@@ -19,7 +19,7 @@ module ConsoleGame {
             this.dungeon = new Array<Dungeon.Level>(new Dungeon.Level(Dungeon.MapTypes.Mines));
             this.currLevel = 0;
             this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
-            this.nextFrame = new C.ObservableProperty<DrawMatrix>();
+            this.nextToDraw = new C.ObservableProperty<DrawMatrix>();
             this.camera = new Camera(Settings.SidebarWidth,
                 Settings.DisplayWidth - Settings.SidebarWidth * 2,
                 0,
@@ -47,6 +47,22 @@ module ConsoleGame {
             this.manager.engine.lock();
 
             this.camera.updateView(this.manager.level);
+            this.nextToDraw.unwrap = this.camera.view.addPath(
+                this.manager.currPath.unwrap,
+                this.camera.x,
+                this.camera.y,
+                this.manager.currEntity.unwrap.stats.ap)
+                .addOverlay(this.textBox.getMatrix(this.camera.width));
+            this.nextToDraw.unwrap = GameUI.getLeftBar(this.manager.characters);
+            this.nextToDraw.unwrap = GameUI.getDPad();
+            this.nextToDraw.unwrap = GameUI.getRightBar(
+                this.manager.level.scheduler,
+                this.manager.currEntity.unwrap,
+                this.manager.level.entities.filter((e) => {
+                    return this.camera.sees(e.x, e.y);
+                }))
+            this.nextToDraw.unwrap = GameUI.getBottomBar();
+            /*
             var matrix = new DrawMatrix(0, 0, null, Settings.DisplayWidth, Settings.DisplayHeight)
                 .addOverlay(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap))
                 .addOverlay(this.textBox.getMatrix(this.camera.width))
@@ -60,24 +76,41 @@ module ConsoleGame {
                         }))
                     )
                 .addOverlay(GameUI.getBottomBar())
-            this.nextFrame.unwrap = matrix;        
+            this.nextToDraw.unwrap = matrix;  */      
 
             this.manager.engine.unlock();
         }
 
         acceptMousedown(tileX: number, tileY: number) {
-            Controllers.Player.updateClick(tileX - this.camera.xOffset + this.camera.x,
-                tileY - this.camera.yOffset + this.camera.y);
+            var hitUiContext = GameUI.updateMouseDown(tileX, tileY);
+            if (!hitUiContext &&
+                tileX >= Settings.CamXOffset && tileX < Settings.CamXOffset + Settings.CamWidth &&
+                tileY >= Settings.CamYOffset && tileY < Settings.CamYOffset + Settings.CamHeight) {
+                Controllers.Player.updateClick(tileX - this.camera.xOffset + this.camera.x,
+                    tileY - this.camera.yOffset + this.camera.y);
+            }
+        }
+
+        acceptMouseup(tileX: number, tileY: number) {
+            GameUI.updateMouseUp(tileX, tileY);
         }
 
         acceptMousedrag(tileX: number, tileY: number) {
-            Controllers.Player.updateMousedrag(tileX - this.camera.xOffset + this.camera.x,
-                tileY - this.camera.yOffset + this.camera.y);
+            if (tileX >= Settings.CamXOffset && tileX < Settings.CamXOffset + Settings.CamWidth &&
+                tileY >= Settings.CamYOffset && tileY < Settings.CamYOffset + Settings.CamHeight) {
+                Controllers.Player.updateMousedrag(tileX - this.camera.xOffset + this.camera.x,
+                    tileY - this.camera.yOffset + this.camera.y);
+            }
         }
 
         acceptMousemove(tileX: number, tileY: number) {
-            Controllers.Player.updateMousemove(tileX - this.camera.xOffset + this.camera.x,
-                tileY - this.camera.yOffset + this.camera.y);
+            var hitUiContext = GameUI.updateMousemove(tileX, tileY);
+            if (!hitUiContext &&
+                tileX >= Settings.CamXOffset && tileX < Settings.CamXOffset + Settings.CamWidth &&
+                tileY >= Settings.CamYOffset && tileY < Settings.CamYOffset + Settings.CamHeight) {
+                Controllers.Player.updateMousemove(tileX - this.camera.xOffset + this.camera.x,
+                    tileY - this.camera.yOffset + this.camera.y);
+            }
         }
 
         acceptKeydown(keyCode: string) {

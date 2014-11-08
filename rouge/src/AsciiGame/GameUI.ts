@@ -1,13 +1,28 @@
 ﻿/// <reference path="../Common/Common.ts" />
 /// <reference path="../Common/Controllers/Controllers.ts" />
 /// <reference path="../Common/Entities/Entities.ts" />
-module ConsoleGame.GameUI {
+module AsciiGame.GameUI {
     import Entitites = Common.Entities;
     import Controllers = Common.Controllers;
     import C = Common;
 
     var color1 = "midnightblue";
     var color2 = "royalblue";
+    var context: Array<UI.Container>;
+
+    export function init() {
+        context = new Array<UI.Container>();
+    }
+
+    export function updateMouseDown(x, y): boolean {
+        return false;
+    }
+    export function updateMouseUp(x, y): boolean {
+        return false;
+    }
+    export function updateMousemove(x, y): boolean {
+        return false;
+    }
 
     export function getLeftBar(characters: Array<Entitites.PlayerChar>): DrawMatrix {
         var p1 = characters[0];

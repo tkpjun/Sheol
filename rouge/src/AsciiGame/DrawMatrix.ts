@@ -1,5 +1,5 @@
 ﻿/// <reference path="../Common/Controllers/Controllers.ts" />
-module ConsoleGame {
+module AsciiGame {
     import Controllers = Common.Controllers;
 
     export class DrawMatrix {

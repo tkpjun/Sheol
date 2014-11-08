@@ -1,5 +1,5 @@
 ﻿/// <reference path="../../Common/ObservableProperty.ts" />
-module ConsoleGame.UI {
+module AsciiGame.UI {
 
     export class TextBox extends Common.Observable {
 
@@ -34,23 +34,13 @@ module ConsoleGame.UI {
                 var nextLine = this.lines[index];
 
                 if (nextLine.length > width - 2) {
-                    var split = ConsoleGame.wrapString(nextLine, width - 2);
+                    var split = AsciiGame.wrapString(nextLine, width - 2);
 
                     while (split.length > 0 && used < this.height) {
                         var line = split.pop();
                         matrix.addString(1, this.height - used - 1, line, width - 1);
                         used += 1;
-                    }
-
-                    /*
-                    matrix.addString(1, this.height - used - 1, split[1], width - 1);
-                    used += 1;
-                    if (used >= this.height)
-                        break;
-                    else {
-                        matrix.addString(1, this.height - used - 1, split[0], width - 1);
-                        used += 1;
-                    }    */          
+                    }        
                 }
                 else {
                     matrix.addString(1, this.height - used - 1, nextLine, width - 1);

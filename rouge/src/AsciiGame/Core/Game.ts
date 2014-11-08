@@ -1,4 +1,4 @@
-﻿module ConsoleGame.Core {
+﻿module AsciiGame.Core {
 
     export class Game {
 
@@ -11,11 +11,12 @@
             
             this.display = new ROT.Display({ width: Settings.DisplayWidth, height: Settings.DisplayHeight });
             this.gameScreen = new GameScreen();
-            this.gameScreen.nextFrame.attach(() => {
-                this.draw(this.gameScreen.nextFrame.unwrap);
+            this.gameScreen.nextToDraw.attach(() => {
+                this.draw(this.gameScreen.nextToDraw.unwrap);
             });
             this.screen = this.gameScreen;
             Control.init(this);
+            GameUI.init();
 
             var resize = () => {
                 var size = this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight);
@@ -39,7 +40,7 @@
         }
 
         draw(matrix: DrawMatrix) {
-            this.display.clear();
+            //this.display.clear();
             matrix.draw(this.display);
             //Eventual goal: the game logic should be a web worker, 
             //with control sending string messages of DOM events to it
@@ -49,5 +50,5 @@
 }
 
 window.onload = () => {
-    document.getElementById("content").appendChild(new ConsoleGame.Core.Game().display.getContainer());
+    document.getElementById("content").appendChild(new AsciiGame.Core.Game().display.getContainer());
 };

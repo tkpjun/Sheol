@@ -1,4 +1,4 @@
-﻿module ConsoleGame {
+﻿module AsciiGame {
 
     export class MainMenuScreen {
 

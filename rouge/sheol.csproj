@@ -27,18 +27,18 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="parallel.d.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\Camera.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\Core\Control.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\DrawMatrix.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\GameScreen.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\GameUI.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\MainMenuScreen.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\Settings.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\UI\Button.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\UI\ContextContainer.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\UI\Description.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\UI\HoriList.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\UI\TextBox.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\Camera.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\Core\Control.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\DrawMatrix.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\GameScreen.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\GameUI.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\MainMenuScreen.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\Settings.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\UI\Button.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\UI\Container.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\UI\Description.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\UI\HoriList.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\UI\TextBox.ts" />
     <TypeScriptCompile Include="src\Common\Controllers\AstarPath.ts" />
     <TypeScriptCompile Include="src\Common\Controllers\BasicAI.ts" />
     <TypeScriptCompile Include="src\Common\Controllers\Path.ts" />
@@ -51,8 +51,8 @@
     <TypeScriptCompile Include="src\Common\Entities\Skill.ts" />
     <TypeScriptCompile Include="src\Common\Entities\Skillset.ts" />
     <TypeScriptCompile Include="src\Common\Entities\Trait.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\ConsoleGame.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\Core\Game.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\ConsoleGame.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\Core\Game.ts" />
     <TypeScriptCompile Include="src\Common\Controllers\ChangeProperty.ts" />
     <TypeScriptCompile Include="src\Common\Controllers\Controllers.ts" />
     <TypeScriptCompile Include="src\Common\Controllers\EntityManager.ts" />
@@ -73,8 +73,8 @@
     <TypeScriptCompile Include="src\Common\ObservableProperty.ts" />
     <TypeScriptCompile Include="src\Common\Settings.ts" />
     <TypeScriptCompile Include="src\Common\Vec.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\UI\UI.ts" />
-    <TypeScriptCompile Include="src\ConsoleGame\UI\VertList.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\UI\UI.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\UI\VertList.ts" />
   </ItemGroup>
   <ItemGroup>
     <None Include="web.Debug.config">

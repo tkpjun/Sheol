@@ -1,11 +1,11 @@
 ﻿/// <reference path="../../Common/Common.ts" />
-module ConsoleGame.UI {
+module AsciiGame.UI {
 
-    export interface IElement extends Common.IObservable {
+    export interface IElement {
         mouseOver();
         mouseNotOver();
         mouseDown();
         mouseUp();
-        getMatrix(width: number, height: number): DrawMatrix;
+        getMatrix(x: number, y: number, width: number, height: number): DrawMatrix;
     }
 } 
