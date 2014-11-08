@@ -16,7 +16,7 @@
             });*/
             this.screen = this.gameScreen;
             Control.init(this);
-            GameUI.init();
+            //GameUI.init();
 
             var resize = () => {
                 var size = this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight);

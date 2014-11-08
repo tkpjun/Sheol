@@ -343,8 +343,8 @@ var AsciiGame;
                 });*/
                 this.screen = this.gameScreen;
                 Core.Control.init(this);
-                AsciiGame.GameUI.init();
 
+                //GameUI.init();
                 var resize = function () {
                     var size = _this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight);
                     _this.display.setOptions({ fontSize: size });
@@ -617,6 +617,7 @@ var AsciiGame;
             //this.nextToDraw = new C.ObservableProperty<DrawMatrix>();
             this.camera = new AsciiGame.Camera(AsciiGame.Settings.SidebarWidth, AsciiGame.Settings.DisplayWidth - AsciiGame.Settings.SidebarWidth * 2, 0, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight);
 
+            this.ui = new AsciiGame.GameUI();
             this.draw = drawCallback;
             this.update = function () {
                 var middle = _this.manager.characters.map(function (c) {
@@ -640,12 +641,12 @@ var AsciiGame;
 
             this.camera.updateView(this.manager.level);
             this.draw(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap).addOverlay(this.textBox.getMatrix(this.camera.width)));
-            this.draw(AsciiGame.GameUI.getLeftBar(this.manager.characters));
-            this.draw(AsciiGame.GameUI.getDPad());
-            this.draw(AsciiGame.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.unwrap, this.manager.level.entities.filter(function (e) {
+            this.draw(this.ui.getLeftBar(this.manager.characters));
+            this.draw(this.ui.getDPad());
+            this.draw(this.ui.getRightBar(this.manager.level.scheduler, this.manager.currEntity.unwrap, this.manager.level.entities.filter(function (e) {
                 return _this.camera.sees(e.x, e.y);
             })));
-            this.draw(AsciiGame.GameUI.getBottomBar());
+            this.draw(this.ui.getBottomBar());
 
             /*
             var matrix = new DrawMatrix(0, 0, null, Settings.DisplayWidth, Settings.DisplayHeight)
@@ -666,14 +667,14 @@ var AsciiGame;
         };
 
         GameScreen.prototype.acceptMousedown = function (tileX, tileY) {
-            var hitUiContext = AsciiGame.GameUI.updateMouseDown(tileX, tileY);
+            var hitUiContext = this.ui.updateMouseDown(tileX, tileY);
             if (!hitUiContext && tileX >= AsciiGame.Settings.CamXOffset && tileX < AsciiGame.Settings.CamXOffset + AsciiGame.Settings.CamWidth && tileY >= AsciiGame.Settings.CamYOffset && tileY < AsciiGame.Settings.CamYOffset + AsciiGame.Settings.CamHeight) {
                 this.manager.player.updateClick(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
             }
         };
 
         GameScreen.prototype.acceptMouseup = function (tileX, tileY) {
-            AsciiGame.GameUI.updateMouseUp(tileX, tileY);
+            this.ui.updateMouseUp(tileX, tileY);
         };
 
         GameScreen.prototype.acceptMousedrag = function (tileX, tileY) {
@@ -683,7 +684,7 @@ var AsciiGame;
         };
 
         GameScreen.prototype.acceptMousemove = function (tileX, tileY) {
-            var hitUiContext = AsciiGame.GameUI.updateMousemove(tileX, tileY);
+            var hitUiContext = this.ui.updateMousemove(tileX, tileY);
             if (!hitUiContext && tileX >= AsciiGame.Settings.CamXOffset && tileX < AsciiGame.Settings.CamXOffset + AsciiGame.Settings.CamWidth && tileY >= AsciiGame.Settings.CamYOffset && tileY < AsciiGame.Settings.CamYOffset + AsciiGame.Settings.CamHeight) {
                 this.manager.player.updateMousemove(tileX - this.camera.xOffset + this.camera.x, tileY - this.camera.yOffset + this.camera.y);
             }
@@ -696,44 +697,37 @@ var AsciiGame;
     })();
     AsciiGame.GameScreen = GameScreen;
 })(AsciiGame || (AsciiGame = {}));
+/// <reference path="../Common/Common.ts" />
+/// <reference path="../Common/Controllers/Controllers.ts" />
+/// <reference path="../Common/Entities/Entities.ts" />
 var AsciiGame;
 (function (AsciiGame) {
-    /// <reference path="../Common/Common.ts" />
-    /// <reference path="../Common/Controllers/Controllers.ts" />
-    /// <reference path="../Common/Entities/Entities.ts" />
-    (function (GameUI) {
-        var Controllers = Common.Controllers;
+    var Controllers = Common.Controllers;
 
-        var color1 = "midnightblue";
-        var color2 = "royalblue";
-        var context;
-
-        function init() {
-            context = new Array();
+    var GameUI = (function () {
+        function GameUI() {
+            this.color1 = "midnightblue";
+            this.color2 = "royalblue";
+            this.context = new Array();
         }
-        GameUI.init = init;
-
-        function updateMouseDown(x, y) {
+        GameUI.prototype.updateMouseDown = function (x, y) {
             return false;
-        }
-        GameUI.updateMouseDown = updateMouseDown;
-        function updateMouseUp(x, y) {
+        };
+        GameUI.prototype.updateMouseUp = function (x, y) {
             return false;
-        }
-        GameUI.updateMouseUp = updateMouseUp;
-        function updateMousemove(x, y) {
+        };
+        GameUI.prototype.updateMousemove = function (x, y) {
             return false;
-        }
-        GameUI.updateMousemove = updateMousemove;
+        };
 
-        function getLeftBar(characters) {
+        GameUI.prototype.getLeftBar = function (characters) {
             var p1 = characters[0];
             var p2 = characters[1];
             var w = AsciiGame.Settings.SidebarWidth;
             var matrix = new AsciiGame.DrawMatrix(0, 0, null, w, 23);
 
             for (var i = 0; i < AsciiGame.Settings.SidebarWidth; i++) {
-                matrix.matrix[i][0] = { symbol: " ", bgColor: color1 };
+                matrix.matrix[i][0] = { symbol: " ", bgColor: this.color1 };
             }
             matrix.addString(4, 0, "LEVEL:1");
 
@@ -769,14 +763,13 @@ var AsciiGame;
             matrix.addString(5, 22, "[+5, 0-0]");
             */
             return matrix;
-        }
-        GameUI.getLeftBar = getLeftBar;
+        };
 
-        function getRightBar(scheduler, current, seen, baseTime) {
+        GameUI.prototype.getRightBar = function (scheduler, current, seen, baseTime) {
             var w = AsciiGame.Settings.SidebarWidth;
             var wDisp = AsciiGame.Settings.DisplayWidth;
             var leftEdge = wDisp - w;
-            var matrix = new AsciiGame.DrawMatrix(leftEdge, 0, null, w, AsciiGame.Settings.DisplayHeight - 2);
+            var matrix = new AsciiGame.DrawMatrix(leftEdge, 0, null, w, AsciiGame.Settings.DisplayHeight - 1);
             if (!baseTime)
                 baseTime = 0;
 
@@ -796,7 +789,7 @@ var AsciiGame;
             both.unshift({ entity: current, time: baseTime });
 
             for (var i = 0; i < AsciiGame.Settings.SidebarWidth; i++) {
-                matrix.matrix[i][0] = { symbol: " ", bgColor: color1 };
+                matrix.matrix[i][0] = { symbol: " ", bgColor: this.color1 };
             }
             matrix.addString(5, 0, "QUEUE");
             matrix.addString(0, 1, "--- current ---", null, "green");
@@ -808,11 +801,11 @@ var AsciiGame;
                 //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, "---");
                 //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, "| |");
                 if (i % 2 == 0) {
-                    matrix.addString(AsciiGame.Settings.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, color2);
-                    matrix.addString(AsciiGame.Settings.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color2);
+                    matrix.addString(AsciiGame.Settings.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, this.color2);
+                    matrix.addString(AsciiGame.Settings.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, this.color2);
                 } else {
-                    matrix.addString(AsciiGame.Settings.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, color1);
-                    matrix.addString(AsciiGame.Settings.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, color1);
+                    matrix.addString(AsciiGame.Settings.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, this.color1);
+                    matrix.addString(AsciiGame.Settings.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, this.color1);
                 }
                 //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 4, "---");
                 /*
@@ -824,14 +817,13 @@ var AsciiGame;
                 }*/
             }
             matrix.addString(AsciiGame.Settings.SidebarWidth - 7, 29, "space:");
-            matrix.addString(AsciiGame.Settings.SidebarWidth - 7, 30, " END  ", null, null, color2);
-            matrix.addString(AsciiGame.Settings.SidebarWidth - 7, 31, " TURN ", null, null, color2);
+            matrix.addString(AsciiGame.Settings.SidebarWidth - 7, 30, " END  ", null, null, this.color2);
+            matrix.addString(AsciiGame.Settings.SidebarWidth - 7, 31, " TURN ", null, null, this.color2);
 
             return matrix;
-        }
-        GameUI.getRightBar = getRightBar;
+        };
 
-        function getDPad() {
+        GameUI.prototype.getDPad = function () {
             var w = AsciiGame.Settings.SidebarWidth;
             var hDisp = AsciiGame.Settings.DisplayHeight;
             var hThis = 10;
@@ -855,57 +847,56 @@ var AsciiGame;
             matrix.addString(1, 6, "----+----+----");
             matrix.addString(1, 7, "    |    |    ");
             matrix.addString(1, 8, "    |    |    ");
-            matrix.addString(1, 1, "q   ", null, null, color1);
-            matrix.addString(1, 2, " NW ", null, null, color1);
-            matrix.addString(6, 1, "w   ", null, null, color2);
-            matrix.addString(6, 2, "  N ", null, null, color2);
-            matrix.addString(11, 1, "e   ", null, null, color1);
-            matrix.addString(11, 2, " NE ", null, null, color1);
-            matrix.addString(1, 4, "a   ", null, null, color2);
-            matrix.addString(1, 5, " W  ", null, null, color2);
-            matrix.addString(6, 4, "f   ", null, null, color1);
-            matrix.addString(6, 5, "PICK", null, null, color1);
-            matrix.addString(11, 4, "d   ", null, null, color2);
-            matrix.addString(11, 5, "  E ", null, null, color2);
-            matrix.addString(1, 7, "z   ", null, null, color1);
-            matrix.addString(1, 8, " SW ", null, null, color1);
-            matrix.addString(6, 7, "x   ", null, null, color2);
-            matrix.addString(6, 8, " S  ", null, null, color2);
-            matrix.addString(11, 7, "c   ", null, null, color1);
-            matrix.addString(11, 8, " SE ", null, null, color1);
+            matrix.addString(1, 1, "q   ", null, null, this.color1);
+            matrix.addString(1, 2, " NW ", null, null, this.color1);
+            matrix.addString(6, 1, "w   ", null, null, this.color2);
+            matrix.addString(6, 2, "  N ", null, null, this.color2);
+            matrix.addString(11, 1, "e   ", null, null, this.color1);
+            matrix.addString(11, 2, " NE ", null, null, this.color1);
+            matrix.addString(1, 4, "a   ", null, null, this.color2);
+            matrix.addString(1, 5, " W  ", null, null, this.color2);
+            matrix.addString(6, 4, "f   ", null, null, this.color1);
+            matrix.addString(6, 5, "PICK", null, null, this.color1);
+            matrix.addString(11, 4, "d   ", null, null, this.color2);
+            matrix.addString(11, 5, "  E ", null, null, this.color2);
+            matrix.addString(1, 7, "z   ", null, null, this.color1);
+            matrix.addString(1, 8, " SW ", null, null, this.color1);
+            matrix.addString(6, 7, "x   ", null, null, this.color2);
+            matrix.addString(6, 8, " S  ", null, null, this.color2);
+            matrix.addString(11, 7, "c   ", null, null, this.color1);
+            matrix.addString(11, 8, " SE ", null, null, this.color1);
 
             return matrix;
-        }
-        GameUI.getDPad = getDPad;
+        };
 
-        function getBottomBar() {
+        GameUI.prototype.getBottomBar = function () {
             var matrix = new AsciiGame.DrawMatrix(0, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight, null, AsciiGame.Settings.DisplayWidth, AsciiGame.Settings.BottomBarHeight);
 
             for (var i = 0; i < matrix.matrix.length; i++) {
                 for (var j = 0; j < matrix.matrix[0].length; j++) {
-                    matrix.matrix[i][j] = { symbol: " ", bgColor: color1 };
+                    matrix.matrix[i][j] = { symbol: " ", bgColor: this.color1 };
                 }
             }
             matrix.addString(1, 0, "1");
-            matrix.addString(2, 0, "  MOVE  ", null, null, color2);
+            matrix.addString(2, 0, "  MOVE  ", null, null, this.color2);
             matrix.addString(11, 0, "2");
-            matrix.addString(12, 0, " ATTACK ", null, null, color2);
+            matrix.addString(12, 0, " ATTACK ", null, null, this.color2);
             matrix.addString(21, 0, "3");
-            matrix.addString(22, 0, " SPECIAL ", null, null, color2);
+            matrix.addString(22, 0, " SPECIAL ", null, null, this.color2);
             matrix.addString(32, 0, "4");
-            matrix.addString(33, 0, " SWITCH ", null, null, color2);
+            matrix.addString(33, 0, " SWITCH ", null, null, this.color2);
 
             matrix.addString(AsciiGame.Settings.DisplayWidth - 32, 0, "CON");
-            matrix.addString(AsciiGame.Settings.DisplayWidth - 29, 0, " v ", null, null, color2);
-            matrix.addString(AsciiGame.Settings.DisplayWidth - 25, 0, " ^ ", null, null, color2);
-            matrix.addString(AsciiGame.Settings.DisplayWidth - 20, 0, "INVENTORY", null, null, color2);
-            matrix.addString(AsciiGame.Settings.DisplayWidth - 9, 0, "  MENU  ", null, null, color2);
+            matrix.addString(AsciiGame.Settings.DisplayWidth - 29, 0, " v ", null, null, this.color2);
+            matrix.addString(AsciiGame.Settings.DisplayWidth - 25, 0, " ^ ", null, null, this.color2);
+            matrix.addString(AsciiGame.Settings.DisplayWidth - 20, 0, "INVENTORY", null, null, this.color2);
+            matrix.addString(AsciiGame.Settings.DisplayWidth - 9, 0, "  MENU  ", null, null, this.color2);
 
             return matrix;
-        }
-        GameUI.getBottomBar = getBottomBar;
-    })(AsciiGame.GameUI || (AsciiGame.GameUI = {}));
-    var GameUI = AsciiGame.GameUI;
+        };
+        return GameUI;
+    })();
+    AsciiGame.GameUI = GameUI;
 })(AsciiGame || (AsciiGame = {}));
 var AsciiGame;
 (function (AsciiGame) {

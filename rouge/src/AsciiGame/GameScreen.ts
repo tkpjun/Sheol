@@ -12,6 +12,7 @@ module AsciiGame {
         manager: Controllers.EntityManager;
         camera: Camera;
         //nextToDraw: C.ObservableProperty<DrawMatrix>;
+        ui: GameUI;
         textBox: UI.TextBox;
         update: () => void
         draw: (DrawMatrix) => void;
@@ -28,6 +29,7 @@ module AsciiGame {
                 0,
                 Settings.DisplayHeight - Settings.BottomBarHeight);
 
+            this.ui = new GameUI();
             this.draw = drawCallback;
             this.update = () => {
                 var middle = this.manager.characters.map((c) => { 
@@ -54,15 +56,15 @@ module AsciiGame {
                 this.camera.y,
                 this.manager.currEntity.unwrap.stats.ap)
                 .addOverlay(this.textBox.getMatrix(this.camera.width)));
-            this.draw(GameUI.getLeftBar(this.manager.characters));
-            this.draw( GameUI.getDPad());
-            this.draw(GameUI.getRightBar(
+            this.draw(this.ui.getLeftBar(this.manager.characters));
+            this.draw(this.ui.getDPad());
+            this.draw(this.ui.getRightBar(
                 this.manager.level.scheduler,
                 this.manager.currEntity.unwrap,
                 this.manager.level.entities.filter((e) => {
                     return this.camera.sees(e.x, e.y);
                 })));
-            this.draw(GameUI.getBottomBar());
+            this.draw(this.ui.getBottomBar());
             /*
             var matrix = new DrawMatrix(0, 0, null, Settings.DisplayWidth, Settings.DisplayHeight)
                 .addOverlay(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap))
@@ -83,7 +85,7 @@ module AsciiGame {
         }
 
         acceptMousedown(tileX: number, tileY: number) {
-            var hitUiContext = GameUI.updateMouseDown(tileX, tileY);
+            var hitUiContext = this.ui.updateMouseDown(tileX, tileY);
             if (!hitUiContext &&
                 tileX >= Settings.CamXOffset && tileX < Settings.CamXOffset + Settings.CamWidth &&
                 tileY >= Settings.CamYOffset && tileY < Settings.CamYOffset + Settings.CamHeight) {
@@ -93,7 +95,7 @@ module AsciiGame {
         }
 
         acceptMouseup(tileX: number, tileY: number) {
-            GameUI.updateMouseUp(tileX, tileY);
+            this.ui.updateMouseUp(tileX, tileY);
         }
 
         acceptMousedrag(tileX: number, tileY: number) {
@@ -105,7 +107,7 @@ module AsciiGame {
         }
 
         acceptMousemove(tileX: number, tileY: number) {
-            var hitUiContext = GameUI.updateMousemove(tileX, tileY);
+            var hitUiContext = this.ui.updateMousemove(tileX, tileY);
             if (!hitUiContext &&
                 tileX >= Settings.CamXOffset && tileX < Settings.CamXOffset + Settings.CamWidth &&
                 tileY >= Settings.CamYOffset && tileY < Settings.CamYOffset + Settings.CamHeight) {
