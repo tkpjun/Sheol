@@ -1,23 +1,25 @@
 ﻿module Common {
 
     export class Observable implements IObservable {
-        private observers: Array<() => void>;
+        private callbacks: Array<() => void>;
 
-        constructor() {
-            this.observers = new Array<() => void>();
+        constructor(callback?: () => void) {
+            this.callbacks = new Array<() => void>();
+            if (callback)
+                this.callbacks.push(callback);
         }
 
         attach(observer: () => void) {
-            this.observers.push(observer);
+            this.callbacks.push(observer);
         }
 
         detach(observer: () => void) {
-            var index = this.observers.indexOf(observer);
-            this.observers.splice(index, 1);
+            var index = this.callbacks.indexOf(observer);
+            this.callbacks.splice(index, 1);
         }
 
         notify() {
-            this.observers.forEach((o) => {
+            this.callbacks.forEach((o) => {
                 o();
             })
         }
@@ -27,8 +29,8 @@
 
         private _property: T;
 
-        constructor() {
-            super();
+        constructor(callback?: () => void) {
+            super(callback);
         }
 
         get unwrap(): T {

@@ -8,8 +8,8 @@ module AsciiGame.UI {
         x: number;
         y: number;
 
-        constructor(x: number, y: number, height: number) {
-            super();
+        constructor(x: number, y: number, height: number, callback) {
+            super(callback);
             this.x = x;
             this.y = y;
             this.height = height;

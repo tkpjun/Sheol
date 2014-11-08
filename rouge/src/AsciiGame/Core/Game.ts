@@ -10,10 +10,10 @@
         constructor() {
             
             this.display = new ROT.Display({ width: Settings.DisplayWidth, height: Settings.DisplayHeight });
-            this.gameScreen = new GameScreen();
-            this.gameScreen.nextToDraw.attach(() => {
+            this.gameScreen = new GameScreen((d: DrawMatrix) => this.draw(d));
+            /*this.gameScreen.nextToDraw.attach(() => {
                 this.draw(this.gameScreen.nextToDraw.unwrap);
-            });
+            });*/
             this.screen = this.gameScreen;
             Control.init(this);
             GameUI.init();

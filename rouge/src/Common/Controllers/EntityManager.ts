@@ -10,8 +10,7 @@
 
         constructor(level: Dungeon.Level) {
             this.level = level;
-            this.currEntity = new ObservableProperty<Entities.Entity>();
-            this.currEntity.attach(() => this.update());
+            this.currEntity = new ObservableProperty<Entities.Entity>(() => this.update());
             this.currPath = new ObservableProperty<Path>();
             this.engine = new ROT.Engine(this.level.scheduler);
             this.characters = new Array<Entities.PlayerChar>();

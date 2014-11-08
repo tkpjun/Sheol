@@ -11,22 +11,24 @@ module AsciiGame {
         currLevel: number;
         manager: Controllers.EntityManager;
         camera: Camera;
-        nextToDraw: C.ObservableProperty<DrawMatrix>;
+        //nextToDraw: C.ObservableProperty<DrawMatrix>;
         textBox: UI.TextBox;
         update: () => void
+        draw: (DrawMatrix) => void;
 
-        constructor() {
+        constructor(drawCallback: (DrawMatrix) => void) {
             this.dungeon = new Array<Dungeon.Level>(new Dungeon.Level(Dungeon.MapTypes.Mines));
             this.currLevel = 0;
             this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
-            this.nextToDraw = new C.ObservableProperty<DrawMatrix>();
+            //this.nextToDraw = new C.ObservableProperty<DrawMatrix>();
             this.camera = new Camera(Settings.SidebarWidth,
                 Settings.DisplayWidth - Settings.SidebarWidth * 2,
                 0,
                 Settings.DisplayHeight - Settings.BottomBarHeight);
-            this.textBox = new UI.TextBox(Settings.SidebarWidth, 0, 7);
+            this.textBox = new UI.TextBox(Settings.SidebarWidth, 0, 7, () => this.advanceFrame());
             Controllers.Player.initialize(this.textBox, this.manager);
 
+            this.draw = drawCallback;
             this.update = () => {
                 var middle = this.manager.characters.map((c) => { 
                     return c.x
@@ -38,7 +40,6 @@ module AsciiGame {
             }
             this.manager.currEntity.attach(this.update);
             this.manager.currPath.attach(() => this.advanceFrame());
-            this.textBox.attach(() => this.advanceFrame());
             this.manager.start();
             this.update();
         }
@@ -47,21 +48,21 @@ module AsciiGame {
             this.manager.engine.lock();
 
             this.camera.updateView(this.manager.level);
-            this.nextToDraw.unwrap = this.camera.view.addPath(
+            this.draw(this.camera.view.addPath(
                 this.manager.currPath.unwrap,
                 this.camera.x,
                 this.camera.y,
                 this.manager.currEntity.unwrap.stats.ap)
-                .addOverlay(this.textBox.getMatrix(this.camera.width));
-            this.nextToDraw.unwrap = GameUI.getLeftBar(this.manager.characters);
-            this.nextToDraw.unwrap = GameUI.getDPad();
-            this.nextToDraw.unwrap = GameUI.getRightBar(
+                .addOverlay(this.textBox.getMatrix(this.camera.width)));
+            this.draw(GameUI.getLeftBar(this.manager.characters));
+            this.draw( GameUI.getDPad());
+            this.draw(GameUI.getRightBar(
                 this.manager.level.scheduler,
                 this.manager.currEntity.unwrap,
                 this.manager.level.entities.filter((e) => {
                     return this.camera.sees(e.x, e.y);
-                }))
-            this.nextToDraw.unwrap = GameUI.getBottomBar();
+                })));
+            this.draw(GameUI.getBottomBar());
             /*
             var matrix = new DrawMatrix(0, 0, null, Settings.DisplayWidth, Settings.DisplayHeight)
                 .addOverlay(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap))

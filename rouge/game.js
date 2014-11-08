@@ -334,10 +334,13 @@ var AsciiGame;
             function Game() {
                 var _this = this;
                 this.display = new ROT.Display({ width: AsciiGame.Settings.DisplayWidth, height: AsciiGame.Settings.DisplayHeight });
-                this.gameScreen = new AsciiGame.GameScreen();
-                this.gameScreen.nextToDraw.attach(function () {
-                    _this.draw(_this.gameScreen.nextToDraw.unwrap);
+                this.gameScreen = new AsciiGame.GameScreen(function (d) {
+                    return _this.draw(d);
                 });
+
+                /*this.gameScreen.nextToDraw.attach(() => {
+                this.draw(this.gameScreen.nextToDraw.unwrap);
+                });*/
                 this.screen = this.gameScreen;
                 Core.Control.init(this);
                 AsciiGame.GameUI.init();
@@ -611,19 +614,22 @@ var AsciiGame;
     var Dungeon = Common.Dungeon;
 
     var Controllers = Common.Controllers;
-    var C = Common;
 
     var GameScreen = (function () {
-        function GameScreen() {
+        function GameScreen(drawCallback) {
             var _this = this;
             this.dungeon = new Array(new Dungeon.Level(0 /* Mines */));
             this.currLevel = 0;
             this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
-            this.nextToDraw = new C.ObservableProperty();
+
+            //this.nextToDraw = new C.ObservableProperty<DrawMatrix>();
             this.camera = new AsciiGame.Camera(AsciiGame.Settings.SidebarWidth, AsciiGame.Settings.DisplayWidth - AsciiGame.Settings.SidebarWidth * 2, 0, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight);
-            this.textBox = new AsciiGame.UI.TextBox(AsciiGame.Settings.SidebarWidth, 0, 7);
+            this.textBox = new AsciiGame.UI.TextBox(AsciiGame.Settings.SidebarWidth, 0, 7, function () {
+                return _this.advanceFrame();
+            });
             Controllers.Player.initialize(this.textBox, this.manager);
 
+            this.draw = drawCallback;
             this.update = function () {
                 var middle = _this.manager.characters.map(function (c) {
                     return c.x;
@@ -637,9 +643,6 @@ var AsciiGame;
             this.manager.currPath.attach(function () {
                 return _this.advanceFrame();
             });
-            this.textBox.attach(function () {
-                return _this.advanceFrame();
-            });
             this.manager.start();
             this.update();
         }
@@ -648,13 +651,13 @@ var AsciiGame;
             this.manager.engine.lock();
 
             this.camera.updateView(this.manager.level);
-            this.nextToDraw.unwrap = this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap).addOverlay(this.textBox.getMatrix(this.camera.width));
-            this.nextToDraw.unwrap = AsciiGame.GameUI.getLeftBar(this.manager.characters);
-            this.nextToDraw.unwrap = AsciiGame.GameUI.getDPad();
-            this.nextToDraw.unwrap = AsciiGame.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.unwrap, this.manager.level.entities.filter(function (e) {
+            this.draw(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap).addOverlay(this.textBox.getMatrix(this.camera.width)));
+            this.draw(AsciiGame.GameUI.getLeftBar(this.manager.characters));
+            this.draw(AsciiGame.GameUI.getDPad());
+            this.draw(AsciiGame.GameUI.getRightBar(this.manager.level.scheduler, this.manager.currEntity.unwrap, this.manager.level.entities.filter(function (e) {
                 return _this.camera.sees(e.x, e.y);
-            }));
-            this.nextToDraw.unwrap = AsciiGame.GameUI.getBottomBar();
+            })));
+            this.draw(AsciiGame.GameUI.getBottomBar());
 
             /*
             var matrix = new DrawMatrix(0, 0, null, Settings.DisplayWidth, Settings.DisplayHeight)
@@ -1003,20 +1006,22 @@ var __extends = this.__extends || function (d, b) {
 var Common;
 (function (Common) {
     var Observable = (function () {
-        function Observable() {
-            this.observers = new Array();
+        function Observable(callback) {
+            this.callbacks = new Array();
+            if (callback)
+                this.callbacks.push(callback);
         }
         Observable.prototype.attach = function (observer) {
-            this.observers.push(observer);
+            this.callbacks.push(observer);
         };
 
         Observable.prototype.detach = function (observer) {
-            var index = this.observers.indexOf(observer);
-            this.observers.splice(index, 1);
+            var index = this.callbacks.indexOf(observer);
+            this.callbacks.splice(index, 1);
         };
 
         Observable.prototype.notify = function () {
-            this.observers.forEach(function (o) {
+            this.callbacks.forEach(function (o) {
                 o();
             });
         };
@@ -1026,8 +1031,8 @@ var Common;
 
     var ObservableProperty = (function (_super) {
         __extends(ObservableProperty, _super);
-        function ObservableProperty() {
-            _super.call(this);
+        function ObservableProperty(callback) {
+            _super.call(this, callback);
         }
         Object.defineProperty(ObservableProperty.prototype, "unwrap", {
             get: function () {
@@ -1050,8 +1055,8 @@ var AsciiGame;
     (function (UI) {
         var Button = (function (_super) {
             __extends(Button, _super);
-            function Button(corner, label) {
-                _super.call(this);
+            function Button(corner, label, callback) {
+                _super.call(this, callback);
                 this.corner = corner;
                 this.label = label;
                 this.state = 0 /* Up */;
@@ -1177,8 +1182,8 @@ var AsciiGame;
     (function (UI) {
         var TextBox = (function (_super) {
             __extends(TextBox, _super);
-            function TextBox(x, y, height) {
-                _super.call(this);
+            function TextBox(x, y, height, callback) {
+                _super.call(this, callback);
                 this.x = x;
                 this.y = y;
                 this.height = height;
@@ -1410,8 +1415,7 @@ var Common;
             function EntityManager(level) {
                 var _this = this;
                 this.level = level;
-                this.currEntity = new Common.ObservableProperty();
-                this.currEntity.attach(function () {
+                this.currEntity = new Common.ObservableProperty(function () {
                     return _this.update();
                 });
                 this.currPath = new Common.ObservableProperty();

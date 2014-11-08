@@ -10,8 +10,8 @@ module AsciiGame.UI {
         label: string;
         state: ButtonState;
 
-        constructor(corner: string, label: string) {
-            super();
+        constructor(corner: string, label: string, callback) {
+            super(callback);
             this.corner = corner;
             this.label = label;
             this.state = ButtonState.Up;
