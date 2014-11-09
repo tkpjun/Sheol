@@ -18,14 +18,17 @@ module AsciiGame.UI {
 
         getMatrix(dim: Rect): DrawMatrix {
             var color = this.getColor();
-            var matrix = new DrawMatrix(dim.x, dim.y, null, dim.w, dim.h, this.getColor());
+            var matrix = new DrawMatrix(dim.x, dim.y, dim.w, dim.h, this.getColor());
             if (this.corner) {
                 matrix.addString(0, 0, this.corner, dim.w - 1);
             }
             var labelX, labelY;
             labelY = Math.floor(dim.h / 2);
             if (this.label.length >= dim.w) {
-                labelX = 0;
+                if (labelY == 0 && this.corner)
+                    labelX = this.corner.length + 1;
+                else
+                    labelX = 0;
             }
             else {
                 labelX = Math.floor(dim.w / 2) - Math.floor(this.label.length / 2);

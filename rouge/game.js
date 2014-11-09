@@ -114,13 +114,7 @@ var AsciiGame;
         };
 
         Camera.prototype.getMapView = function (map) {
-            var matrix = new Array();
-            for (var i = 0; i < this.width; i++) {
-                matrix[i] = new Array();
-                for (var j = 0; j < this.height; j++) {
-                    matrix[i][j] = { symbol: " " };
-                }
-            }
+            var matrix = new AsciiGame.DrawMatrix(this.xOffset, this.yOffset, this.width, this.height);
 
             for (var key in map) {
                 var parts = key.split(",");
@@ -136,21 +130,21 @@ var AsciiGame;
 
                 switch (map[key]) {
                     case " ":
-                        matrix[x - this.x][y - this.y] = {
+                        matrix.matrix[x - this.x][y - this.y] = {
                             symbol: map[key],
                             color: "white",
                             bgColor: "gray"
                         };
                         break;
                     default:
-                        matrix[x - this.x][y - this.y] = {
+                        matrix.matrix[x - this.x][y - this.y] = {
                             symbol: map[key],
                             color: "white"
                         };
                         break;
                 }
             }
-            return new AsciiGame.DrawMatrix(this.xOffset, this.yOffset, matrix);
+            return matrix;
         };
 
         Camera.prototype.addObjects = function (matrix, objects) {
@@ -439,19 +433,15 @@ var Common;
 var AsciiGame;
 (function (AsciiGame) {
     var DrawMatrix = (function () {
-        function DrawMatrix(xOffset, yOffset, matrix, width, height, bgColor) {
+        function DrawMatrix(xOffset, yOffset, width, height, bgColor) {
             this.xOffset = xOffset;
             this.yOffset = yOffset;
 
-            if (matrix) {
-                this.matrix = matrix;
-            } else {
-                this.matrix = new Array();
-                for (var i = 0; i < width; i++) {
-                    this.matrix[i] = new Array();
-                    for (var j = 0; j < height; j++) {
-                        this.matrix[i][j] = { symbol: " ", bgColor: bgColor };
-                    }
+            this.matrix = new Array();
+            for (var i = 0; i < width; i++) {
+                this.matrix[i] = new Array();
+                for (var j = 0; j < height; j++) {
+                    this.matrix[i][j] = { symbol: " ", bgColor: bgColor };
                 }
             }
         }
@@ -716,9 +706,13 @@ var AsciiGame;
         function GameUI() {
             this.color1 = "midnightblue";
             this.color2 = "royalblue";
-            this.context = new Array();
             this.alwaysInContext = new Array();
             this.stack = new Array();
+
+            this.initDpad();
+            this.initLeftBar();
+            this.initRightBar();
+            this.initBottomBar();
         }
         GameUI.prototype.updateMouseDown = function (x, y) {
             return false;
@@ -730,11 +724,14 @@ var AsciiGame;
             return false;
         };
 
+        GameUI.prototype.initLeftBar = function () {
+        };
+
         GameUI.prototype.getLeftBar = function (characters) {
             var p1 = characters[0];
             var p2 = characters[1];
             var w = AsciiGame.Settings.SidebarWidth;
-            var matrix = new AsciiGame.DrawMatrix(0, 0, null, w, 23);
+            var matrix = new AsciiGame.DrawMatrix(0, 0, w, 23);
 
             for (var i = 0; i < AsciiGame.Settings.SidebarWidth; i++) {
                 matrix.matrix[i][0] = { symbol: " ", bgColor: this.color1 };
@@ -775,11 +772,14 @@ var AsciiGame;
             return matrix;
         };
 
+        GameUI.prototype.initRightBar = function () {
+        };
+
         GameUI.prototype.getRightBar = function (scheduler, current, seen, baseTime) {
             var w = AsciiGame.Settings.SidebarWidth;
             var wDisp = AsciiGame.Settings.DisplayWidth;
             var leftEdge = wDisp - w;
-            var matrix = new AsciiGame.DrawMatrix(leftEdge, 0, null, w, AsciiGame.Settings.DisplayHeight - 1);
+            var matrix = new AsciiGame.DrawMatrix(leftEdge, 0, w, AsciiGame.Settings.DisplayHeight - 1);
             if (!baseTime)
                 baseTime = 0;
 
@@ -833,22 +833,31 @@ var AsciiGame;
             return matrix;
         };
 
-        GameUI.prototype.getDPad = function () {
+        GameUI.prototype.initDpad = function () {
             var w = AsciiGame.Settings.SidebarWidth;
             var hDisp = AsciiGame.Settings.DisplayHeight;
             var hThis = 10;
-            var matrix = new AsciiGame.DrawMatrix(0, hDisp - hThis - AsciiGame.Settings.BottomBarHeight, null, w, hThis);
+            var box = new AsciiGame.UI.Box(new AsciiGame.UI.Rect(0, hDisp - hThis - AsciiGame.Settings.BottomBarHeight + 1, w, hThis), new AsciiGame.UI.VertList().add(new AsciiGame.UI.HoriList(1).add(new AsciiGame.UI.Button("q", "NW", function () {
+            }, this.color1)).add(new AsciiGame.UI.Button("w", "N", function () {
+            })).add(new AsciiGame.UI.Button("e", "NE", function () {
+            }, this.color1))).add(new AsciiGame.UI.HoriList(1).add(new AsciiGame.UI.Button("a", "W ", function () {
+            })).add(new AsciiGame.UI.Button("f", "PICK", function () {
+            }, this.color1)).add(new AsciiGame.UI.Button("d", "E", function () {
+            }))).add(new AsciiGame.UI.HoriList(1).add(new AsciiGame.UI.Button("z", "SW", function () {
+            }, this.color1)).add(new AsciiGame.UI.Button("x", "S ", function () {
+            })).add(new AsciiGame.UI.Button("c", "SE", function () {
+            }, this.color1))));
+            this.dpad = box;
+        };
 
+        GameUI.prototype.getDPad = function () {
+            return this.dpad.getMatrix();
             /*
-            matrix.addString(0, 0, "q--- w--- e---");
-            matrix.addString(0, 1, "|NW| | N| |NE|");
-            matrix.addString(0, 2, "---- ---- ----");
-            matrix.addString(0, 3, "a--- f--- d---");
-            matrix.addString(0, 4, "|W | PICK | E|");
-            matrix.addString(0, 5, "---- ---- ----");
-            matrix.addString(0, 6, "z--- x--- c---");
-            matrix.addString(0, 7, "|SW| |S | |SE|");
-            matrix.addString(0, 8, "---- ---- ----");*/
+            var w = Settings.SidebarWidth;
+            var hDisp = Settings.DisplayHeight;
+            var hThis = 10;
+            var matrix = new DrawMatrix(0, hDisp - hThis - Settings.BottomBarHeight, null, w, hThis);
+            
             matrix.addString(1, 1, "    |    |    ");
             matrix.addString(1, 2, "    |    |    ");
             matrix.addString(1, 3, "----+----+----");
@@ -875,17 +884,39 @@ var AsciiGame;
             matrix.addString(6, 8, " S  ", null, null, this.color2);
             matrix.addString(11, 7, "c   ", null, null, this.color1);
             matrix.addString(11, 8, " SE ", null, null, this.color1);
-
+            
             return matrix;
+            */
+        };
+
+        GameUI.prototype.initBottomBar = function () {
+            var box = new AsciiGame.UI.Box(new AsciiGame.UI.Rect(0, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight, 45, AsciiGame.Settings.BottomBarHeight), new AsciiGame.UI.HoriList(1, 1, this.color1).add(new AsciiGame.UI.Button("1", "MOVE", function () {
+            })).add(new AsciiGame.UI.Button("2", "ATTACK", function () {
+            })).add(new AsciiGame.UI.Button("3", "SPECIAL", function () {
+            })).add(new AsciiGame.UI.Button("4", "SWITCH", function () {
+            })));
+            this.bottomLeft = box;
+
+            box = new AsciiGame.UI.Box(new AsciiGame.UI.Rect(50, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight, 25, AsciiGame.Settings.BottomBarHeight), new AsciiGame.UI.HoriList(1, 1, this.color1).add(new AsciiGame.UI.Button(null, "INVENTORY", function () {
+            })).add(new AsciiGame.UI.Button(null, "MENU", function () {
+            })));
+            this.bottomRight = box;
         };
 
         GameUI.prototype.getBottomBar = function () {
-            var matrix = new AsciiGame.DrawMatrix(0, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight, null, AsciiGame.Settings.DisplayWidth, AsciiGame.Settings.BottomBarHeight);
-
+            this.bottomRight.dimensions.x = AsciiGame.Settings.DisplayWidth - this.bottomRight.dimensions.w;
+            return new AsciiGame.DrawMatrix(0, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight, AsciiGame.Settings.DisplayWidth, AsciiGame.Settings.BottomBarHeight, this.color1).addOverlay(this.bottomLeft.getMatrix()).addOverlay(this.bottomRight.getMatrix());
+            /*
+            var matrix = new DrawMatrix(0,
+            Settings.DisplayHeight - Settings.BottomBarHeight,
+            null,
+            Settings.DisplayWidth,
+            Settings.BottomBarHeight);
+            
             for (var i = 0; i < matrix.matrix.length; i++) {
-                for (var j = 0; j < matrix.matrix[0].length; j++) {
-                    matrix.matrix[i][j] = { symbol: " ", bgColor: this.color1 };
-                }
+            for (var j = 0; j < matrix.matrix[0].length; j++) {
+            matrix.matrix[i][j] = { symbol: " ", bgColor: this.color1 };
+            }
             }
             matrix.addString(1, 0, "1");
             matrix.addString(2, 0, "  MOVE  ", null, null, this.color2);
@@ -895,14 +926,15 @@ var AsciiGame;
             matrix.addString(22, 0, " SPECIAL ", null, null, this.color2);
             matrix.addString(32, 0, "4");
             matrix.addString(33, 0, " SWITCH ", null, null, this.color2);
-
-            matrix.addString(AsciiGame.Settings.DisplayWidth - 32, 0, "CON");
-            matrix.addString(AsciiGame.Settings.DisplayWidth - 29, 0, " v ", null, null, this.color2);
-            matrix.addString(AsciiGame.Settings.DisplayWidth - 25, 0, " ^ ", null, null, this.color2);
-            matrix.addString(AsciiGame.Settings.DisplayWidth - 20, 0, "INVENTORY", null, null, this.color2);
-            matrix.addString(AsciiGame.Settings.DisplayWidth - 9, 0, "  MENU  ", null, null, this.color2);
-
+            
+            matrix.addString(Settings.DisplayWidth - 32, 0, "CON");
+            matrix.addString(Settings.DisplayWidth - 29, 0, " v ", null, null, this.color2);
+            matrix.addString(Settings.DisplayWidth - 25, 0, " ^ ", null, null, this.color2);
+            matrix.addString(Settings.DisplayWidth - 20, 0, "INVENTORY", null, null, this.color2);
+            matrix.addString(Settings.DisplayWidth - 9, 0, "  MENU  ", null, null, this.color2);
+            
             return matrix;
+            */
         };
         return GameUI;
     })();
@@ -1103,14 +1135,17 @@ var AsciiGame;
             }
             Button.prototype.getMatrix = function (dim) {
                 var color = this.getColor();
-                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, null, dim.w, dim.h, this.getColor());
+                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, dim.w, dim.h, this.getColor());
                 if (this.corner) {
                     matrix.addString(0, 0, this.corner, dim.w - 1);
                 }
                 var labelX, labelY;
                 labelY = Math.floor(dim.h / 2);
                 if (this.label.length >= dim.w) {
-                    labelX = 0;
+                    if (labelY == 0 && this.corner)
+                        labelX = this.corner.length + 1;
+                    else
+                        labelX = 0;
                 } else {
                     labelX = Math.floor(dim.w / 2) - Math.floor(this.label.length / 2);
                 }
@@ -1174,7 +1209,7 @@ var AsciiGame;
             function Description() {
             }
             Description.prototype.getMatrix = function (dim) {
-                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, null, dim.w, dim.h);
+                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, dim.w, dim.h);
                 var y = 1;
                 if (this.header) {
                     var headerX;
@@ -1218,23 +1253,33 @@ var AsciiGame;
 (function (AsciiGame) {
     (function (UI) {
         var HoriList = (function () {
-            function HoriList() {
-                this.offset = 2;
+            function HoriList(offsetEnds, offset, bgcolor) {
+                this.offset = 1;
+                this.offEnds = 0;
                 this.elements = new Array();
                 this.weights = new Array();
+                this.bgColor = bgcolor;
+                if (offsetEnds)
+                    this.offEnds = offsetEnds;
+                if (offset)
+                    this.offset = offset;
             }
             HoriList.prototype.add = function (elem, weight) {
                 this.elements.push(elem);
-                this.weights.push(weight);
+                if (weight)
+                    this.weights.push(weight);
+                else
+                    this.weights.push(1);
+                return this;
             };
 
             HoriList.prototype.getMatrix = function (dim) {
-                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, null, dim.w, dim.h);
-                var space = dim.w - this.offset * (this.elements.length - 1);
+                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, dim.w, dim.h, this.bgColor);
+                var space = dim.w - this.offset * (this.elements.length - 1) - 2 * this.offEnds;
                 var step = Math.floor(space / this.weights.reduce(function (x, y) {
                     return x + y;
                 }));
-                var nextX = dim.x;
+                var nextX = dim.x + this.offEnds;
                 for (var i = 0; i < this.elements.length; i++) {
                     matrix.addOverlay(this.elements[i].getMatrix(new UI.Rect(nextX, dim.y, step, dim.h)));
                     nextX += this.offset;
@@ -1297,7 +1342,7 @@ var AsciiGame;
             };
 
             TextBox.prototype.getMatrix = function (width) {
-                var matrix = new AsciiGame.DrawMatrix(this.x, this.y, null, width, this.height);
+                var matrix = new AsciiGame.DrawMatrix(this.x, this.y, width, this.height);
                 var used = 0;
                 var index = this.lines.length - 1;
 
@@ -1350,25 +1395,31 @@ var AsciiGame;
 (function (AsciiGame) {
     (function (UI) {
         var VertList = (function () {
-            function VertList() {
+            function VertList(offset) {
                 this.offset = 1;
                 this.elements = new Array();
                 this.weights = new Array();
+                if (offset)
+                    this.offset = offset;
             }
             VertList.prototype.add = function (elem, weight) {
                 this.elements.push(elem);
-                this.weights.push(weight);
+                if (weight)
+                    this.weights.push(weight);
+                else
+                    this.weights.push(1);
+                return this;
             };
 
             VertList.prototype.getMatrix = function (dim) {
-                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, null, dim.w, dim.h);
+                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, dim.w, dim.h);
                 var space = dim.h - this.offset * (this.elements.length - 1);
                 var step = Math.floor(space / this.weights.reduce(function (x, y) {
                     return x + y;
                 }));
                 var nextY = dim.y;
                 for (var i = 0; i < this.elements.length; i++) {
-                    matrix.addOverlay(this.elements[i].getMatrix(new UI.Rect(dim.x, nextY, dim.h, step)));
+                    matrix.addOverlay(this.elements[i].getMatrix(new UI.Rect(dim.x, nextY, dim.w, step)));
                     nextY += this.offset;
                     nextY += this.weights[i] * step;
                 }

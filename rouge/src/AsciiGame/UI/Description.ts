@@ -6,7 +6,7 @@
         text: string;
 
         getMatrix(dim: Rect): DrawMatrix {
-            var matrix = new DrawMatrix(dim.x, dim.y, null, dim.w, dim.h);
+            var matrix = new DrawMatrix(dim.x, dim.y, dim.w, dim.h);
             var y = 1;
             if (this.header) {
                 var headerX;

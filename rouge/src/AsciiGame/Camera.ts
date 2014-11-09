@@ -59,13 +59,15 @@ module AsciiGame {
 
         private getMapView(map: ROT.IMap): DrawMatrix {
 
+            var matrix = new DrawMatrix(this.xOffset, this.yOffset, this.width, this.height);
+            /*
             var matrix = new Array<Array<IDrawable>>();
             for (var i = 0; i < this.width; i++) {
                 matrix[i] = new Array<IDrawable>();
                 for (var j = 0; j < this.height; j++) {
                     matrix[i][j] = { symbol: " " };
                 }
-            }
+            }*/
 
             for (var key in map) {
                 var parts = key.split(",");
@@ -81,21 +83,21 @@ module AsciiGame {
 
                 switch (map[key]) {
                     case " ":
-                        matrix[x - this.x][y - this.y] = { 
+                        matrix.matrix[x - this.x][y - this.y] = { 
                             symbol: map[key], 
                             color: "white", 
                             bgColor: "gray"
                         };
                         break;
                     default:
-                        matrix[x - this.x][y - this.y] = {
+                        matrix.matrix[x - this.x][y - this.y] = {
                             symbol: map[key],
                             color: "white"
                         };
                         break;
                 }
             }
-            return new DrawMatrix(this.xOffset, this.yOffset, matrix);
+            return matrix;
         }
 
         private addObjects(matrix: DrawMatrix, objects: Array<C.IObject>): DrawMatrix {

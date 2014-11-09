@@ -26,7 +26,7 @@ module AsciiGame.UI {
         }
 
         getMatrix(width: number): DrawMatrix {
-            var matrix = new DrawMatrix(this.x, this.y, null, width, this.height);
+            var matrix = new DrawMatrix(this.x, this.y, width, this.height);
             var used = 0;
             var index = this.lines.length - 1;
 

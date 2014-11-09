@@ -6,23 +6,29 @@
         private weights: number[];
         private offset = 1;
 
-        constructor() {
+        constructor(offset?) {
             this.elements = new Array<IElement>();
             this.weights = new Array<number>();
+            if (offset)
+                this.offset = offset;
         }
 
-        add(elem: IElement, weight: number) {
+        add(elem: IElement, weight?: number): VertList {
             this.elements.push(elem);
-            this.weights.push(weight);
+            if (weight)
+                this.weights.push(weight);
+            else
+                this.weights.push(1);
+            return this;
         }
 
         getMatrix(dim: Rect): DrawMatrix {
-            var matrix = new DrawMatrix(dim.x, dim.y, null, dim.w, dim.h);
+            var matrix = new DrawMatrix(dim.x, dim.y, dim.w, dim.h);
             var space = dim.h - this.offset * (this.elements.length - 1);
             var step = Math.floor(space / this.weights.reduce((x, y) => { return x + y }));
             var nextY = dim.y;
             for (var i = 0; i < this.elements.length; i++) {
-                matrix.addOverlay(this.elements[i].getMatrix(new Rect(dim.x, nextY, dim.h, step)));
+                matrix.addOverlay(this.elements[i].getMatrix(new Rect(dim.x, nextY, dim.w, step)));
                 nextY += this.offset;
                 nextY += this.weights[i] * step;
             }
