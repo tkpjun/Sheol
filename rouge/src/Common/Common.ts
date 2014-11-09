@@ -38,4 +38,9 @@
         detach(observer: () => void);
         notify();
     }
+
+    export interface Tuple2<T, U> {
+        fst: T;
+        snd: U;
+    }
 }

@@ -3,35 +3,39 @@ module AsciiGame.UI {
 
     export class Button extends Common.Observable implements IElement {
 
-        upColor: string;
-        hoverColor: string;
-        downColor: string;
+        color: string;
         corner: string;
         label: string;
         state: ButtonState;
 
-        constructor(corner: string, label: string, callback) {
+        constructor(corner: string, label: string, callback, color?: string) {
             super(callback);
             this.corner = corner;
             this.label = label;
             this.state = ButtonState.Up;
+            this.color = color;
         }
 
-        getMatrix(x: number, y: number, width: number, height: number): DrawMatrix {
+        getMatrix(dim: Rect): DrawMatrix {
             var color = this.getColor();
-            var matrix = new DrawMatrix(x, y, null, width, height, this.getColor());
+            var matrix = new DrawMatrix(dim.x, dim.y, null, dim.w, dim.h, this.getColor());
             if (this.corner) {
-                matrix.addString(0, 0, this.corner, width - 1);
+                matrix.addString(0, 0, this.corner, dim.w - 1);
             }
             var labelX, labelY;
-            labelY = Math.floor(height / 2);
-            if (this.label.length >= width) {
+            labelY = Math.floor(dim.h / 2);
+            if (this.label.length >= dim.w) {
                 labelX = 0;
             }
             else {
-                labelX = Math.floor(width / 2) - Math.floor(this.label.length / 2);
+                labelX = Math.floor(dim.w / 2) - Math.floor(this.label.length / 2);
             }
+            matrix.addString(labelX, labelY, this.label, dim.w - 1);
             return matrix;
+        }
+
+        whatIsAt(x: number, y: number): Common.Tuple2<IElement, Rect> {
+            return null;
         }
 
         mouseOver() {
@@ -54,7 +58,10 @@ module AsciiGame.UI {
         private getColor(): string {
             switch (this.state) {
                 case ButtonState.Up:
-                    return "royalblue";
+                    if (this.color)
+                        return this.color;
+                    else
+                        return "royalblue";
                     break;
                 case ButtonState.Hover:
                     return "yellow";

@@ -35,7 +35,7 @@
     <TypeScriptCompile Include="src\AsciiGame\MainMenuScreen.ts" />
     <TypeScriptCompile Include="src\AsciiGame\Settings.ts" />
     <TypeScriptCompile Include="src\AsciiGame\UI\Button.ts" />
-    <TypeScriptCompile Include="src\AsciiGame\UI\Container.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\UI\Box.ts" />
     <TypeScriptCompile Include="src\AsciiGame\UI\Description.ts" />
     <TypeScriptCompile Include="src\AsciiGame\UI\HoriList.ts" />
     <TypeScriptCompile Include="src\AsciiGame\UI\TextBox.ts" />

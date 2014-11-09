@@ -6,6 +6,25 @@ module AsciiGame.UI {
         mouseNotOver();
         mouseDown();
         mouseUp();
-        getMatrix(x: number, y: number, width: number, height: number): DrawMatrix;
+        getMatrix(dim: Rect): DrawMatrix;
+        whatIsAt(x: number, y: number, dim?: Rect): Common.Tuple2<IElement, Rect>;
+    }
+
+    export class Rect {
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+
+        constructor(x: number, y: number, width: number, height: number) {
+            this.x = x;
+            this.y = y;
+            this.w = width;
+            this.h = height;
+        }
+
+        isWithin(x: number, y: number): boolean {
+            return x >= this.x && y >= this.y && x < this.x + this.w && y < this.y + this.h;
+        }
     }
 } 

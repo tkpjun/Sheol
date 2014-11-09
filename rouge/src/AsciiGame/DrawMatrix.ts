@@ -93,7 +93,7 @@ module AsciiGame {
             return this;
         }
 
-        addOverlay(other: DrawMatrix): DrawMatrix {
+        addOverlay(other: DrawMatrix, alpha?: number): DrawMatrix {
             var newXOff = Math.min(this.xOffset, other.xOffset);
             var newYOff = Math.min(this.yOffset, other.yOffset);
 
@@ -130,16 +130,26 @@ module AsciiGame {
                         var c2 = other.matrix[i][j].bgColor;
                         if (!c1) c1 = "black";
                         if (!c2) c2 = "black";
-                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = 
-                        ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(c1), ROT.Color.fromString(c2), 0.75)));
+                        if (alpha) {
+                            this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color =
+                            ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(c1), ROT.Color.fromString(c2), alpha)));
+                        }
+                        else {
+                            this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = c2;
+                        }
                     }
+
                     var bg1 = this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor
                     var bg2 = other.matrix[i][j].bgColor;
                     if (!bg1) bg1 = "black";
                     if (!bg2) bg2 = "black";
-
-                    this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor =
-                        ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg1), ROT.Color.fromString(bg2), 0.75)));
+                    if (alpha) {
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor =
+                        ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg1), ROT.Color.fromString(bg2), alpha)));
+                    }
+                    else {
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor = bg2;
+                    }
                 }
             }
 

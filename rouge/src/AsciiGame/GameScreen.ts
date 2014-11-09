@@ -55,7 +55,7 @@ module AsciiGame {
                 this.camera.x,
                 this.camera.y,
                 this.manager.currEntity.unwrap.stats.ap)
-                .addOverlay(this.textBox.getMatrix(this.camera.width)));
+                .addOverlay(this.textBox.getMatrix(this.camera.width), 0.75));
             this.draw(this.ui.getLeftBar(this.manager.characters));
             this.draw(this.ui.getDPad());
             this.draw(this.ui.getRightBar(

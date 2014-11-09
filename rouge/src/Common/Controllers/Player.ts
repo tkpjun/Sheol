@@ -2,12 +2,12 @@
     
     export class Player{
 
-        char: Entities.PlayerChar;
-        lvl: Dungeon.Level;
-        state = States.Inactive;
-        manager: EntityManager;
-        con: IConsole;
-        callback;
+        private char: Entities.PlayerChar;
+        private lvl: Dungeon.Level;
+        private state = States.Inactive;
+        private manager: EntityManager;
+        private con: IConsole;
+        private callback;
 
         constructor(console: IConsole, entityManager: EntityManager) {
             this.manager = entityManager;
@@ -120,7 +120,7 @@
 
         }
 
-        alterPath(dir: IVector2) {
+        private alterPath(dir: IVector2) {
             var oldPath = this.manager.currPath.unwrap;
             var location = Vec.add(oldPath.pointer, dir);
             if (location.x < 0) location.x = 0;
@@ -138,7 +138,7 @@
                 throw ("Unimplemented state!");
         }
 
-        endTurn() {
+        private endTurn() {
             this.char.addAction(() => {
                 this.char._hasTurn = false;
                 this.state = States.Inactive;
@@ -146,7 +146,7 @@
             });
         }
 
-        confirm() {
+        private confirm() {
             var path = this.manager.currPath.unwrap;
             var ptr = { x: path.pointer.x, y: path.pointer.y };
             var moves;

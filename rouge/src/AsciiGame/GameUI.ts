@@ -8,12 +8,16 @@ module AsciiGame {
 
     export class GameUI {
 
-        color1 = "midnightblue";
-        color2 = "royalblue";
-        context: Array<UI.Container>;
+        private color1 = "midnightblue";
+        private color2 = "royalblue";
+        private stack: UI.Box[][];
+        private context: UI.Box[];
+        private alwaysInContext: UI.Box[];
 
         constructor() {
-            this.context = new Array<UI.Container>();
+            this.context = new Array<UI.Box>();
+            this.alwaysInContext = new Array<UI.Box>();
+            this.stack = new Array<Array<UI.Box>>();
         }
 
         updateMouseDown(x, y): boolean {

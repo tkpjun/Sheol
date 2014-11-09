@@ -528,7 +528,7 @@ var AsciiGame;
             return this;
         };
 
-        DrawMatrix.prototype.addOverlay = function (other) {
+        DrawMatrix.prototype.addOverlay = function (other, alpha) {
             var newXOff = Math.min(this.xOffset, other.xOffset);
             var newYOff = Math.min(this.yOffset, other.yOffset);
 
@@ -566,16 +566,24 @@ var AsciiGame;
                             c1 = "black";
                         if (!c2)
                             c2 = "black";
-                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(c1), ROT.Color.fromString(c2), 0.75)));
+                        if (alpha) {
+                            this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(c1), ROT.Color.fromString(c2), alpha)));
+                        } else {
+                            this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color = c2;
+                        }
                     }
+
                     var bg1 = this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor;
                     var bg2 = other.matrix[i][j].bgColor;
                     if (!bg1)
                         bg1 = "black";
                     if (!bg2)
                         bg2 = "black";
-
-                    this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg1), ROT.Color.fromString(bg2), 0.75)));
+                    if (alpha) {
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor = ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(bg1), ROT.Color.fromString(bg2), alpha)));
+                    } else {
+                        this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].bgColor = bg2;
+                    }
                 }
             }
 
@@ -640,7 +648,7 @@ var AsciiGame;
             this.manager.engine.lock();
 
             this.camera.updateView(this.manager.level);
-            this.draw(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap).addOverlay(this.textBox.getMatrix(this.camera.width)));
+            this.draw(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap).addOverlay(this.textBox.getMatrix(this.camera.width), 0.75));
             this.draw(this.ui.getLeftBar(this.manager.characters));
             this.draw(this.ui.getDPad());
             this.draw(this.ui.getRightBar(this.manager.level.scheduler, this.manager.currEntity.unwrap, this.manager.level.entities.filter(function (e) {
@@ -709,6 +717,8 @@ var AsciiGame;
             this.color1 = "midnightblue";
             this.color2 = "royalblue";
             this.context = new Array();
+            this.alwaysInContext = new Array();
+            this.stack = new Array();
         }
         GameUI.prototype.updateMouseDown = function (x, y) {
             return false;
@@ -976,6 +986,56 @@ var AsciiGame;
     })();
     AsciiGame.Settings = Settings;
 })(AsciiGame || (AsciiGame = {}));
+var AsciiGame;
+(function (AsciiGame) {
+    (function (UI) {
+        var Box = (function () {
+            function Box(dimensions, element) {
+                this.dimensions = dimensions;
+                this.element = element;
+            }
+            Box.prototype.getMatrix = function () {
+                return this.element.getMatrix(this.dimensions);
+            };
+
+            Box.prototype.mouseOver = function (x, y) {
+                this.element.mouseOver();
+                var next = this.element.whatIsAt(x, y, this.dimensions);
+                while (next) {
+                    next.fst.mouseOver();
+                    next = next.fst.whatIsAt(x, y, next.snd);
+                }
+            };
+            Box.prototype.mouseNotOver = function (x, y) {
+                this.element.mouseNotOver();
+                var next = this.element.whatIsAt(x, y, this.dimensions);
+                while (next) {
+                    next.fst.mouseNotOver();
+                    next = next.fst.whatIsAt(x, y, next.snd);
+                }
+            };
+            Box.prototype.mouseDown = function (x, y) {
+                this.element.mouseDown();
+                var next = this.element.whatIsAt(x, y, this.dimensions);
+                while (next) {
+                    next.fst.mouseDown();
+                    next = next.fst.whatIsAt(x, y, next.snd);
+                }
+            };
+            Box.prototype.mouseUp = function (x, y) {
+                this.element.mouseUp();
+                var next = this.element.whatIsAt(x, y, this.dimensions);
+                while (next) {
+                    next.fst.mouseUp();
+                    next = next.fst.whatIsAt(x, y, next.snd);
+                }
+            };
+            return Box;
+        })();
+        UI.Box = Box;
+    })(AsciiGame.UI || (AsciiGame.UI = {}));
+    var UI = AsciiGame.UI;
+})(AsciiGame || (AsciiGame = {}));
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -1034,26 +1094,32 @@ var AsciiGame;
     (function (UI) {
         var Button = (function (_super) {
             __extends(Button, _super);
-            function Button(corner, label, callback) {
+            function Button(corner, label, callback, color) {
                 _super.call(this, callback);
                 this.corner = corner;
                 this.label = label;
                 this.state = 0 /* Up */;
+                this.color = color;
             }
-            Button.prototype.getMatrix = function (x, y, width, height) {
+            Button.prototype.getMatrix = function (dim) {
                 var color = this.getColor();
-                var matrix = new AsciiGame.DrawMatrix(x, y, null, width, height, this.getColor());
+                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, null, dim.w, dim.h, this.getColor());
                 if (this.corner) {
-                    matrix.addString(0, 0, this.corner, width - 1);
+                    matrix.addString(0, 0, this.corner, dim.w - 1);
                 }
                 var labelX, labelY;
-                labelY = Math.floor(height / 2);
-                if (this.label.length >= width) {
+                labelY = Math.floor(dim.h / 2);
+                if (this.label.length >= dim.w) {
                     labelX = 0;
                 } else {
-                    labelX = Math.floor(width / 2) - Math.floor(this.label.length / 2);
+                    labelX = Math.floor(dim.w / 2) - Math.floor(this.label.length / 2);
                 }
+                matrix.addString(labelX, labelY, this.label, dim.w - 1);
                 return matrix;
+            };
+
+            Button.prototype.whatIsAt = function (x, y) {
+                return null;
             };
 
             Button.prototype.mouseOver = function () {
@@ -1075,7 +1141,10 @@ var AsciiGame;
             Button.prototype.getColor = function () {
                 switch (this.state) {
                     case 0 /* Up */:
-                        return "royalblue";
+                        if (this.color)
+                            return this.color;
+                        else
+                            return "royalblue";
                         break;
                     case 2 /* Hover */:
                         return "yellow";
@@ -1101,42 +1170,44 @@ var AsciiGame;
 var AsciiGame;
 (function (AsciiGame) {
     (function (UI) {
-        var Container = (function () {
-            function Container(x, y, width, height, element) {
-                this.x = x;
-                this.y = y;
-                this.width = width;
-                this.height = height;
-                this.element = element;
-            }
-            Container.prototype.getMatrix = function () {
-                return this.element.getMatrix(this.x, this.y, this.width, this.height);
-            };
-
-            Container.prototype.mouseOver = function () {
-                this.element.mouseOver();
-            };
-            Container.prototype.mouseNotOver = function () {
-                this.element.mouseNotOver();
-            };
-            Container.prototype.mouseDown = function () {
-                this.element.mouseDown();
-            };
-            Container.prototype.mouseUp = function () {
-                this.element.mouseUp();
-            };
-            return Container;
-        })();
-        UI.Container = Container;
-    })(AsciiGame.UI || (AsciiGame.UI = {}));
-    var UI = AsciiGame.UI;
-})(AsciiGame || (AsciiGame = {}));
-var AsciiGame;
-(function (AsciiGame) {
-    (function (UI) {
         var Description = (function () {
             function Description() {
             }
+            Description.prototype.getMatrix = function (dim) {
+                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, null, dim.w, dim.h);
+                var y = 1;
+                if (this.header) {
+                    var headerX;
+                    if (this.header.length >= dim.w) {
+                        headerX = 1;
+                    } else {
+                        headerX = Math.floor(dim.w / 2) - Math.floor(this.header.length / 2);
+                    }
+                    matrix.addString(headerX, 1, this.header, dim.w - 1);
+                    y += 2;
+                }
+                var textX;
+                if (this.text.length >= dim.w) {
+                    textX = 1;
+                } else {
+                    textX = Math.floor(dim.w / 2) - Math.floor(this.text.length / 2);
+                }
+                matrix.addString(textX, y, this.text, dim.w - 1);
+                return matrix;
+            };
+
+            Description.prototype.whatIsAt = function (x, y) {
+                return null;
+            };
+
+            Description.prototype.mouseOver = function () {
+            };
+            Description.prototype.mouseNotOver = function () {
+            };
+            Description.prototype.mouseDown = function () {
+            };
+            Description.prototype.mouseUp = function () {
+            };
             return Description;
         })();
         UI.Description = Description;
@@ -1148,7 +1219,55 @@ var AsciiGame;
     (function (UI) {
         var HoriList = (function () {
             function HoriList() {
+                this.offset = 2;
+                this.elements = new Array();
+                this.weights = new Array();
             }
+            HoriList.prototype.add = function (elem, weight) {
+                this.elements.push(elem);
+                this.weights.push(weight);
+            };
+
+            HoriList.prototype.getMatrix = function (dim) {
+                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, null, dim.w, dim.h);
+                var space = dim.w - this.offset * (this.elements.length - 1);
+                var step = Math.floor(space / this.weights.reduce(function (x, y) {
+                    return x + y;
+                }));
+                var nextX = dim.x;
+                for (var i = 0; i < this.elements.length; i++) {
+                    matrix.addOverlay(this.elements[i].getMatrix(new UI.Rect(nextX, dim.y, step, dim.h)));
+                    nextX += this.offset;
+                    nextX += this.weights[i] * step;
+                }
+                return matrix;
+            };
+
+            HoriList.prototype.whatIsAt = function (x, y, dim) {
+                var space = dim.w - this.offset * (this.elements.length - 1);
+                var step = Math.floor(space / this.weights.reduce(function (x, y) {
+                    return x + y;
+                }));
+                var nextX = dim.x;
+                for (var i = 0; i < this.elements.length; i++) {
+                    var rect = new UI.Rect(nextX, dim.y, step, dim.h);
+                    if (rect.isWithin(x, y)) {
+                        return { fst: this.elements[i], snd: rect };
+                    }
+                    nextX += this.offset;
+                    nextX += this.weights[i] * step;
+                }
+                return null;
+            };
+
+            HoriList.prototype.mouseOver = function () {
+            };
+            HoriList.prototype.mouseNotOver = function () {
+            };
+            HoriList.prototype.mouseDown = function () {
+            };
+            HoriList.prototype.mouseUp = function () {
+            };
             return HoriList;
         })();
         UI.HoriList = HoriList;
@@ -1207,13 +1326,80 @@ var AsciiGame;
     })(AsciiGame.UI || (AsciiGame.UI = {}));
     var UI = AsciiGame.UI;
 })(AsciiGame || (AsciiGame = {}));
-/// <reference path="../../Common/Common.ts" />
+var AsciiGame;
+(function (AsciiGame) {
+    /// <reference path="../../Common/Common.ts" />
+    (function (UI) {
+        var Rect = (function () {
+            function Rect(x, y, width, height) {
+                this.x = x;
+                this.y = y;
+                this.w = width;
+                this.h = height;
+            }
+            Rect.prototype.isWithin = function (x, y) {
+                return x >= this.x && y >= this.y && x < this.x + this.w && y < this.y + this.h;
+            };
+            return Rect;
+        })();
+        UI.Rect = Rect;
+    })(AsciiGame.UI || (AsciiGame.UI = {}));
+    var UI = AsciiGame.UI;
+})(AsciiGame || (AsciiGame = {}));
 var AsciiGame;
 (function (AsciiGame) {
     (function (UI) {
         var VertList = (function () {
             function VertList() {
+                this.offset = 1;
+                this.elements = new Array();
+                this.weights = new Array();
             }
+            VertList.prototype.add = function (elem, weight) {
+                this.elements.push(elem);
+                this.weights.push(weight);
+            };
+
+            VertList.prototype.getMatrix = function (dim) {
+                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, null, dim.w, dim.h);
+                var space = dim.h - this.offset * (this.elements.length - 1);
+                var step = Math.floor(space / this.weights.reduce(function (x, y) {
+                    return x + y;
+                }));
+                var nextY = dim.y;
+                for (var i = 0; i < this.elements.length; i++) {
+                    matrix.addOverlay(this.elements[i].getMatrix(new UI.Rect(dim.x, nextY, dim.h, step)));
+                    nextY += this.offset;
+                    nextY += this.weights[i] * step;
+                }
+                return matrix;
+            };
+
+            VertList.prototype.whatIsAt = function (x, y, dim) {
+                var space = dim.h - this.offset * (this.elements.length - 1);
+                var step = Math.floor(space / this.weights.reduce(function (x, y) {
+                    return x + y;
+                }));
+                var nextY = dim.y;
+                for (var i = 0; i < this.elements.length; i++) {
+                    var rect = new UI.Rect(dim.x, nextY, dim.h, step);
+                    if (rect.isWithin(x, y)) {
+                        return { fst: this.elements[i], snd: rect };
+                    }
+                    nextY += this.offset;
+                    nextY += this.weights[i] * step;
+                }
+                return null;
+            };
+
+            VertList.prototype.mouseOver = function () {
+            };
+            VertList.prototype.mouseNotOver = function () {
+            };
+            VertList.prototype.mouseDown = function () {
+            };
+            VertList.prototype.mouseUp = function () {
+            };
             return VertList;
         })();
         UI.VertList = VertList;
