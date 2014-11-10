@@ -102,7 +102,6 @@ module AsciiGame {
 
         private addObjects(matrix: DrawMatrix, objects: Array<C.IObject>): DrawMatrix {
             objects.forEach((o) => {
-                //ConsoleGame.log(e);
                 if (o.x < this.x || o.y < this.y || o.x > this.x + this.width - 1 || o.y > this.y + this.height - 1) {
 
                 }
@@ -118,7 +117,6 @@ module AsciiGame {
         private addEntities(matrix: DrawMatrix, entities: Array<C.IEntity>): DrawMatrix {
 
             entities.forEach((e) => {
-                //ConsoleGame.log(e);
                 if (e.x < this.x || e.y < this.y || e.x > this.x + this.width - 1 || e.y > this.y + this.height - 1) {
 
                 }

@@ -41,9 +41,9 @@
         }
 
         whatIsAt(x: number, y: number, dim: Rect): Common.Tuple2<IElement, Rect> {
-            var space = dim.w - this.offset * (this.elements.length - 1);
+            var space = dim.w - this.offset * (this.elements.length - 1) - 2 * this.offEnds;
             var step = Math.floor(space / this.weights.reduce((x, y) => { return x + y }));
-            var nextX = dim.x;
+            var nextX = dim.x + this.offEnds;
             for (var i = 0; i < this.elements.length; i++) {
                 var rect = new Rect(nextX, dim.y, step, dim.h);
                 if (rect.isWithin(x, y)) {

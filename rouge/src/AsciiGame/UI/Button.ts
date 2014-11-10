@@ -46,7 +46,6 @@ module AsciiGame.UI {
         }
         mouseNotOver() {
             this.state = ButtonState.Up;
-
         }
         mouseDown() {
             if (this.state !== ButtonState.Down) {
@@ -67,7 +66,7 @@ module AsciiGame.UI {
                         return "royalblue";
                     break;
                 case ButtonState.Hover:
-                    return "yellow";
+                    return "gray";
                     break;
                 default:
                     return "navy";

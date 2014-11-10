@@ -28,8 +28,8 @@ module AsciiGame {
                 Settings.DisplayWidth - Settings.SidebarWidth * 2,
                 0,
                 Settings.DisplayHeight - Settings.BottomBarHeight);
-
             this.ui = new GameUI();
+
             this.draw = drawCallback;
             this.update = () => {
                 var middle = this.manager.characters.map((c) => { 
@@ -40,6 +40,7 @@ module AsciiGame {
                 this.camera.centerOn(middle);
                 this.advanceFrame();
             }
+            this.ui.mouseLastOver.attach(() => this.advanceFrame());
             this.manager.currEntity.attach(this.update);
             this.manager.currPath.attach(() => this.advanceFrame());
             this.manager.start();

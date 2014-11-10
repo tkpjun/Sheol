@@ -11,16 +11,19 @@ module AsciiGame {
         private color1 = "midnightblue";
         private color2 = "royalblue";
         private stack: UI.Box[][];
+        private context: UI.Box[];
         private alwaysInContext: UI.Box[];
         private dpad: UI.Box;
         private leftBar: UI.Box;
         private rightBar: UI.Box;
-        private bottomLeft: UI.Box;
-        private bottomRight: UI.Box;
+        private bottomBar: UI.Box[];
+        mouseLastOver: Common.ObservableProperty<UI.IElement>;
 
         constructor() {
             this.alwaysInContext = new Array<UI.Box>();
             this.stack = new Array<Array<UI.Box>>();
+            this.context = new Array<UI.Box>();
+            this.mouseLastOver = new Common.ObservableProperty<UI.IElement>();
 
             this.initDpad();
             this.initLeftBar();
@@ -29,13 +32,74 @@ module AsciiGame {
         }
 
         updateMouseDown(x, y): boolean {
-            return false;
+            var t = this.findTarget(x, y);
+            if (t) {
+                t.mouseDown();
+                this.mouseLastOver.unwrap = t;
+                return true;
+            }
+            else
+                return false;
         }
+
         updateMouseUp(x, y): boolean {
-            return false;
+            var t = this.findTarget(x, y);
+            console.log(this.mouseLastOver.unwrap)
+            if (this.mouseLastOver.unwrap) {
+                this.mouseLastOver.unwrap.mouseUp();
+                if (!t) {
+                    this.mouseLastOver.unwrap = null;
+                }
+            }
+            if (t) {
+                t.mouseOver();
+                this.mouseLastOver.unwrap = t;
+                return true;
+            }
+            else
+                return false;
         }
+
         updateMousemove(x, y): boolean {
-            return false;
+            var t = this.findTarget(x, y);
+            if (t) {
+                if (this.mouseLastOver.unwrap !== t) {
+                    t.mouseOver();
+                    if (this.mouseLastOver.unwrap)
+                        this.mouseLastOver.unwrap.mouseNotOver();
+                    this.mouseLastOver.unwrap = t;
+                    return true;
+                }
+            }
+            else if (this.mouseLastOver.unwrap) {
+                this.mouseLastOver.unwrap.mouseNotOver();
+                this.mouseLastOver.unwrap = null;
+                return false;
+            }
+            else {
+                return false;
+            }
+        }
+
+        private findTarget(x, y): UI.IElement {
+            var target;
+
+            for (var i = 0; i < this.context.length; i++) {
+                target = this.context[i].whatIsAt(x, y);
+                if (target) {
+                    break;
+                }
+            }
+            if (!target) {
+                for (i = 0; i < this.alwaysInContext.length; i++) {
+                    target = this.alwaysInContext[i].whatIsAt(x, y);
+                    if (target) {
+                        break;
+                    }
+                }
+            }
+
+            return target;
         }
 
         private initLeftBar() {
@@ -157,8 +221,8 @@ module AsciiGame {
             var w = Settings.SidebarWidth;
             var hDisp = Settings.DisplayHeight;
             var hThis = 10;
-            var box = new UI.Box(new UI.Rect(0, hDisp - hThis - Settings.BottomBarHeight + 1, w, hThis),
-                new UI.VertList().add(
+            var box = new UI.Box(new UI.Rect(0, hDisp - hThis - Settings.BottomBarHeight, w, hThis),
+                new UI.VertList(1).add(
                     new UI.HoriList(1).add(
                         new UI.Button("q", "NW", () => { }, this.color1)).add(
                         new UI.Button("w", "N", () => { })).add(
@@ -176,6 +240,7 @@ module AsciiGame {
                     )
                 );
             this.dpad = box;
+            this.alwaysInContext.push(this.dpad);
         }
 
         getDPad(): DrawMatrix {
@@ -218,6 +283,7 @@ module AsciiGame {
         }
 
         initBottomBar() {
+            this.bottomBar = new Array<UI.Box>();
             var box = new UI.Box(
                 new UI.Rect(
                     0,
@@ -230,7 +296,7 @@ module AsciiGame {
                     new UI.Button("3", "SPECIAL", () => { })).add(
                     new UI.Button("4", "SWITCH", () => { }))
                 );
-            this.bottomLeft = box;
+            this.bottomBar.push(box);
 
             box = new UI.Box(
                 new UI.Rect(
@@ -242,19 +308,21 @@ module AsciiGame {
                     new UI.Button(null, "INVENTORY", () => { })).add(
                     new UI.Button(null, "MENU", () => { }))
                 );
-            this.bottomRight = box;
+            this.bottomBar.push(box);
+            this.context.push(this.bottomBar[0]);
+            this.context.push(this.bottomBar[1]);
         }
 
         getBottomBar(): DrawMatrix {
-            this.bottomRight.dimensions.x = Settings.DisplayWidth - this.bottomRight.dimensions.w;
+            this.bottomBar[1].dimensions.x = Settings.DisplayWidth - this.bottomBar[1].dimensions.w;
             return new DrawMatrix(
                 0,
                 Settings.DisplayHeight - Settings.BottomBarHeight,
                 Settings.DisplayWidth,
                 Settings.BottomBarHeight,
                 this.color1).
-                addOverlay(this.bottomLeft.getMatrix()).
-                addOverlay(this.bottomRight.getMatrix());
+                addOverlay(this.bottomBar[0].getMatrix()).
+                addOverlay(this.bottomBar[1].getMatrix());
             /*
             var matrix = new DrawMatrix(0,
                 Settings.DisplayHeight - Settings.BottomBarHeight,
