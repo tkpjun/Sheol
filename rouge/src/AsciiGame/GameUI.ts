@@ -28,7 +28,7 @@ module AsciiGame {
             this.initDpad(screen.manager.player);
             this.initLeftBar();
             this.initRightBar();
-            this.initBottomBar();
+            this.initBottomBar(screen.manager.player);
         }
 
         updateMouseDown(x, y): boolean {
@@ -281,17 +281,18 @@ module AsciiGame {
             */
         }
 
-        initBottomBar() {
+        initBottomBar(control: Common.Controllers.Player) {
             this.bottomBar = new Array<UI.Box>();
+            
             var box = new UI.Box(
                 new UI.Rect(
                     0,
                     Settings.DisplayHeight - Settings.BottomBarHeight,
                     45,
                     Settings.BottomBarHeight),
-                new UI.HoriList(1, 1, this.color1).add(
-                    new UI.Button("1", "MOVE", () => { })).add(
-                    new UI.Button("2", "ATTACK", () => { })).add(
+                new UI.HoriList<UI.Button>(1, 1, this.color1).add(
+                    new UI.Button("1", "MOVE", () => { control.switchState(Common.Controllers.States.Move); })).add(
+                    new UI.Button("2", "ATTACK", () => { control.switchState(Common.Controllers.States.Attack); })).add(
                     new UI.Button("3", "SPECIAL", () => { })).add(
                     new UI.Button("4", "SWITCH", () => { }))
                 );
@@ -312,7 +313,23 @@ module AsciiGame {
             this.context.push(this.bottomBar[1]);
         }
 
-        getBottomBar(): DrawMatrix {
+        setBottomBarFocus(index: number) {
+            (<UI.HoriList<UI.Button>>this.bottomBar[0].element).setFocus(index);
+        }
+
+        getBottomBar(control: Common.Controllers.Player): DrawMatrix {
+            switch (control.getState()) {
+                case Common.Controllers.States.Move:
+                    this.setBottomBarFocus(0);
+                    break;
+                case Common.Controllers.States.Attack:
+                    this.setBottomBarFocus(1);
+                    break;
+                default:
+                    this.setBottomBarFocus(null);
+                    break;
+            }
+
             this.bottomBar[1].dimensions.x = Settings.DisplayWidth - this.bottomBar[1].dimensions.w;
             return new DrawMatrix(
                 0,

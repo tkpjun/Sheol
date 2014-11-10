@@ -65,7 +65,7 @@ module AsciiGame {
                 this.manager.level.entities.filter((e) => {
                     return this.camera.sees(e.x, e.y);
                 })));
-            this.draw(this.ui.getBottomBar());
+            this.draw(this.ui.getBottomBar(this.manager.player));
             /*
             var matrix = new DrawMatrix(0, 0, null, Settings.DisplayWidth, Settings.DisplayHeight)
                 .addOverlay(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap))

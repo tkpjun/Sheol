@@ -105,19 +105,40 @@
                     this.confirm();
                     break;
                 case "VK_1":
-                    this.state = States.Move;
-                    var old = this.manager.currPath.unwrap;
-                    this.manager.currPath.unwrap = new AstarPath(old.begin, null, this.char.stats.ap);
+                    this.switchState(States.Move);
+                    //this.state = States.Move;
+                    //var old = this.manager.currPath.unwrap;
+                    //this.manager.currPath.unwrap = new AstarPath(old.begin, null, this.char.stats.ap);
                     break;
                 case "VK_2":
-                    this.state = States.Attack;
-                    var old = this.manager.currPath.unwrap;
-                    this.manager.currPath.unwrap = new StraightPath(old.begin, null, this.char.currWeapon.maxRange);
+                    this.switchState(States.Attack);
+                    //this.state = States.Attack;
+                    //var old = this.manager.currPath.unwrap;
+                    //this.manager.currPath.unwrap = new StraightPath(old.begin, null, this.char.currWeapon.maxRange);
                     break;
                 default:
                     break;
             }
 
+        }
+
+        switchState(state: States) {
+            this.state = state;
+            var old = this.manager.currPath.unwrap;
+            switch (state) {
+                case States.Move:
+                    this.manager.currPath.unwrap = new AstarPath(old.begin, null, this.char.stats.ap);
+                    break;
+                case States.Attack:
+                    this.manager.currPath.unwrap = new StraightPath(old.begin, null, this.char.currWeapon.maxRange);
+                    break;
+                default:
+                    this.manager.currPath.unwrap = null;
+                    break;
+            }
+        }
+        getState(): States {
+            return this.state;
         }
 
         private alterPath(dir: IVector2) {
