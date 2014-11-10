@@ -28,7 +28,7 @@ module AsciiGame {
                 Settings.DisplayWidth - Settings.SidebarWidth * 2,
                 0,
                 Settings.DisplayHeight - Settings.BottomBarHeight);
-            this.ui = new GameUI();
+            this.ui = new GameUI(this);
 
             this.draw = drawCallback;
             this.update = () => {

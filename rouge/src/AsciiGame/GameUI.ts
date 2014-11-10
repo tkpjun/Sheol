@@ -19,13 +19,13 @@ module AsciiGame {
         private bottomBar: UI.Box[];
         mouseLastOver: Common.ObservableProperty<UI.IElement>;
 
-        constructor() {
+        constructor(screen: GameScreen) {
             this.alwaysInContext = new Array<UI.Box>();
             this.stack = new Array<Array<UI.Box>>();
             this.context = new Array<UI.Box>();
             this.mouseLastOver = new Common.ObservableProperty<UI.IElement>();
 
-            this.initDpad();
+            this.initDpad(screen.manager.player);
             this.initLeftBar();
             this.initRightBar();
             this.initBottomBar();
@@ -44,7 +44,6 @@ module AsciiGame {
 
         updateMouseUp(x, y): boolean {
             var t = this.findTarget(x, y);
-            console.log(this.mouseLastOver.unwrap)
             if (this.mouseLastOver.unwrap) {
                 this.mouseLastOver.unwrap.mouseUp();
                 if (!t) {
@@ -217,26 +216,26 @@ module AsciiGame {
             return matrix;
         }
 
-        private initDpad() {
+        private initDpad(control: Common.Controllers.Player) {
             var w = Settings.SidebarWidth;
             var hDisp = Settings.DisplayHeight;
             var hThis = 10;
             var box = new UI.Box(new UI.Rect(0, hDisp - hThis - Settings.BottomBarHeight, w, hThis),
                 new UI.VertList(1).add(
                     new UI.HoriList(1).add(
-                        new UI.Button("q", "NW", () => { }, this.color1)).add(
-                        new UI.Button("w", "N", () => { })).add(
-                        new UI.Button("e", "NE", () => { }, this.color1))
+                        new UI.Button("q", "NW", () => { control.update("VK_Q"); }, this.color1)).add(
+                        new UI.Button("w", "N", () => { control.update("VK_W"); })).add(
+                        new UI.Button("e", "NE", () => { control.update("VK_E"); }, this.color1))
                     ).add(
                     new UI.HoriList(1).add(
-                        new UI.Button("a", "W ", () => { })).add(
-                        new UI.Button("f", "PICK", () => { }, this.color1)).add(
-                        new UI.Button("d", "E", () => { }))
+                        new UI.Button("a", "W ", () => { control.update("VK_A"); })).add(
+                        new UI.Button("f", "PICK", () => { control.update("VK_F"); }, this.color1)).add(
+                        new UI.Button("d", "E", () => { control.update("VK_D"); }))
                     ).add(
                     new UI.HoriList(1).add(
-                        new UI.Button("z", "SW", () => { }, this.color1)).add(
-                        new UI.Button("x", "S ", () => { })).add(
-                        new UI.Button("c", "SE", () => { }, this.color1))
+                        new UI.Button("z", "SW", () => { control.update("VK_Z"); }, this.color1)).add(
+                        new UI.Button("x", "S ", () => { control.update("VK_X"); })).add(
+                        new UI.Button("c", "SE", () => { control.update("VK_C"); }, this.color1))
                     )
                 );
             this.dpad = box;
