@@ -15,7 +15,7 @@ module AsciiGame {
         private alwaysInContext: UI.Box[];
         private dpad: UI.Box;
         private leftBar: UI.Box;
-        private rightBar: UI.Box;
+        private rightBar: UI.Box[];
         private bottomBar: UI.Box[];
         mouseLastOver: Common.ObservableProperty<UI.IElement>;
 
@@ -152,17 +152,40 @@ module AsciiGame {
         }
 
         initRightBar() {
+            var w = Settings.SidebarWidth;
+            this.rightBar = new Array<UI.Box>();
+            var enemyButtons = new UI.Box(new UI.Rect(0, 2, 3, 9 * 3),
+                new UI.VertList());
+            for (var i = 0; i < 9; i++) {
+                if (i % 2 == 0) {
+                    (<UI.VertList<UI.Button>>enemyButtons.element).add(
+                        new UI.Button("^" + (i + 1), "", () => { }));
+                }
+                else {
+                    (<UI.VertList<UI.Button>>enemyButtons.element).add(
+                        new UI.Button("^" + (i + 1), "", () => { }, this.color1));
+                }
+            }
+            this.rightBar.push(enemyButtons);
+            this.context.push(enemyButtons);
 
+            var utilButtons = new UI.Box(new UI.Rect(0, Settings.DisplayHeight - 3, w, 2),
+                new UI.HoriList(1, 2).add(
+                    new UI.Button(null, "ITEMS", () => { })).add(
+                    new UI.Button(null, "MENU", () => { })))
+            this.rightBar.push(utilButtons);
+            this.context.push(utilButtons);
         }
 
         getRightBar(scheduler: ROT.Scheduler.Action,
             current: Entitites.Entity,
             seen: Array<C.IEntity>,
+            control: Common.Controllers.Player,
             baseTime?: number): DrawMatrix {
             var w = Settings.SidebarWidth;
             var wDisp = Settings.DisplayWidth;
             var leftEdge = wDisp - w;
-            var matrix = new DrawMatrix(leftEdge, 0, w, Settings.DisplayHeight - 1);
+            var matrix = new DrawMatrix(leftEdge, 0, w, Settings.DisplayHeight);
             if (!baseTime) baseTime = 0;
 
             var events = scheduler._queue._events;
@@ -181,37 +204,30 @@ module AsciiGame {
                 });
             both.unshift({ entity: current, time: baseTime });
 
+            this.rightBar[0].dimensions.x = leftEdge + w - 4;
+            this.rightBar[1].dimensions.x = leftEdge;
+
             for (var i = 0; i < Settings.SidebarWidth; i++) {
                 matrix.matrix[i][0] = { symbol: " ", bgColor: this.color1 }
-        }
+            }
             matrix.addString(5, 0, "QUEUE");
             matrix.addString(0, 1, "--- current ---", null, "green");
+            (<UI.VertList<UI.Button>>this.rightBar[0].element).setVisibleElements(both.length);
+
+            function createClickAt(x: number, y: number): () => void {
+                return () => { control.updateClick(x, y) };
+            }
             for (var i = 0; i < both.length && i < 9; i++) {
                 var drawable = getDrawable(both[i].entity);
-                matrix.addString(1, i * 3 + 2, both[i].entity.name, Settings.SidebarWidth - 4);
-                matrix.addString(1, i * 3 + 3, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, Settings.SidebarWidth - 4);
-                //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, "---");
-                //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, "| |");
-                if (i % 2 == 0) {
-                    matrix.addString(Settings.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, this.color2);
-                    matrix.addString(Settings.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, this.color2);
-                }
-                else {
-                    matrix.addString(Settings.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, this.color1);
-                    matrix.addString(Settings.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, this.color1);
-                }
-                //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 4, "---");
-                /*
-                if (both[i].time === 0) {
-                    matrix.addString(0, i * 3 + 1, "---  ready  ---", null, "green");
-                }
-                else {
-                    matrix.addString(0, i * 3 + 1, "--- +" + (<number>both[i].time).toFixed(2) + "tu ---", null, "red");           
-                }*/
+                var entity = both[i].entity;
+                matrix.addString(1, i * 3 + 2, entity.name, Settings.SidebarWidth - 4);
+                matrix.addString(1, i * 3 + 3, "HP:" + entity.stats.hp + "/" + entity.stats.hpMax, Settings.SidebarWidth - 4);
+                var button = (<UI.VertList<UI.Button>>this.rightBar[0].element).getAtIndex(i);
+                button.label = drawable.symbol;
+                button.switchCallback(createClickAt(entity.x, entity.y));
             }
-            matrix.addString(Settings.SidebarWidth - 7, 29, "space:");
-            matrix.addString(Settings.SidebarWidth - 7, 30, " END  ", null, null, this.color2);
-            matrix.addString(Settings.SidebarWidth - 7, 31, " TURN ", null, null, this.color2);
+            matrix.addOverlay(this.rightBar[0].getMatrix());
+            matrix.addOverlay(this.rightBar[1].getMatrix());
 
             return matrix;
         }
@@ -220,7 +236,7 @@ module AsciiGame {
             var w = Settings.SidebarWidth;
             var hDisp = Settings.DisplayHeight;
             var hThis = 10;
-            var box = new UI.Box(new UI.Rect(0, hDisp - hThis - Settings.BottomBarHeight, w, hThis),
+            var box = new UI.Box(new UI.Rect(0, hDisp - hThis, w, hThis),
                 new UI.VertList(1).add(
                     new UI.HoriList(1).add(
                         new UI.Button("q", "NW", () => { control.update("VK_Q"); }, this.color1)).add(
@@ -245,10 +261,6 @@ module AsciiGame {
         getDPad(): DrawMatrix {
             return this.dpad.getMatrix();
             /*
-            var w = Settings.SidebarWidth;
-            var hDisp = Settings.DisplayHeight;
-            var hThis = 10;
-            var matrix = new DrawMatrix(0, hDisp - hThis - Settings.BottomBarHeight, null, w, hThis);
 
             matrix.addString(1, 1, "    |    |    ");
             matrix.addString(1, 2, "    |    |    ");
@@ -258,26 +270,6 @@ module AsciiGame {
             matrix.addString(1, 6, "----+----+----");
             matrix.addString(1, 7, "    |    |    ");
             matrix.addString(1, 8, "    |    |    ");
-            matrix.addString(1, 1, "q   ", null, null, this.color1);
-            matrix.addString(1, 2, " NW ", null, null, this.color1);
-            matrix.addString(6, 1, "w   ", null, null, this.color2);
-            matrix.addString(6, 2, "  N ", null, null, this.color2);
-            matrix.addString(11, 1, "e   ", null, null, this.color1);
-            matrix.addString(11, 2, " NE ", null, null, this.color1);
-            matrix.addString(1, 4, "a   ", null, null, this.color2);
-            matrix.addString(1, 5, " W  ", null, null, this.color2);
-            matrix.addString(6, 4, "f   ", null, null, this.color1);
-            matrix.addString(6, 5, "PICK", null, null, this.color1);
-            matrix.addString(11, 4, "d   ", null, null, this.color2);
-            matrix.addString(11, 5, "  E ", null, null, this.color2);
-            matrix.addString(1, 7, "z   ", null, null, this.color1);
-            matrix.addString(1, 8, " SW ", null, null, this.color1);
-            matrix.addString(6, 7, "x   ", null, null, this.color2);
-            matrix.addString(6, 8, " S  ", null, null, this.color2);
-            matrix.addString(11, 7, "c   ", null, null, this.color1);
-            matrix.addString(11, 8, " SE ", null, null, this.color1);
-
-            return matrix;
             */
         }
 
@@ -286,27 +278,26 @@ module AsciiGame {
             
             var box = new UI.Box(
                 new UI.Rect(
-                    0,
+                    Settings.SidebarWidth,
                     Settings.DisplayHeight - Settings.BottomBarHeight,
-                    45,
+                    30,
                     Settings.BottomBarHeight),
-                new UI.HoriList<UI.Button>(1, 1, this.color1).add(
+                new UI.HoriList<UI.Button>(0, 2, this.color1).add(
                     new UI.Button("1", "MOVE", () => { control.switchState(Common.Controllers.States.Move); })).add(
                     new UI.Button("2", "ATTACK", () => { control.switchState(Common.Controllers.States.Attack); })).add(
-                    new UI.Button("3", "SPECIAL", () => { })).add(
-                    new UI.Button("4", "SWITCH", () => { }))
+                    new UI.Button("3", "SKILL", () => { }))
                 );
             this.bottomBar.push(box);
 
             box = new UI.Box(
                 new UI.Rect(
-                    50,
+                    Settings.SidebarWidth,
                     Settings.DisplayHeight - Settings.BottomBarHeight,
-                    25,
+                    18,
                     Settings.BottomBarHeight),
-                new UI.HoriList(1, 1, this.color1).add(
-                    new UI.Button(null, "INVENTORY", () => { })).add(
-                    new UI.Button(null, "MENU", () => { }))
+                new UI.HoriList(0, 2, this.color1).add(
+                    new UI.Button(null, "END TURN", () => { control.update("VK_SPACE") })).add(
+                    new UI.Button(null, "QUICKBAR", () => { }))                 
                 );
             this.bottomBar.push(box);
             this.context.push(this.bottomBar[0]);
@@ -330,44 +321,15 @@ module AsciiGame {
                     break;
             }
 
-            this.bottomBar[1].dimensions.x = Settings.DisplayWidth - this.bottomBar[1].dimensions.w;
+            this.bottomBar[1].dimensions.x = Settings.DisplayWidth - this.bottomBar[1].dimensions.w - Settings.SidebarWidth;
             return new DrawMatrix(
-                0,
+                Settings.SidebarWidth,
                 Settings.DisplayHeight - Settings.BottomBarHeight,
-                Settings.DisplayWidth,
+                Settings.DisplayWidth - 2 * Settings.SidebarWidth,
                 Settings.BottomBarHeight,
                 this.color1).
                 addOverlay(this.bottomBar[0].getMatrix()).
                 addOverlay(this.bottomBar[1].getMatrix());
-            /*
-            var matrix = new DrawMatrix(0,
-                Settings.DisplayHeight - Settings.BottomBarHeight,
-                null,
-                Settings.DisplayWidth,
-                Settings.BottomBarHeight);
-
-            for (var i = 0; i < matrix.matrix.length; i++) {
-                for (var j = 0; j < matrix.matrix[0].length; j++) {
-                    matrix.matrix[i][j] = { symbol: " ", bgColor: this.color1 };
-                }
-            }
-            matrix.addString(1, 0, "1");
-            matrix.addString(2, 0, "  MOVE  ", null, null, this.color2);
-            matrix.addString(11, 0, "2");
-            matrix.addString(12, 0, " ATTACK ", null, null, this.color2);
-            matrix.addString(21, 0, "3");
-            matrix.addString(22, 0, " SPECIAL ", null, null, this.color2);
-            matrix.addString(32, 0, "4");
-            matrix.addString(33, 0, " SWITCH ", null, null, this.color2);
-
-            matrix.addString(Settings.DisplayWidth - 32, 0, "CON");
-            matrix.addString(Settings.DisplayWidth - 29, 0, " v ", null, null, this.color2);
-            matrix.addString(Settings.DisplayWidth - 25, 0, " ^ ", null, null, this.color2);
-            matrix.addString(Settings.DisplayWidth - 20, 0, "INVENTORY", null, null, this.color2);
-            matrix.addString(Settings.DisplayWidth - 9, 0, "  MENU  ", null, null, this.color2);
-
-            return matrix;
-*/
         }
     }
 }

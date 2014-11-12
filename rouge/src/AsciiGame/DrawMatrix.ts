@@ -125,7 +125,7 @@ module AsciiGame {
                     else {
                         var c1 = this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color;
                         var c2 = other.matrix[i][j].bgColor;
-                        if (!c1) c1 = "black";
+                        if (!c1) c1 = "white";
                         if (!c2) c2 = "black";
                         if (alpha) {
                             this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color =

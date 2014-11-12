@@ -43,7 +43,7 @@ module AsciiGame {
             var lt = words[startIndex].length;
             var i = startIndex + 1;
             var next = words[i];
-            while (next && lt + next.length + 1 < limit) {
+            while (next && lt + next.length + 1 <= limit) {
                 lt += next.length + 1;
                 line += " " + next;
                 i += 1;

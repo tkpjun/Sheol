@@ -49,7 +49,6 @@ module AsciiGame {
 
         advanceFrame() {
             this.manager.engine.lock();
-
             this.camera.updateView(this.manager.level);
             this.draw(this.camera.view.addPath(
                 this.manager.currPath.unwrap,
@@ -64,7 +63,8 @@ module AsciiGame {
                 this.manager.currEntity.unwrap,
                 this.manager.level.entities.filter((e) => {
                     return this.camera.sees(e.x, e.y);
-                })));
+                }),
+                this.manager.player));
             this.draw(this.ui.getBottomBar(this.manager.player));
             /*
             var matrix = new DrawMatrix(0, 0, null, Settings.DisplayWidth, Settings.DisplayHeight)

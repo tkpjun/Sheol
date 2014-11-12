@@ -6,7 +6,7 @@
             return 33;
         }
         static get MapHeight(): number {
-            return 33;
+            return 32;
         }
     }
 } 

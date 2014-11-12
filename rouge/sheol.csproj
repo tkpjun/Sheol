@@ -51,7 +51,7 @@
     <TypeScriptCompile Include="src\Common\Entities\Skill.ts" />
     <TypeScriptCompile Include="src\Common\Entities\Skillset.ts" />
     <TypeScriptCompile Include="src\Common\Entities\Trait.ts" />
-    <TypeScriptCompile Include="src\AsciiGame\ConsoleGame.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\AsciiGame.ts" />
     <TypeScriptCompile Include="src\AsciiGame\Core\Game.ts" />
     <TypeScriptCompile Include="src\Common\Controllers\ChangeProperty.ts" />
     <TypeScriptCompile Include="src\Common\Controllers\Controllers.ts" />

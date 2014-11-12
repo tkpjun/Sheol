@@ -7,13 +7,21 @@ module AsciiGame.UI {
         corner: string;
         label: string;
         state: ButtonState;
+        private cb: () => void;
 
         constructor(corner: string, label: string, callback, color?: string) {
             super(callback);
+            this.cb = callback;
             this.corner = corner;
+            if (!corner) this.corner = "";
             this.label = label;
             this.state = ButtonState.Up;
             this.color = color;
+        }
+
+        switchCallback(callback: () => void) {
+            this.detach(this.cb);
+            this.attach(callback);
         }
 
         getMatrix(dim: Rect): DrawMatrix {
@@ -25,7 +33,7 @@ module AsciiGame.UI {
             var labelX, labelY;
             labelY = Math.floor(dim.h / 2);
             if (this.label.length >= dim.w) {
-                if (labelY == 0 && this.corner)
+                if (labelY == 0 && this.corner.length > 0)
                     labelX = this.corner.length + 1;
                 else
                     labelX = 0;
@@ -33,7 +41,10 @@ module AsciiGame.UI {
             else {
                 labelX = Math.floor(dim.w / 2) - Math.floor(this.label.length / 2);
             }
-            matrix.addString(labelX, labelY, this.label, dim.w - 1);
+            if (dim.h <= 1 && this.corner.length > 0) {
+                labelX = Math.max(labelX, this.corner.length + 1);
+            }
+            matrix.addString(labelX, labelY, this.label, dim.w);
             return matrix;
         }
 

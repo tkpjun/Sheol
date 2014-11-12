@@ -1,5 +1,94 @@
 ﻿var Common;
 (function (Common) {
+    (function (Entities) {
+        (function (Skills) {
+            Skills[Skills["prowess"] = 0] = "prowess";
+            Skills[Skills["perception"] = 1] = "perception";
+            Skills[Skills["wrestling"] = 2] = "wrestling";
+            Skills[Skills["evasion"] = 3] = "evasion";
+            Skills[Skills["fortitude"] = 4] = "fortitude";
+            Skills[Skills["will"] = 5] = "will";
+            Skills[Skills["stealth"] = 6] = "stealth";
+        })(Entities.Skills || (Entities.Skills = {}));
+        var Skills = Entities.Skills;
+
+        function getEnemy(name) {
+            switch (name) {
+                default:
+                    return new Entities.Enemy(name, new Entities.Statset(30, 30, 10, 10));
+                    break;
+            }
+        }
+        Entities.getEnemy = getEnemy;
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+/// <reference path="../Common/Common.ts" />
+/// <reference path="../Common/Entities/Entities.ts" />
+var AsciiGame;
+(function (AsciiGame) {
+    var Entities = Common.Entities;
+
+    function symbolO(item) {
+        throw ("TODO");
+    }
+    AsciiGame.symbolO = symbolO;
+
+    function colorO(item) {
+        throw ("TODO");
+    }
+    AsciiGame.colorO = colorO;
+
+    function symbolE(entity) {
+        throw ("TODO");
+    }
+    AsciiGame.symbolE = symbolE;
+
+    function colorE(entity) {
+        throw ("TODO");
+    }
+    AsciiGame.colorE = colorE;
+
+    function getDrawable(entity) {
+        if (entity instanceof Entities.PlayerChar) {
+            return { symbol: "@" };
+        } else {
+            return { symbol: "e" };
+        }
+    }
+    AsciiGame.getDrawable = getDrawable;
+
+    function wrapString(str, limit) {
+        var arr = new Array();
+        var split = str.split(" ");
+        function nextLine(words, startIndex) {
+            var line = words[startIndex];
+            var lt = words[startIndex].length;
+            var i = startIndex + 1;
+            var next = words[i];
+            while (next && lt + next.length + 1 <= limit) {
+                lt += next.length + 1;
+                line += " " + next;
+                i += 1;
+                next = words[i];
+            }
+
+            return [line, i];
+        }
+
+        var wordsUsed = 0;
+        while (wordsUsed < split.length) {
+            var line = nextLine(split, wordsUsed);
+            arr.push(line[0]);
+            wordsUsed = line[1];
+        }
+
+        return arr;
+    }
+    AsciiGame.wrapString = wrapString;
+})(AsciiGame || (AsciiGame = {}));
+var Common;
+(function (Common) {
     (function (Dungeon) {
         (function (MapTypes) {
             MapTypes[MapTypes["Mines"] = 0] = "Mines";
@@ -40,31 +129,6 @@
     })(Common.Dungeon || (Common.Dungeon = {}));
     var Dungeon = Common.Dungeon;
 })(Common || (Common = {}));
-var Common;
-(function (Common) {
-    (function (Entities) {
-        (function (Skills) {
-            Skills[Skills["prowess"] = 0] = "prowess";
-            Skills[Skills["perception"] = 1] = "perception";
-            Skills[Skills["wrestling"] = 2] = "wrestling";
-            Skills[Skills["evasion"] = 3] = "evasion";
-            Skills[Skills["fortitude"] = 4] = "fortitude";
-            Skills[Skills["will"] = 5] = "will";
-            Skills[Skills["stealth"] = 6] = "stealth";
-        })(Entities.Skills || (Entities.Skills = {}));
-        var Skills = Entities.Skills;
-
-        function getEnemy(name) {
-            switch (name) {
-                default:
-                    return new Entities.Enemy(name, new Entities.Statset(30, 30, 10, 10));
-                    break;
-            }
-        }
-        Entities.getEnemy = getEnemy;
-    })(Common.Entities || (Common.Entities = {}));
-    var Entities = Common.Entities;
-})(Common || (Common = {}));
 /// <reference path="../Common/Common.ts" />
 /// <reference path="../Common/Dungeon/Dungeon.ts" />
 /// <reference path="../Common/Entities/Entities.ts" />
@@ -77,7 +141,7 @@ var AsciiGame;
             this.xOffset = xOffset;
             this.yOffset = yOffset;
             this.x = 0;
-            this.y = 0;
+            this.y = -1;
         }
         Object.defineProperty(Camera.prototype, "view", {
             get: function () {
@@ -255,6 +319,61 @@ var AsciiGame;
     })(AsciiGame.Core || (AsciiGame.Core = {}));
     var Core = AsciiGame.Core;
 })(AsciiGame || (AsciiGame = {}));
+var AsciiGame;
+(function (AsciiGame) {
+    (function (Core) {
+        var Game = (function () {
+            function Game() {
+                var _this = this;
+                this.display = new ROT.Display({ width: AsciiGame.Settings.DisplayWidth, height: AsciiGame.Settings.DisplayHeight });
+                this.gameScreen = new AsciiGame.GameScreen(function (d) {
+                    return _this.draw(d);
+                });
+
+                /*this.gameScreen.nextToDraw.attach(() => {
+                this.draw(this.gameScreen.nextToDraw.unwrap);
+                });*/
+                this.screen = this.gameScreen;
+                Core.Control.init(this);
+
+                //GameUI.init();
+                var resize = function () {
+                    var size = _this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight);
+                    _this.display.setOptions({ fontSize: size });
+
+                    while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) >= size) {
+                        _this.display.setOptions({ width: _this.display.getOptions().width + 1 });
+                    }
+                    while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) < size) {
+                        _this.display.setOptions({ width: _this.display.getOptions().width - 1 });
+                    }
+
+                    AsciiGame.Settings.DisplayWidth = _this.display.getOptions().width;
+                    _this.gameScreen.camera.width = AsciiGame.Settings.DisplayWidth - AsciiGame.Settings.SidebarWidth * 2;
+                    _this.gameScreen.update();
+                    //console.log((window.innerWidth / window.innerHeight).toFixed(2));
+                    //console.log(this.display.getOptions().width);
+                };
+                window.onresize = resize;
+                resize();
+            }
+            Game.prototype.draw = function (matrix) {
+                //this.display.clear();
+                matrix.draw(this.display);
+                //Eventual goal: the game logic should be a web worker,
+                //with control sending string messages of DOM events to it
+                //and it sending JSON:ed DrawMatrixes to this
+            };
+            return Game;
+        })();
+        Core.Game = Game;
+    })(AsciiGame.Core || (AsciiGame.Core = {}));
+    var Core = AsciiGame.Core;
+})(AsciiGame || (AsciiGame = {}));
+
+window.onload = function () {
+    document.getElementById("content").appendChild(new AsciiGame.Core.Game().display.getContainer());
+};
 var Common;
 (function (Common) {
     (function (Controllers) {
@@ -432,7 +551,7 @@ var AsciiGame;
                         var c1 = this.matrix[i + other.xOffset - this.xOffset][j + other.yOffset - this.yOffset].color;
                         var c2 = other.matrix[i][j].bgColor;
                         if (!c1)
-                            c1 = "black";
+                            c1 = "white";
                         if (!c2)
                             c2 = "black";
                         if (alpha) {
@@ -518,14 +637,13 @@ var AsciiGame;
         GameScreen.prototype.advanceFrame = function () {
             var _this = this;
             this.manager.engine.lock();
-
             this.camera.updateView(this.manager.level);
             this.draw(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap).addOverlay(this.textBox.getMatrix(this.camera.width), 0.75));
             this.draw(this.ui.getLeftBar(this.manager.characters));
             this.draw(this.ui.getDPad());
             this.draw(this.ui.getRightBar(this.manager.level.scheduler, this.manager.currEntity.unwrap, this.manager.level.entities.filter(function (e) {
                 return _this.camera.sees(e.x, e.y);
-            })));
+            }), this.manager.player));
             this.draw(this.ui.getBottomBar(this.manager.player));
 
             /*
@@ -713,13 +831,33 @@ var AsciiGame;
         };
 
         GameUI.prototype.initRightBar = function () {
+            var w = AsciiGame.Settings.SidebarWidth;
+            this.rightBar = new Array();
+            var enemyButtons = new AsciiGame.UI.Box(new AsciiGame.UI.Rect(0, 2, 3, 9 * 3), new AsciiGame.UI.VertList());
+            for (var i = 0; i < 9; i++) {
+                if (i % 2 == 0) {
+                    enemyButtons.element.add(new AsciiGame.UI.Button("^" + (i + 1), "", function () {
+                    }));
+                } else {
+                    enemyButtons.element.add(new AsciiGame.UI.Button("^" + (i + 1), "", function () {
+                    }, this.color1));
+                }
+            }
+            this.rightBar.push(enemyButtons);
+            this.context.push(enemyButtons);
+
+            var utilButtons = new AsciiGame.UI.Box(new AsciiGame.UI.Rect(0, AsciiGame.Settings.DisplayHeight - 3, w, 2), new AsciiGame.UI.HoriList(1, 2).add(new AsciiGame.UI.Button(null, "ITEMS", function () {
+            })).add(new AsciiGame.UI.Button(null, "MENU", function () {
+            })));
+            this.rightBar.push(utilButtons);
+            this.context.push(utilButtons);
         };
 
-        GameUI.prototype.getRightBar = function (scheduler, current, seen, baseTime) {
+        GameUI.prototype.getRightBar = function (scheduler, current, seen, control, baseTime) {
             var w = AsciiGame.Settings.SidebarWidth;
             var wDisp = AsciiGame.Settings.DisplayWidth;
             var leftEdge = wDisp - w;
-            var matrix = new AsciiGame.DrawMatrix(leftEdge, 0, w, AsciiGame.Settings.DisplayHeight - 1);
+            var matrix = new AsciiGame.DrawMatrix(leftEdge, 0, w, AsciiGame.Settings.DisplayHeight);
             if (!baseTime)
                 baseTime = 0;
 
@@ -738,37 +876,32 @@ var AsciiGame;
             });
             both.unshift({ entity: current, time: baseTime });
 
+            this.rightBar[0].dimensions.x = leftEdge + w - 4;
+            this.rightBar[1].dimensions.x = leftEdge;
+
             for (var i = 0; i < AsciiGame.Settings.SidebarWidth; i++) {
                 matrix.matrix[i][0] = { symbol: " ", bgColor: this.color1 };
             }
             matrix.addString(5, 0, "QUEUE");
             matrix.addString(0, 1, "--- current ---", null, "green");
+            this.rightBar[0].element.setVisibleElements(both.length);
+
+            function createClickAt(x, y) {
+                return function () {
+                    control.updateClick(x, y);
+                };
+            }
             for (var i = 0; i < both.length && i < 9; i++) {
                 var drawable = AsciiGame.getDrawable(both[i].entity);
-                matrix.addString(1, i * 3 + 2, both[i].entity.name, AsciiGame.Settings.SidebarWidth - 4);
-                matrix.addString(1, i * 3 + 3, "HP:" + both[i].entity.stats.hp + "/" + both[i].entity.stats.hpMax, AsciiGame.Settings.SidebarWidth - 4);
-
-                //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 2, "---");
-                //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 3, "| |");
-                if (i % 2 == 0) {
-                    matrix.addString(AsciiGame.Settings.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, this.color2);
-                    matrix.addString(AsciiGame.Settings.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, this.color2);
-                } else {
-                    matrix.addString(AsciiGame.Settings.SidebarWidth - 4, i * 3 + 2, "^" + (i + 1) + " ", null, null, this.color1);
-                    matrix.addString(AsciiGame.Settings.SidebarWidth - 4, i * 3 + 3, " " + drawable.symbol + " ", null, drawable.color, this.color1);
-                }
-                //matrix.addString(Constants.SidebarWidth - 4, i * 3 + 4, "---");
-                /*
-                if (both[i].time === 0) {
-                matrix.addString(0, i * 3 + 1, "---  ready  ---", null, "green");
-                }
-                else {
-                matrix.addString(0, i * 3 + 1, "--- +" + (<number>both[i].time).toFixed(2) + "tu ---", null, "red");
-                }*/
+                var entity = both[i].entity;
+                matrix.addString(1, i * 3 + 2, entity.name, AsciiGame.Settings.SidebarWidth - 4);
+                matrix.addString(1, i * 3 + 3, "HP:" + entity.stats.hp + "/" + entity.stats.hpMax, AsciiGame.Settings.SidebarWidth - 4);
+                var button = this.rightBar[0].element.getAtIndex(i);
+                button.label = drawable.symbol;
+                button.switchCallback(createClickAt(entity.x, entity.y));
             }
-            matrix.addString(AsciiGame.Settings.SidebarWidth - 7, 29, "space:");
-            matrix.addString(AsciiGame.Settings.SidebarWidth - 7, 30, " END  ", null, null, this.color2);
-            matrix.addString(AsciiGame.Settings.SidebarWidth - 7, 31, " TURN ", null, null, this.color2);
+            matrix.addOverlay(this.rightBar[0].getMatrix());
+            matrix.addOverlay(this.rightBar[1].getMatrix());
 
             return matrix;
         };
@@ -777,7 +910,7 @@ var AsciiGame;
             var w = AsciiGame.Settings.SidebarWidth;
             var hDisp = AsciiGame.Settings.DisplayHeight;
             var hThis = 10;
-            var box = new AsciiGame.UI.Box(new AsciiGame.UI.Rect(0, hDisp - hThis - AsciiGame.Settings.BottomBarHeight, w, hThis), new AsciiGame.UI.VertList(1).add(new AsciiGame.UI.HoriList(1).add(new AsciiGame.UI.Button("q", "NW", function () {
+            var box = new AsciiGame.UI.Box(new AsciiGame.UI.Rect(0, hDisp - hThis, w, hThis), new AsciiGame.UI.VertList(1).add(new AsciiGame.UI.HoriList(1).add(new AsciiGame.UI.Button("q", "NW", function () {
                 control.update("VK_Q");
             }, this.color1)).add(new AsciiGame.UI.Button("w", "N", function () {
                 control.update("VK_W");
@@ -803,10 +936,6 @@ var AsciiGame;
         GameUI.prototype.getDPad = function () {
             return this.dpad.getMatrix();
             /*
-            var w = Settings.SidebarWidth;
-            var hDisp = Settings.DisplayHeight;
-            var hThis = 10;
-            var matrix = new DrawMatrix(0, hDisp - hThis - Settings.BottomBarHeight, null, w, hThis);
             
             matrix.addString(1, 1, "    |    |    ");
             matrix.addString(1, 2, "    |    |    ");
@@ -816,43 +945,23 @@ var AsciiGame;
             matrix.addString(1, 6, "----+----+----");
             matrix.addString(1, 7, "    |    |    ");
             matrix.addString(1, 8, "    |    |    ");
-            matrix.addString(1, 1, "q   ", null, null, this.color1);
-            matrix.addString(1, 2, " NW ", null, null, this.color1);
-            matrix.addString(6, 1, "w   ", null, null, this.color2);
-            matrix.addString(6, 2, "  N ", null, null, this.color2);
-            matrix.addString(11, 1, "e   ", null, null, this.color1);
-            matrix.addString(11, 2, " NE ", null, null, this.color1);
-            matrix.addString(1, 4, "a   ", null, null, this.color2);
-            matrix.addString(1, 5, " W  ", null, null, this.color2);
-            matrix.addString(6, 4, "f   ", null, null, this.color1);
-            matrix.addString(6, 5, "PICK", null, null, this.color1);
-            matrix.addString(11, 4, "d   ", null, null, this.color2);
-            matrix.addString(11, 5, "  E ", null, null, this.color2);
-            matrix.addString(1, 7, "z   ", null, null, this.color1);
-            matrix.addString(1, 8, " SW ", null, null, this.color1);
-            matrix.addString(6, 7, "x   ", null, null, this.color2);
-            matrix.addString(6, 8, " S  ", null, null, this.color2);
-            matrix.addString(11, 7, "c   ", null, null, this.color1);
-            matrix.addString(11, 8, " SE ", null, null, this.color1);
-            
-            return matrix;
             */
         };
 
         GameUI.prototype.initBottomBar = function (control) {
             this.bottomBar = new Array();
 
-            var box = new AsciiGame.UI.Box(new AsciiGame.UI.Rect(0, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight, 45, AsciiGame.Settings.BottomBarHeight), new AsciiGame.UI.HoriList(1, 1, this.color1).add(new AsciiGame.UI.Button("1", "MOVE", function () {
+            var box = new AsciiGame.UI.Box(new AsciiGame.UI.Rect(AsciiGame.Settings.SidebarWidth, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight, 30, AsciiGame.Settings.BottomBarHeight), new AsciiGame.UI.HoriList(0, 2, this.color1).add(new AsciiGame.UI.Button("1", "MOVE", function () {
                 control.switchState(0 /* Move */);
             })).add(new AsciiGame.UI.Button("2", "ATTACK", function () {
                 control.switchState(1 /* Attack */);
-            })).add(new AsciiGame.UI.Button("3", "SPECIAL", function () {
-            })).add(new AsciiGame.UI.Button("4", "SWITCH", function () {
+            })).add(new AsciiGame.UI.Button("3", "SKILL", function () {
             })));
             this.bottomBar.push(box);
 
-            box = new AsciiGame.UI.Box(new AsciiGame.UI.Rect(50, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight, 25, AsciiGame.Settings.BottomBarHeight), new AsciiGame.UI.HoriList(1, 1, this.color1).add(new AsciiGame.UI.Button(null, "INVENTORY", function () {
-            })).add(new AsciiGame.UI.Button(null, "MENU", function () {
+            box = new AsciiGame.UI.Box(new AsciiGame.UI.Rect(AsciiGame.Settings.SidebarWidth, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight, 18, AsciiGame.Settings.BottomBarHeight), new AsciiGame.UI.HoriList(0, 2, this.color1).add(new AsciiGame.UI.Button(null, "END TURN", function () {
+                control.update("VK_SPACE");
+            })).add(new AsciiGame.UI.Button(null, "QUICKBAR", function () {
             })));
             this.bottomBar.push(box);
             this.context.push(this.bottomBar[0]);
@@ -876,37 +985,8 @@ var AsciiGame;
                     break;
             }
 
-            this.bottomBar[1].dimensions.x = AsciiGame.Settings.DisplayWidth - this.bottomBar[1].dimensions.w;
-            return new AsciiGame.DrawMatrix(0, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight, AsciiGame.Settings.DisplayWidth, AsciiGame.Settings.BottomBarHeight, this.color1).addOverlay(this.bottomBar[0].getMatrix()).addOverlay(this.bottomBar[1].getMatrix());
-            /*
-            var matrix = new DrawMatrix(0,
-            Settings.DisplayHeight - Settings.BottomBarHeight,
-            null,
-            Settings.DisplayWidth,
-            Settings.BottomBarHeight);
-            
-            for (var i = 0; i < matrix.matrix.length; i++) {
-            for (var j = 0; j < matrix.matrix[0].length; j++) {
-            matrix.matrix[i][j] = { symbol: " ", bgColor: this.color1 };
-            }
-            }
-            matrix.addString(1, 0, "1");
-            matrix.addString(2, 0, "  MOVE  ", null, null, this.color2);
-            matrix.addString(11, 0, "2");
-            matrix.addString(12, 0, " ATTACK ", null, null, this.color2);
-            matrix.addString(21, 0, "3");
-            matrix.addString(22, 0, " SPECIAL ", null, null, this.color2);
-            matrix.addString(32, 0, "4");
-            matrix.addString(33, 0, " SWITCH ", null, null, this.color2);
-            
-            matrix.addString(Settings.DisplayWidth - 32, 0, "CON");
-            matrix.addString(Settings.DisplayWidth - 29, 0, " v ", null, null, this.color2);
-            matrix.addString(Settings.DisplayWidth - 25, 0, " ^ ", null, null, this.color2);
-            matrix.addString(Settings.DisplayWidth - 20, 0, "INVENTORY", null, null, this.color2);
-            matrix.addString(Settings.DisplayWidth - 9, 0, "  MENU  ", null, null, this.color2);
-            
-            return matrix;
-            */
+            this.bottomBar[1].dimensions.x = AsciiGame.Settings.DisplayWidth - this.bottomBar[1].dimensions.w - AsciiGame.Settings.SidebarWidth;
+            return new AsciiGame.DrawMatrix(AsciiGame.Settings.SidebarWidth, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight, AsciiGame.Settings.DisplayWidth - 2 * AsciiGame.Settings.SidebarWidth, AsciiGame.Settings.BottomBarHeight, this.color1).addOverlay(this.bottomBar[0].getMatrix()).addOverlay(this.bottomBar[1].getMatrix());
         };
         return GameUI;
     })();
@@ -990,140 +1070,6 @@ var AsciiGame;
     })();
     AsciiGame.Settings = Settings;
 })(AsciiGame || (AsciiGame = {}));
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var Common;
-(function (Common) {
-    var Observable = (function () {
-        function Observable(callback) {
-            this.callbacks = new Array();
-            if (callback)
-                this.callbacks.push(callback);
-        }
-        Observable.prototype.attach = function (observer) {
-            this.callbacks.push(observer);
-        };
-
-        Observable.prototype.detach = function (observer) {
-            var index = this.callbacks.indexOf(observer);
-            this.callbacks.splice(index, 1);
-        };
-
-        Observable.prototype.notify = function () {
-            this.callbacks.forEach(function (o) {
-                o();
-            });
-        };
-        return Observable;
-    })();
-    Common.Observable = Observable;
-
-    var ObservableProperty = (function (_super) {
-        __extends(ObservableProperty, _super);
-        function ObservableProperty(callback) {
-            _super.call(this, callback);
-        }
-        Object.defineProperty(ObservableProperty.prototype, "unwrap", {
-            get: function () {
-                return this._property;
-            },
-            set: function (property) {
-                this._property = property;
-                this.notify();
-            },
-            enumerable: true,
-            configurable: true
-        });
-        return ObservableProperty;
-    })(Observable);
-    Common.ObservableProperty = ObservableProperty;
-})(Common || (Common = {}));
-var AsciiGame;
-(function (AsciiGame) {
-    /// <reference path="../../Common/ObservableProperty.ts" />
-    (function (UI) {
-        var Button = (function (_super) {
-            __extends(Button, _super);
-            function Button(corner, label, callback, color) {
-                _super.call(this, callback);
-                this.corner = corner;
-                this.label = label;
-                this.state = 0 /* Up */;
-                this.color = color;
-            }
-            Button.prototype.getMatrix = function (dim) {
-                var color = this.getColor();
-                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, dim.w, dim.h, this.getColor());
-                if (this.corner) {
-                    matrix.addString(0, 0, this.corner, dim.w - 1);
-                }
-                var labelX, labelY;
-                labelY = Math.floor(dim.h / 2);
-                if (this.label.length >= dim.w) {
-                    if (labelY == 0 && this.corner)
-                        labelX = this.corner.length + 1;
-                    else
-                        labelX = 0;
-                } else {
-                    labelX = Math.floor(dim.w / 2) - Math.floor(this.label.length / 2);
-                }
-                matrix.addString(labelX, labelY, this.label, dim.w - 1);
-                return matrix;
-            };
-
-            Button.prototype.whatIsAt = function (x, y) {
-                return null;
-            };
-
-            Button.prototype.mouseOver = function () {
-                this.state = 2 /* Hover */;
-            };
-            Button.prototype.mouseNotOver = function () {
-                this.state = 0 /* Up */;
-            };
-            Button.prototype.mouseDown = function () {
-                if (this.state !== 1 /* Down */) {
-                    this.notify();
-                }
-                this.state = 1 /* Down */;
-            };
-            Button.prototype.mouseUp = function () {
-                this.state = 0 /* Up */;
-            };
-
-            Button.prototype.getColor = function () {
-                switch (this.state) {
-                    case 0 /* Up */:
-                        if (this.color)
-                            return this.color;
-                        else
-                            return "royalblue";
-                        break;
-                    case 2 /* Hover */:
-                        return "gray";
-                        break;
-                    default:
-                        return "navy";
-                        break;
-                }
-            };
-            return Button;
-        })(Common.Observable);
-        UI.Button = Button;
-
-        (function (ButtonState) {
-            ButtonState[ButtonState["Up"] = 0] = "Up";
-            ButtonState[ButtonState["Down"] = 1] = "Down";
-            ButtonState[ButtonState["Hover"] = 2] = "Hover";
-        })(UI.ButtonState || (UI.ButtonState = {}));
-        var ButtonState = UI.ButtonState;
-    })(AsciiGame.UI || (AsciiGame.UI = {}));
-    var UI = AsciiGame.UI;
-})(AsciiGame || (AsciiGame = {}));
 var AsciiGame;
 (function (AsciiGame) {
     (function (UI) {
@@ -1189,6 +1135,151 @@ var AsciiGame;
             return Box;
         })();
         UI.Box = Box;
+    })(AsciiGame.UI || (AsciiGame.UI = {}));
+    var UI = AsciiGame.UI;
+})(AsciiGame || (AsciiGame = {}));
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var Common;
+(function (Common) {
+    var Observable = (function () {
+        function Observable(callback) {
+            this.callbacks = new Array();
+            if (callback)
+                this.callbacks.push(callback);
+        }
+        Observable.prototype.attach = function (observer) {
+            this.callbacks.push(observer);
+        };
+
+        Observable.prototype.detach = function (observer) {
+            var index = this.callbacks.indexOf(observer);
+            this.callbacks.splice(index, 1);
+        };
+
+        Observable.prototype.notify = function () {
+            this.callbacks.forEach(function (o) {
+                o();
+            });
+        };
+        return Observable;
+    })();
+    Common.Observable = Observable;
+
+    var ObservableProperty = (function (_super) {
+        __extends(ObservableProperty, _super);
+        function ObservableProperty(callback) {
+            _super.call(this, callback);
+        }
+        Object.defineProperty(ObservableProperty.prototype, "unwrap", {
+            get: function () {
+                return this._property;
+            },
+            set: function (property) {
+                this._property = property;
+                this.notify();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return ObservableProperty;
+    })(Observable);
+    Common.ObservableProperty = ObservableProperty;
+})(Common || (Common = {}));
+var AsciiGame;
+(function (AsciiGame) {
+    /// <reference path="../../Common/ObservableProperty.ts" />
+    (function (UI) {
+        var Button = (function (_super) {
+            __extends(Button, _super);
+            function Button(corner, label, callback, color) {
+                _super.call(this, callback);
+                this.cb = callback;
+                this.corner = corner;
+                if (!corner)
+                    this.corner = "";
+                this.label = label;
+                this.state = 0 /* Up */;
+                this.color = color;
+            }
+            Button.prototype.switchCallback = function (callback) {
+                this.detach(this.cb);
+                this.attach(callback);
+            };
+
+            Button.prototype.getMatrix = function (dim) {
+                var color = this.getColor();
+                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, dim.w, dim.h, this.getColor());
+                if (this.corner) {
+                    matrix.addString(0, 0, this.corner, dim.w - 1);
+                }
+                var labelX, labelY;
+                labelY = Math.floor(dim.h / 2);
+                if (this.label.length >= dim.w) {
+                    if (labelY == 0 && this.corner.length > 0)
+                        labelX = this.corner.length + 1;
+                    else
+                        labelX = 0;
+                } else {
+                    labelX = Math.floor(dim.w / 2) - Math.floor(this.label.length / 2);
+                }
+                if (dim.h <= 1 && this.corner.length > 0) {
+                    labelX = Math.max(labelX, this.corner.length + 1);
+                }
+                matrix.addString(labelX, labelY, this.label, dim.w);
+                return matrix;
+            };
+
+            Button.prototype.whatIsAt = function (x, y) {
+                return null;
+            };
+
+            Button.prototype.mouseOver = function () {
+                this.state = 2 /* Hover */;
+            };
+            Button.prototype.mouseNotOver = function () {
+                this.state = 0 /* Up */;
+            };
+            Button.prototype.mouseDown = function () {
+                if (this.state !== 1 /* Down */) {
+                    this.notify();
+                }
+                this.state = 1 /* Down */;
+            };
+            Button.prototype.mouseUp = function () {
+                this.state = 0 /* Up */;
+            };
+
+            Button.prototype.getColor = function () {
+                switch (this.state) {
+                    case 0 /* Up */:
+                        if (this.color)
+                            return this.color;
+                        else
+                            return "royalblue";
+                        break;
+                    case 2 /* Hover */:
+                        return "gray";
+                        break;
+                    default:
+                        return "navy";
+                        break;
+                }
+            };
+            return Button;
+        })(Common.Observable);
+        UI.Button = Button;
+
+        (function (ButtonState) {
+            ButtonState[ButtonState["Up"] = 0] = "Up";
+            ButtonState[ButtonState["Down"] = 1] = "Down";
+            ButtonState[ButtonState["Hover"] = 2] = "Hover";
+        })(UI.ButtonState || (UI.ButtonState = {}));
+        var ButtonState = UI.ButtonState;
     })(AsciiGame.UI || (AsciiGame.UI = {}));
     var UI = AsciiGame.UI;
 })(AsciiGame || (AsciiGame = {}));
@@ -1347,20 +1438,22 @@ var AsciiGame;
                 var matrix = new AsciiGame.DrawMatrix(this.x, this.y, width, this.height);
                 var used = 0;
                 var index = this.lines.length - 1;
+                var mod = 0;
 
                 while (used < this.height && index >= 0) {
+                    if (used >= this.height - 2)
+                        mod = 2;
                     var nextLine = this.lines[index];
-
-                    if (nextLine.length > width - 2) {
-                        var split = AsciiGame.wrapString(nextLine, width - 2);
+                    if (nextLine.length > width - 2 - mod) {
+                        var split = AsciiGame.wrapString(nextLine, width - 2 - mod);
 
                         while (split.length > 0 && used < this.height) {
                             var line = split.pop();
-                            matrix.addString(1, this.height - used - 1, line, width - 1);
+                            matrix.addString(1, this.height - used - 1, line, width - 1 - mod);
                             used += 1;
                         }
                     } else {
-                        matrix.addString(1, this.height - used - 1, nextLine, width - 1);
+                        matrix.addString(1, this.height - used - 1, nextLine, width - 1 - mod);
                         used += 1;
                     }
                     index -= 1;
@@ -1370,6 +1463,128 @@ var AsciiGame;
             return TextBox;
         })(Common.Observable);
         UI.TextBox = TextBox;
+    })(AsciiGame.UI || (AsciiGame.UI = {}));
+    var UI = AsciiGame.UI;
+})(AsciiGame || (AsciiGame = {}));
+var AsciiGame;
+(function (AsciiGame) {
+    /// <reference path="../../Common/Common.ts" />
+    (function (UI) {
+        var Rect = (function () {
+            function Rect(x, y, width, height) {
+                this.x = x;
+                this.y = y;
+                this.w = width;
+                this.h = height;
+            }
+            Rect.prototype.isWithin = function (x, y) {
+                return x >= this.x && y >= this.y && x < this.x + this.w && y < this.y + this.h;
+            };
+            return Rect;
+        })();
+        UI.Rect = Rect;
+    })(AsciiGame.UI || (AsciiGame.UI = {}));
+    var UI = AsciiGame.UI;
+})(AsciiGame || (AsciiGame = {}));
+var AsciiGame;
+(function (AsciiGame) {
+    (function (UI) {
+        var VertList = (function () {
+            function VertList(offsetEnds, offset, bgcolor) {
+                this.offset = 1;
+                this.offEnds = 0;
+                this.visibleElements = null;
+                this.elements = new Array();
+                this.weights = new Array();
+                this.bgColor = bgcolor;
+                if (offsetEnds)
+                    this.offEnds = offsetEnds;
+                if (offset)
+                    this.offset = offset;
+            }
+            VertList.prototype.add = function (elem, weight) {
+                this.elements.push(elem);
+                if (weight)
+                    this.weights.push(weight);
+                else
+                    this.weights.push(1);
+                return this;
+            };
+
+            VertList.prototype.setFocus = function (index) {
+                this.focus = index;
+            };
+
+            VertList.prototype.setVisibleElements = function (amount) {
+                this.visibleElements = amount;
+            };
+
+            VertList.prototype.getAtIndex = function (index) {
+                return this.elements[index];
+            };
+
+            VertList.prototype.indexIsVisible = function (i) {
+                if (this.visibleElements)
+                    return i < this.visibleElements;
+                else
+                    return i < this.elements.length;
+            };
+
+            VertList.prototype.getMatrix = function (dim) {
+                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, dim.w, dim.h, this.bgColor);
+                var space = dim.h - this.offset * (this.elements.length - 1) - 2 * this.offEnds;
+                ;
+                var step = Math.floor(space / this.weights.reduce(function (x, y) {
+                    return x + y;
+                }));
+                var nextY = dim.y + this.offEnds;
+                ;
+                for (var i = 0; this.indexIsVisible(i); i++) {
+                    var next = this.elements[i].getMatrix(new UI.Rect(dim.x, nextY, dim.w, step));
+                    if (this.focus === i) {
+                        next.matrix.forEach(function (row) {
+                            return row.forEach(function (cell) {
+                                return cell.bgColor == "yellow";
+                            });
+                        });
+                    }
+                    matrix.addOverlay(next);
+                    nextY += this.offset;
+                    nextY += this.weights[i] * step;
+                }
+                return matrix;
+            };
+
+            VertList.prototype.whatIsAt = function (x, y, dim) {
+                var space = dim.h - this.offset * (this.elements.length - 1) - 2 * this.offEnds;
+                ;
+                var step = Math.floor(space / this.weights.reduce(function (x, y) {
+                    return x + y;
+                }));
+                var nextY = dim.y + this.offEnds;
+                ;
+                for (var i = 0; this.indexIsVisible(i); i++) {
+                    var rect = new UI.Rect(dim.x, nextY, dim.w, step);
+                    if (rect.isWithin(x, y)) {
+                        return { fst: this.elements[i], snd: rect };
+                    }
+                    nextY += this.offset;
+                    nextY += this.weights[i] * step;
+                }
+                return null;
+            };
+
+            VertList.prototype.mouseOver = function () {
+            };
+            VertList.prototype.mouseNotOver = function () {
+            };
+            VertList.prototype.mouseDown = function () {
+            };
+            VertList.prototype.mouseUp = function () {
+            };
+            return VertList;
+        })();
+        UI.VertList = VertList;
     })(AsciiGame.UI || (AsciiGame.UI = {}));
     var UI = AsciiGame.UI;
 })(AsciiGame || (AsciiGame = {}));
@@ -1518,6 +1733,148 @@ var Common;
             var callback;
         })(Controllers.BasicAI || (Controllers.BasicAI = {}));
         var BasicAI = Controllers.BasicAI;
+    })(Common.Controllers || (Common.Controllers = {}));
+    var Controllers = Common.Controllers;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
+    (function (Controllers) {
+        var ChangeProperty = (function () {
+            function ChangeProperty(which, to) {
+                this.target = to;
+                this.func = function () {
+                    which.unwrap = to;
+                };
+            }
+            ChangeProperty.prototype.act = function () {
+                this.func();
+            };
+            return ChangeProperty;
+        })();
+        Controllers.ChangeProperty = ChangeProperty;
+    })(Common.Controllers || (Common.Controllers = {}));
+    var Controllers = Common.Controllers;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
+    (function (Controllers) {
+        var EntityManager = (function () {
+            function EntityManager(level) {
+                var _this = this;
+                this.level = level;
+                this.currEntity = new Common.ObservableProperty(function () {
+                    return _this.update();
+                });
+                this.currPath = new Common.ObservableProperty();
+                this.engine = new ROT.Engine(this.level.scheduler);
+                this.characters = new Array();
+            }
+            EntityManager.prototype.pause = function () {
+                this.engine.lock();
+            };
+
+            EntityManager.prototype.start = function () {
+                this.engine.start();
+            };
+
+            EntityManager.prototype.init = function (player) {
+                var _this = this;
+                this.player = player;
+                var rooms = this.level.map.getRooms();
+                var room = rooms[0];
+                var player1 = new Common.Entities.PlayerChar("char1");
+                player1.equipment.equipWeapon(Common.Items.getWeapon(3 /* Mace */));
+                player1.currWeapon = player1.equipment.mainHand;
+                player1.x = room.getCenter()[0];
+                player1.y = room.getCenter()[1];
+                this.characters.push(player1);
+                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player1), true, 1);
+
+                var player2 = new Common.Entities.PlayerChar("char2");
+                player2.equipment.equipWeapon(Common.Items.getWeapon(6 /* Spear */));
+                player2.currWeapon = player2.equipment.mainHand;
+                player2.x = room.getCenter()[0] + 1;
+                player2.y = room.getCenter()[1];
+                this.characters.push(player2);
+                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player2), true, 1);
+
+                this.characters.forEach(function (c) {
+                    _this.level.entities.push(c);
+                });
+
+                for (var i = 0; i < rooms.length; i++) {
+                    if (i % 6 != 0)
+                        continue;
+
+                    var enemy = Common.Entities.getEnemy("debug" + i / 6);
+                    enemy.x = rooms[i].getLeft();
+                    enemy.y = rooms[i].getBottom();
+
+                    //console.log(enemy.x +", "+ enemy.y)
+                    this.level.entities.push(enemy);
+                    this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true, 1);
+                }
+            };
+
+            EntityManager.prototype.update = function () {
+                var _this = this;
+                this.engine.lock();
+                var entity = this.currEntity.unwrap;
+
+                var pollForAction = function () {
+                    _this.planAction(entity);
+                    var action = entity.getAction();
+                    if (action) {
+                        action();
+                        //console.log(entity.x + "," + entity.y);
+                    }
+
+                    if (entity.hasTurn()) {
+                        setTimeout(pollForAction, Common.Settings.UpdateRate);
+                    } else {
+                        entity.newTurn();
+
+                        var unlock = function () {
+                            _this.engine.unlock();
+                        };
+                        setTimeout(unlock, Common.Settings.UpdateRate * 4);
+                    }
+                };
+                pollForAction();
+            };
+
+            EntityManager.prototype.kill = function (entity) {
+                this.level.entities.splice(this.level.entities.indexOf(entity), 1);
+                var actor = this.level.scheduler._queue._events.filter(function (x) {
+                    return x instanceof Controllers.ChangeProperty;
+                }).filter(function (x) {
+                    return x.target == entity;
+                })[0];
+                this.level.scheduler.remove(actor);
+                this.level.objects.push({
+                    name: entity.name + " corpse",
+                    isPassable: true,
+                    x: entity.x,
+                    y: entity.y,
+                    pick: function (who) {
+                        return who.name.substr(0, 1).toUpperCase() + who.name.substr(1) + " gives the " + entity.name + " corpse" + " a hearty stomp!";
+                    }
+                });
+            };
+
+            EntityManager.prototype.planAction = function (entity) {
+                if (entity instanceof Common.Entities.PlayerChar) {
+                    this.player.activate(entity);
+                } else if (entity instanceof Common.Entities.Enemy) {
+                    var enemy = entity;
+                    enemy.addAction(function () {
+                        enemy._hasTurn = false;
+                    });
+                }
+            };
+            return EntityManager;
+        })();
+        Controllers.EntityManager = EntityManager;
     })(Common.Controllers || (Common.Controllers = {}));
     var Controllers = Common.Controllers;
 })(Common || (Common = {}));
@@ -1882,6 +2239,79 @@ var Common;
 })(Common || (Common = {}));
 var Common;
 (function (Common) {
+    (function (Dungeon) {
+        var ItemObject = (function () {
+            function ItemObject(item, x, y) {
+                this._x = x;
+                this._y = y;
+                this.item = item;
+            }
+            Object.defineProperty(ItemObject.prototype, "x", {
+                get: function () {
+                    return this._x;
+                },
+                set: function (value) {
+                    this._x = value;
+                },
+                enumerable: true,
+                configurable: true
+            });
+
+            Object.defineProperty(ItemObject.prototype, "y", {
+                get: function () {
+                    return this._y;
+                },
+                set: function (value) {
+                    this._y = value;
+                },
+                enumerable: true,
+                configurable: true
+            });
+
+            Object.defineProperty(ItemObject.prototype, "name", {
+                get: function () {
+                    return this.item.name;
+                },
+                enumerable: true,
+                configurable: true
+            });
+
+            Object.defineProperty(ItemObject.prototype, "isPassable", {
+                get: function () {
+                    return true;
+                },
+                enumerable: true,
+                configurable: true
+            });
+
+            ItemObject.prototype.pick = function (who) {
+                who.inventory.push(this.item);
+                return null;
+            };
+            return ItemObject;
+        })();
+        Dungeon.ItemObject = ItemObject;
+    })(Common.Dungeon || (Common.Dungeon = {}));
+    var Dungeon = Common.Dungeon;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
+    (function (Dungeon) {
+        var Level = (function () {
+            function Level(type) {
+                this.scheduler = new ROT.Scheduler.Action();
+                this.map = Dungeon.createMap(type);
+                this.entities = new Array();
+                this.objects = new Array();
+            }
+            return Level;
+        })();
+        Dungeon.Level = Level;
+    })(Common.Dungeon || (Common.Dungeon = {}));
+    var Dungeon = Common.Dungeon;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
     (function (Entities) {
         var Attack = (function () {
             function Attack(user, damage, multiplier, hitSkill) {
@@ -1939,6 +2369,116 @@ var Common;
             return AttackResult;
         })();
         Entities.AttackResult = AttackResult;
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
+    (function (Entities) {
+        var Entity = (function () {
+            function Entity(name) {
+                this.name = name;
+                this.skills = new Entities.Skillset();
+                this.traits = new Array();
+                this.inventory = new Array();
+                this.actionQueue = new Array();
+            }
+            Object.defineProperty(Entity.prototype, "x", {
+                get: function () {
+                    return this._x;
+                },
+                set: function (value) {
+                    this._x = value;
+                },
+                enumerable: true,
+                configurable: true
+            });
+
+            Object.defineProperty(Entity.prototype, "y", {
+                get: function () {
+                    return this._y;
+                },
+                set: function (value) {
+                    this._y = value;
+                },
+                enumerable: true,
+                configurable: true
+            });
+
+            Entity.prototype.getStruck = function (attack) {
+                var evadeSkill;
+                switch (attack.hitSkill) {
+                    default:
+                        evadeSkill = this.skills.evasion;
+                }
+                var result = new Entities.AttackResult(attack, this, evadeSkill, 0, 0);
+                this.stats.hp -= result.finalDmg;
+                return result;
+            };
+
+            Entity.prototype.getAttack = function () {
+                throw ("Abstract!");
+            };
+
+            Entity.prototype.getAction = function () {
+                return this.actionQueue.pop();
+            };
+            Entity.prototype.addAction = function (action) {
+                this.actionQueue.unshift(action);
+            };
+
+            Entity.prototype.hasAP = function () {
+                return false;
+            };
+
+            Entity.prototype.hasTurn = function () {
+                return false;
+            };
+
+            Entity.prototype.newTurn = function () {
+                throw ("Abstract!");
+            };
+            return Entity;
+        })();
+        Entities.Entity = Entity;
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
+    ///<reference path="Entity.ts"/>
+    (function (Entities) {
+        var Enemy = (function (_super) {
+            __extends(Enemy, _super);
+            function Enemy(name, stats, skills, traits) {
+                _super.call(this, name);
+                if (skills)
+                    this.skills = skills;
+                else
+                    this.skills = new Entities.Skillset();
+                if (traits)
+                    this.traits = traits;
+                else
+                    this.traits = new Array();
+                this.stats = stats;
+                this._hasTurn = true;
+                this.dir = Common.Vec.West;
+            }
+            Enemy.prototype.hasAP = function () {
+                return this.stats.ap > 0;
+            };
+
+            Enemy.prototype.hasTurn = function () {
+                return this._hasTurn;
+            };
+
+            Enemy.prototype.newTurn = function () {
+                this.stats.ap = this.stats.apMax;
+                this._hasTurn = true;
+            };
+            return Enemy;
+        })(Entities.Entity);
+        Entities.Enemy = Enemy;
     })(Common.Entities || (Common.Entities = {}));
     var Entities = Common.Entities;
 })(Common || (Common = {}));
@@ -2057,481 +2597,6 @@ var Common;
 })(Common || (Common = {}));
 var Common;
 (function (Common) {
-    (function (Entities) {
-        var Skill = (function () {
-            function Skill(which, value) {
-                this.which = which;
-                this.value = value;
-            }
-            return Skill;
-        })();
-        Entities.Skill = Skill;
-    })(Common.Entities || (Common.Entities = {}));
-    var Entities = Common.Entities;
-})(Common || (Common = {}));
-var Common;
-(function (Common) {
-    (function (Entities) {
-        var Skillset = (function () {
-            function Skillset() {
-                this.prowess = new Entities.Skill(0 /* prowess */, 0);
-                this.perception = new Entities.Skill(1 /* perception */, 0);
-                this.wrestling = new Entities.Skill(2 /* wrestling */, 0);
-                this.evasion = new Entities.Skill(3 /* evasion */, 0);
-                this.fortitude = new Entities.Skill(4 /* fortitude */, 0);
-                this.will = new Entities.Skill(5 /* will */, 0);
-                this.stealth = new Entities.Skill(6 /* stealth */, 0);
-            }
-            Skillset.prototype.setProwess = function (amount) {
-                this.prowess.value = amount;
-                return this;
-            };
-
-            Skillset.prototype.setEvasion = function (amount) {
-                this.evasion.value = amount;
-                return this;
-            };
-            return Skillset;
-        })();
-        Entities.Skillset = Skillset;
-    })(Common.Entities || (Common.Entities = {}));
-    var Entities = Common.Entities;
-})(Common || (Common = {}));
-var Common;
-(function (Common) {
-    (function (Entities) {
-        var Trait = (function () {
-            function Trait() {
-            }
-            return Trait;
-        })();
-        Entities.Trait = Trait;
-    })(Common.Entities || (Common.Entities = {}));
-    var Entities = Common.Entities;
-})(Common || (Common = {}));
-/// <reference path="../Common/Common.ts" />
-/// <reference path="../Common/Entities/Entities.ts" />
-var AsciiGame;
-(function (AsciiGame) {
-    var Entities = Common.Entities;
-
-    function symbolO(item) {
-        throw ("TODO");
-    }
-    AsciiGame.symbolO = symbolO;
-
-    function colorO(item) {
-        throw ("TODO");
-    }
-    AsciiGame.colorO = colorO;
-
-    function symbolE(entity) {
-        throw ("TODO");
-    }
-    AsciiGame.symbolE = symbolE;
-
-    function colorE(entity) {
-        throw ("TODO");
-    }
-    AsciiGame.colorE = colorE;
-
-    function getDrawable(entity) {
-        if (entity instanceof Entities.PlayerChar) {
-            return { symbol: "@" };
-        } else {
-            return { symbol: "e" };
-        }
-    }
-    AsciiGame.getDrawable = getDrawable;
-
-    function wrapString(str, limit) {
-        var arr = new Array();
-        var split = str.split(" ");
-        function nextLine(words, startIndex) {
-            var line = words[startIndex];
-            var lt = words[startIndex].length;
-            var i = startIndex + 1;
-            var next = words[i];
-            while (next && lt + next.length + 1 < limit) {
-                lt += next.length + 1;
-                line += " " + next;
-                i += 1;
-                next = words[i];
-            }
-
-            return [line, i];
-        }
-
-        var wordsUsed = 0;
-        while (wordsUsed < split.length) {
-            var line = nextLine(split, wordsUsed);
-            arr.push(line[0]);
-            wordsUsed = line[1];
-        }
-
-        return arr;
-    }
-    AsciiGame.wrapString = wrapString;
-})(AsciiGame || (AsciiGame = {}));
-var AsciiGame;
-(function (AsciiGame) {
-    (function (Core) {
-        var Game = (function () {
-            function Game() {
-                var _this = this;
-                this.display = new ROT.Display({ width: AsciiGame.Settings.DisplayWidth, height: AsciiGame.Settings.DisplayHeight });
-                this.gameScreen = new AsciiGame.GameScreen(function (d) {
-                    return _this.draw(d);
-                });
-
-                /*this.gameScreen.nextToDraw.attach(() => {
-                this.draw(this.gameScreen.nextToDraw.unwrap);
-                });*/
-                this.screen = this.gameScreen;
-                Core.Control.init(this);
-
-                //GameUI.init();
-                var resize = function () {
-                    var size = _this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight);
-                    _this.display.setOptions({ fontSize: size });
-
-                    while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) >= size) {
-                        _this.display.setOptions({ width: _this.display.getOptions().width + 1 });
-                    }
-                    while (_this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) < size) {
-                        _this.display.setOptions({ width: _this.display.getOptions().width - 1 });
-                    }
-
-                    AsciiGame.Settings.DisplayWidth = _this.display.getOptions().width;
-                    _this.gameScreen.camera.width = AsciiGame.Settings.DisplayWidth - AsciiGame.Settings.SidebarWidth * 2;
-                    _this.gameScreen.update();
-                    //console.log((window.innerWidth / window.innerHeight).toFixed(2));
-                    //console.log(this.display.getOptions().width);
-                };
-                window.onresize = resize;
-                resize();
-            }
-            Game.prototype.draw = function (matrix) {
-                //this.display.clear();
-                matrix.draw(this.display);
-                //Eventual goal: the game logic should be a web worker,
-                //with control sending string messages of DOM events to it
-                //and it sending JSON:ed DrawMatrixes to this
-            };
-            return Game;
-        })();
-        Core.Game = Game;
-    })(AsciiGame.Core || (AsciiGame.Core = {}));
-    var Core = AsciiGame.Core;
-})(AsciiGame || (AsciiGame = {}));
-
-window.onload = function () {
-    document.getElementById("content").appendChild(new AsciiGame.Core.Game().display.getContainer());
-};
-var Common;
-(function (Common) {
-    (function (Controllers) {
-        var ChangeProperty = (function () {
-            function ChangeProperty(which, to) {
-                this.target = to;
-                this.func = function () {
-                    which.unwrap = to;
-                };
-            }
-            ChangeProperty.prototype.act = function () {
-                this.func();
-            };
-            return ChangeProperty;
-        })();
-        Controllers.ChangeProperty = ChangeProperty;
-    })(Common.Controllers || (Common.Controllers = {}));
-    var Controllers = Common.Controllers;
-})(Common || (Common = {}));
-var Common;
-(function (Common) {
-    (function (Controllers) {
-        var EntityManager = (function () {
-            function EntityManager(level) {
-                var _this = this;
-                this.level = level;
-                this.currEntity = new Common.ObservableProperty(function () {
-                    return _this.update();
-                });
-                this.currPath = new Common.ObservableProperty();
-                this.engine = new ROT.Engine(this.level.scheduler);
-                this.characters = new Array();
-            }
-            EntityManager.prototype.pause = function () {
-                this.engine.lock();
-            };
-
-            EntityManager.prototype.start = function () {
-                this.engine.start();
-            };
-
-            EntityManager.prototype.init = function (player) {
-                var _this = this;
-                this.player = player;
-                var rooms = this.level.map.getRooms();
-                var room = rooms[0];
-                var player1 = new Common.Entities.PlayerChar("char1");
-                player1.equipment.equipWeapon(Common.Items.getWeapon(3 /* Mace */));
-                player1.currWeapon = player1.equipment.mainHand;
-                player1.x = room.getCenter()[0];
-                player1.y = room.getCenter()[1];
-                this.characters.push(player1);
-                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player1), true, 1);
-
-                var player2 = new Common.Entities.PlayerChar("char2");
-                player2.equipment.equipWeapon(Common.Items.getWeapon(6 /* Spear */));
-                player2.currWeapon = player2.equipment.mainHand;
-                player2.x = room.getCenter()[0] + 1;
-                player2.y = room.getCenter()[1];
-                this.characters.push(player2);
-                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player2), true, 1);
-
-                this.characters.forEach(function (c) {
-                    _this.level.entities.push(c);
-                });
-
-                for (var i = 0; i < rooms.length; i++) {
-                    if (i % 6 != 0)
-                        continue;
-
-                    var enemy = Common.Entities.getEnemy("debug" + i / 6);
-                    enemy.x = rooms[i].getLeft();
-                    enemy.y = rooms[i].getBottom();
-
-                    //console.log(enemy.x +", "+ enemy.y)
-                    this.level.entities.push(enemy);
-                    this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true, 1);
-                }
-            };
-
-            EntityManager.prototype.update = function () {
-                var _this = this;
-                this.engine.lock();
-                var entity = this.currEntity.unwrap;
-
-                var pollForAction = function () {
-                    _this.planAction(entity);
-                    var action = entity.getAction();
-                    if (action) {
-                        action();
-                        //console.log(entity.x + "," + entity.y);
-                    }
-
-                    if (entity.hasTurn()) {
-                        setTimeout(pollForAction, Common.Settings.UpdateRate);
-                    } else {
-                        entity.newTurn();
-
-                        var unlock = function () {
-                            _this.engine.unlock();
-                        };
-                        setTimeout(unlock, Common.Settings.UpdateRate * 4);
-                    }
-                };
-                pollForAction();
-            };
-
-            EntityManager.prototype.kill = function (entity) {
-                this.level.entities.splice(this.level.entities.indexOf(entity), 1);
-                var actor = this.level.scheduler._queue._events.filter(function (x) {
-                    return x instanceof Controllers.ChangeProperty;
-                }).filter(function (x) {
-                    return x.target == entity;
-                })[0];
-                this.level.scheduler.remove(actor);
-                this.level.objects.push({
-                    name: entity.name + " corpse",
-                    isPassable: true,
-                    x: entity.x,
-                    y: entity.y,
-                    pick: function (who) {
-                        return who.name.substr(0, 1).toUpperCase() + who.name.substr(1) + " gives the " + entity.name + " corpse" + " a hearty stomp!";
-                    }
-                });
-            };
-
-            EntityManager.prototype.planAction = function (entity) {
-                if (entity instanceof Common.Entities.PlayerChar) {
-                    this.player.activate(entity);
-                } else if (entity instanceof Common.Entities.Enemy) {
-                    var enemy = entity;
-                    enemy.addAction(function () {
-                        enemy._hasTurn = false;
-                    });
-                }
-            };
-            return EntityManager;
-        })();
-        Controllers.EntityManager = EntityManager;
-    })(Common.Controllers || (Common.Controllers = {}));
-    var Controllers = Common.Controllers;
-})(Common || (Common = {}));
-var Common;
-(function (Common) {
-    (function (Dungeon) {
-        var Level = (function () {
-            function Level(type) {
-                this.scheduler = new ROT.Scheduler.Action();
-                this.map = Dungeon.createMap(type);
-                this.entities = new Array();
-                this.objects = new Array();
-            }
-            return Level;
-        })();
-        Dungeon.Level = Level;
-    })(Common.Dungeon || (Common.Dungeon = {}));
-    var Dungeon = Common.Dungeon;
-})(Common || (Common = {}));
-var Common;
-(function (Common) {
-    (function (Entities) {
-        var Entity = (function () {
-            function Entity(name) {
-                this.name = name;
-                this.skills = new Entities.Skillset();
-                this.traits = new Array();
-                this.inventory = new Array();
-                this.actionQueue = new Array();
-            }
-            Object.defineProperty(Entity.prototype, "x", {
-                get: function () {
-                    return this._x;
-                },
-                set: function (value) {
-                    this._x = value;
-                },
-                enumerable: true,
-                configurable: true
-            });
-
-            Object.defineProperty(Entity.prototype, "y", {
-                get: function () {
-                    return this._y;
-                },
-                set: function (value) {
-                    this._y = value;
-                },
-                enumerable: true,
-                configurable: true
-            });
-
-            Entity.prototype.getStruck = function (attack) {
-                var evadeSkill;
-                switch (attack.hitSkill) {
-                    default:
-                        evadeSkill = this.skills.evasion;
-                }
-                var result = new Entities.AttackResult(attack, this, evadeSkill, 0, 0);
-                this.stats.hp -= result.finalDmg;
-                return result;
-            };
-
-            Entity.prototype.getAttack = function () {
-                throw ("Abstract!");
-            };
-
-            Entity.prototype.getAction = function () {
-                return this.actionQueue.pop();
-            };
-            Entity.prototype.addAction = function (action) {
-                this.actionQueue.unshift(action);
-            };
-
-            Entity.prototype.hasAP = function () {
-                return false;
-            };
-
-            Entity.prototype.hasTurn = function () {
-                return false;
-            };
-
-            Entity.prototype.newTurn = function () {
-                throw ("Abstract!");
-            };
-            return Entity;
-        })();
-        Entities.Entity = Entity;
-    })(Common.Entities || (Common.Entities = {}));
-    var Entities = Common.Entities;
-})(Common || (Common = {}));
-var Common;
-(function (Common) {
-    ///<reference path="Entity.ts"/>
-    (function (Entities) {
-        var Enemy = (function (_super) {
-            __extends(Enemy, _super);
-            function Enemy(name, stats, skills, traits) {
-                _super.call(this, name);
-                if (skills)
-                    this.skills = skills;
-                else
-                    this.skills = new Entities.Skillset();
-                if (traits)
-                    this.traits = traits;
-                else
-                    this.traits = new Array();
-                this.stats = stats;
-                this._hasTurn = true;
-                this.dir = Common.Vec.West;
-            }
-            Enemy.prototype.hasAP = function () {
-                return this.stats.ap > 0;
-            };
-
-            Enemy.prototype.hasTurn = function () {
-                return this._hasTurn;
-            };
-
-            Enemy.prototype.newTurn = function () {
-                this.stats.ap = this.stats.apMax;
-                this._hasTurn = true;
-            };
-            return Enemy;
-        })(Entities.Entity);
-        Entities.Enemy = Enemy;
-    })(Common.Entities || (Common.Entities = {}));
-    var Entities = Common.Entities;
-})(Common || (Common = {}));
-var Common;
-(function (Common) {
-    (function (Entities) {
-        var Statset = (function () {
-            function Statset(maxHp, maxStamina, maxAP, eqWt) {
-                this.hp = maxHp;
-                this.hpMax = maxHp;
-                this.ap = maxAP;
-                this.apMax = maxAP;
-                this.stamina = maxStamina;
-                this.staminaMax = maxStamina;
-                this.equipWeight = eqWt;
-                this.exp = 0;
-            }
-            Statset.prototype.setHP = function (val) {
-                this.hp = val;
-                return this;
-            };
-
-            Statset.prototype.setAP = function (val) {
-                this.ap = val;
-                return this;
-            };
-
-            Statset.prototype.setStamina = function (val) {
-                this.stamina = val;
-                return this;
-            };
-            return Statset;
-        })();
-        Entities.Statset = Statset;
-    })(Common.Entities || (Common.Entities = {}));
-    var Entities = Common.Entities;
-})(Common || (Common = {}));
-var Common;
-(function (Common) {
     ///<reference path="Entity.ts"/>
     (function (Entities) {
         var PlayerChar = (function (_super) {
@@ -2606,6 +2671,94 @@ var Common;
             return PlayerChar;
         })(Entities.Entity);
         Entities.PlayerChar = PlayerChar;
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
+    (function (Entities) {
+        var Skill = (function () {
+            function Skill(which, value) {
+                this.which = which;
+                this.value = value;
+            }
+            return Skill;
+        })();
+        Entities.Skill = Skill;
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
+    (function (Entities) {
+        var Skillset = (function () {
+            function Skillset() {
+                this.prowess = new Entities.Skill(0 /* prowess */, 0);
+                this.perception = new Entities.Skill(1 /* perception */, 0);
+                this.wrestling = new Entities.Skill(2 /* wrestling */, 0);
+                this.evasion = new Entities.Skill(3 /* evasion */, 0);
+                this.fortitude = new Entities.Skill(4 /* fortitude */, 0);
+                this.will = new Entities.Skill(5 /* will */, 0);
+                this.stealth = new Entities.Skill(6 /* stealth */, 0);
+            }
+            Skillset.prototype.setProwess = function (amount) {
+                this.prowess.value = amount;
+                return this;
+            };
+
+            Skillset.prototype.setEvasion = function (amount) {
+                this.evasion.value = amount;
+                return this;
+            };
+            return Skillset;
+        })();
+        Entities.Skillset = Skillset;
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
+    (function (Entities) {
+        var Statset = (function () {
+            function Statset(maxHp, maxStamina, maxAP, eqWt) {
+                this.hp = maxHp;
+                this.hpMax = maxHp;
+                this.ap = maxAP;
+                this.apMax = maxAP;
+                this.stamina = maxStamina;
+                this.staminaMax = maxStamina;
+                this.equipWeight = eqWt;
+                this.exp = 0;
+            }
+            Statset.prototype.setHP = function (val) {
+                this.hp = val;
+                return this;
+            };
+
+            Statset.prototype.setAP = function (val) {
+                this.ap = val;
+                return this;
+            };
+
+            Statset.prototype.setStamina = function (val) {
+                this.stamina = val;
+                return this;
+            };
+            return Statset;
+        })();
+        Entities.Statset = Statset;
+    })(Common.Entities || (Common.Entities = {}));
+    var Entities = Common.Entities;
+})(Common || (Common = {}));
+var Common;
+(function (Common) {
+    (function (Entities) {
+        var Trait = (function () {
+            function Trait() {
+            }
+            return Trait;
+        })();
+        Entities.Trait = Trait;
     })(Common.Entities || (Common.Entities = {}));
     var Entities = Common.Entities;
 })(Common || (Common = {}));
@@ -2737,63 +2890,6 @@ var Common;
         Items.Consumable = Consumable;
     })(Common.Items || (Common.Items = {}));
     var Items = Common.Items;
-})(Common || (Common = {}));
-var Common;
-(function (Common) {
-    (function (Dungeon) {
-        var ItemObject = (function () {
-            function ItemObject(item, x, y) {
-                this._x = x;
-                this._y = y;
-                this.item = item;
-            }
-            Object.defineProperty(ItemObject.prototype, "x", {
-                get: function () {
-                    return this._x;
-                },
-                set: function (value) {
-                    this._x = value;
-                },
-                enumerable: true,
-                configurable: true
-            });
-
-            Object.defineProperty(ItemObject.prototype, "y", {
-                get: function () {
-                    return this._y;
-                },
-                set: function (value) {
-                    this._y = value;
-                },
-                enumerable: true,
-                configurable: true
-            });
-
-            Object.defineProperty(ItemObject.prototype, "name", {
-                get: function () {
-                    return this.item.name;
-                },
-                enumerable: true,
-                configurable: true
-            });
-
-            Object.defineProperty(ItemObject.prototype, "isPassable", {
-                get: function () {
-                    return true;
-                },
-                enumerable: true,
-                configurable: true
-            });
-
-            ItemObject.prototype.pick = function (who) {
-                who.inventory.push(this.item);
-                return null;
-            };
-            return ItemObject;
-        })();
-        Dungeon.ItemObject = ItemObject;
-    })(Common.Dungeon || (Common.Dungeon = {}));
-    var Dungeon = Common.Dungeon;
 })(Common || (Common = {}));
 var Common;
 (function (Common) {
@@ -3130,7 +3226,7 @@ var Common;
         });
         Object.defineProperty(Settings, "MapHeight", {
             get: function () {
-                return 33;
+                return 32;
             },
             enumerable: true,
             configurable: true
@@ -3211,110 +3307,4 @@ var Common;
     })();
     Common.Vec = Vec;
 })(Common || (Common = {}));
-var AsciiGame;
-(function (AsciiGame) {
-    /// <reference path="../../Common/Common.ts" />
-    (function (UI) {
-        var Rect = (function () {
-            function Rect(x, y, width, height) {
-                this.x = x;
-                this.y = y;
-                this.w = width;
-                this.h = height;
-            }
-            Rect.prototype.isWithin = function (x, y) {
-                return x >= this.x && y >= this.y && x < this.x + this.w && y < this.y + this.h;
-            };
-            return Rect;
-        })();
-        UI.Rect = Rect;
-    })(AsciiGame.UI || (AsciiGame.UI = {}));
-    var UI = AsciiGame.UI;
-})(AsciiGame || (AsciiGame = {}));
-var AsciiGame;
-(function (AsciiGame) {
-    (function (UI) {
-        var VertList = (function () {
-            function VertList(offsetEnds, offset, bgcolor) {
-                this.offset = 1;
-                this.offEnds = 0;
-                this.elements = new Array();
-                this.weights = new Array();
-                this.bgColor = bgcolor;
-                if (offsetEnds)
-                    this.offEnds = offsetEnds;
-                if (offset)
-                    this.offset = offset;
-            }
-            VertList.prototype.add = function (elem, weight) {
-                this.elements.push(elem);
-                if (weight)
-                    this.weights.push(weight);
-                else
-                    this.weights.push(1);
-                return this;
-            };
-
-            VertList.prototype.setFocus = function (index) {
-                this.focus = index;
-            };
-
-            VertList.prototype.getMatrix = function (dim) {
-                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, dim.w, dim.h, this.bgColor);
-                var space = dim.h - this.offset * (this.elements.length - 1) - 2 * this.offEnds;
-                ;
-                var step = Math.floor(space / this.weights.reduce(function (x, y) {
-                    return x + y;
-                }));
-                var nextY = dim.y + this.offEnds;
-                ;
-                for (var i = 0; i < this.elements.length; i++) {
-                    var next = this.elements[i].getMatrix(new UI.Rect(dim.x, nextY, dim.w, step));
-                    if (this.focus === i) {
-                        next.matrix.forEach(function (row) {
-                            return row.forEach(function (cell) {
-                                return cell.bgColor == "yellow";
-                            });
-                        });
-                    }
-                    matrix.addOverlay(next);
-                    nextY += this.offset;
-                    nextY += this.weights[i] * step;
-                }
-                return matrix;
-            };
-
-            VertList.prototype.whatIsAt = function (x, y, dim) {
-                var space = dim.h - this.offset * (this.elements.length - 1) - 2 * this.offEnds;
-                ;
-                var step = Math.floor(space / this.weights.reduce(function (x, y) {
-                    return x + y;
-                }));
-                var nextY = dim.y + this.offEnds;
-                ;
-                for (var i = 0; i < this.elements.length; i++) {
-                    var rect = new UI.Rect(dim.x, nextY, dim.w, step);
-                    if (rect.isWithin(x, y)) {
-                        return { fst: this.elements[i], snd: rect };
-                    }
-                    nextY += this.offset;
-                    nextY += this.weights[i] * step;
-                }
-                return null;
-            };
-
-            VertList.prototype.mouseOver = function () {
-            };
-            VertList.prototype.mouseNotOver = function () {
-            };
-            VertList.prototype.mouseDown = function () {
-            };
-            VertList.prototype.mouseUp = function () {
-            };
-            return VertList;
-        })();
-        UI.VertList = VertList;
-    })(AsciiGame.UI || (AsciiGame.UI = {}));
-    var UI = AsciiGame.UI;
-})(AsciiGame || (AsciiGame = {}));
 //# sourceMappingURL=game.js.map

@@ -22,7 +22,7 @@ module AsciiGame {
             this.xOffset = xOffset;
             this.yOffset = yOffset;
             this.x = 0;
-            this.y = 0;
+            this.y = -1;
         }
 
         get view() {
