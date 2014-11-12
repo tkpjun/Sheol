@@ -10,7 +10,7 @@
         constructor() {
             
             this.display = new ROT.Display({ width: Settings.DisplayWidth, height: Settings.DisplayHeight });
-            this.gameScreen = new GameScreen((d: DrawMatrix) => this.draw(d));
+            this.gameScreen = new GameScreen((d: DrawableMatrix) => this.draw(d));
             /*this.gameScreen.nextToDraw.attach(() => {
                 this.draw(this.gameScreen.nextToDraw.unwrap);
             });*/
@@ -39,7 +39,7 @@
             resize();
         }
 
-        draw(matrix: DrawMatrix) {
+        draw(matrix: DrawableMatrix) {
             //this.display.clear();
             matrix.draw(this.display);
             //Eventual goal: the game logic should be a web worker, 

@@ -14,7 +14,7 @@ module AsciiGame {
         yOffset: number;
         width: number;
         height: number;
-        private _view: DrawMatrix;
+        private _view: DrawableMatrix;
 
         constructor(xOffset: number, width: number, yOffset: number, height: number) {
             this.width = width;
@@ -57,9 +57,9 @@ module AsciiGame {
             return x >= this.x && y >= this.y && x < this.x + this.width && y < this.y + this.height;
         }
 
-        private getMapView(map: ROT.IMap): DrawMatrix {
+        private getMapView(map: ROT.IMap): DrawableMatrix {
 
-            var matrix = new DrawMatrix(this.xOffset, this.yOffset, this.width, this.height);
+            var matrix = new DrawableMatrix(this.xOffset, this.yOffset, this.width, this.height);
             /*
             var matrix = new Array<Array<IDrawable>>();
             for (var i = 0; i < this.width; i++) {
@@ -100,13 +100,13 @@ module AsciiGame {
             return matrix;
         }
 
-        private addObjects(matrix: DrawMatrix, objects: Array<C.IObject>): DrawMatrix {
+        private addObjects(matrix: DrawableMatrix, objects: Array<C.IObject>): DrawableMatrix {
             objects.forEach((o) => {
                 if (o.x < this.x || o.y < this.y || o.x > this.x + this.width - 1 || o.y > this.y + this.height - 1) {
 
                 }
                 else {
-                    var d = { symbol: "%", color: "red" };
+                    var d: IDrawable = getDrawableO(o);
                     matrix.matrix[o.x - this.x][o.y - this.y].symbol = d.symbol;
                     matrix.matrix[o.x - this.x][o.y - this.y].color = d.color;
                 }
@@ -114,14 +114,14 @@ module AsciiGame {
             return matrix;
         }
 
-        private addEntities(matrix: DrawMatrix, entities: Array<C.IEntity>): DrawMatrix {
+        private addEntities(matrix: DrawableMatrix, entities: Array<C.IEntity>): DrawableMatrix {
 
             entities.forEach((e) => {
                 if (e.x < this.x || e.y < this.y || e.x > this.x + this.width - 1 || e.y > this.y + this.height - 1) {
 
                 }
                 else {
-                    var d = getDrawable(e);
+                    var d = getDrawableE(e);
                     matrix.matrix[e.x - this.x][e.y - this.y].symbol = d.symbol;
                     matrix.matrix[e.x - this.x][e.y - this.y].color = d.color;
                     if (matrix.matrix[e.x + e.dir.x - this.x])

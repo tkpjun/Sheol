@@ -105,11 +105,11 @@ module AsciiGame {
 
         }
 
-        getLeftBar(characters: Array<Entitites.PlayerChar>): DrawMatrix {
+        getLeftBar(characters: Array<Entitites.PlayerChar>): DrawableMatrix {
             var p1 = characters[0];
             var p2 = characters[1];
             var w = Settings.SidebarWidth; //Limit for text wrapping
-            var matrix = new DrawMatrix(0, 0, w, 23);
+            var matrix = new DrawableMatrix(0, 0, w, 23);
 
             for (var i = 0; i < Settings.SidebarWidth; i++) {
                 matrix.matrix[i][0] = { symbol: " ", bgColor: this.color1 }
@@ -181,11 +181,11 @@ module AsciiGame {
             current: Entitites.Entity,
             seen: Array<C.IEntity>,
             control: Common.Controllers.Player,
-            baseTime?: number): DrawMatrix {
+            baseTime?: number): DrawableMatrix {
             var w = Settings.SidebarWidth;
             var wDisp = Settings.DisplayWidth;
             var leftEdge = wDisp - w;
-            var matrix = new DrawMatrix(leftEdge, 0, w, Settings.DisplayHeight);
+            var matrix = new DrawableMatrix(leftEdge, 0, w, Settings.DisplayHeight);
             if (!baseTime) baseTime = 0;
 
             var events = scheduler._queue._events;
@@ -218,7 +218,7 @@ module AsciiGame {
                 return () => { control.updateClick(x, y) };
             }
             for (var i = 0; i < both.length && i < 9; i++) {
-                var drawable = getDrawable(both[i].entity);
+                var drawable = getDrawableE(both[i].entity);
                 var entity = both[i].entity;
                 matrix.addString(1, i * 3 + 2, entity.name, Settings.SidebarWidth - 4);
                 matrix.addString(1, i * 3 + 3, "HP:" + entity.stats.hp + "/" + entity.stats.hpMax, Settings.SidebarWidth - 4);
@@ -258,7 +258,7 @@ module AsciiGame {
             this.alwaysInContext.push(this.dpad);
         }
 
-        getDPad(): DrawMatrix {
+        getDPad(): DrawableMatrix {
             return this.dpad.getMatrix();
             /*
 
@@ -308,7 +308,7 @@ module AsciiGame {
             (<UI.HoriList<UI.Button>>this.bottomBar[0].element).setFocus(index);
         }
 
-        getBottomBar(control: Common.Controllers.Player): DrawMatrix {
+        getBottomBar(control: Common.Controllers.Player): DrawableMatrix {
             switch (control.getState()) {
                 case Common.Controllers.States.Move:
                     this.setBottomBarFocus(0);
@@ -322,7 +322,7 @@ module AsciiGame {
             }
 
             this.bottomBar[1].dimensions.x = Settings.DisplayWidth - this.bottomBar[1].dimensions.w - Settings.SidebarWidth;
-            return new DrawMatrix(
+            return new DrawableMatrix(
                 Settings.SidebarWidth,
                 Settings.DisplayHeight - Settings.BottomBarHeight,
                 Settings.DisplayWidth - 2 * Settings.SidebarWidth,

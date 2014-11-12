@@ -6,7 +6,7 @@ module AsciiGame.UI {
         mouseNotOver();
         mouseDown();
         mouseUp();
-        getMatrix(dim: Rect): DrawMatrix;
+        getMatrix(dim: Rect): DrawableMatrix;
         whatIsAt(x: number, y: number, dim?: Rect): Common.Tuple2<IElement, Rect>;
     }
 

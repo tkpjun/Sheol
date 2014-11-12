@@ -36,7 +36,7 @@
             if (ap) newAP = ap;
             else newAP = this._lengthInAP;
 
-            if (newAP) {
+            if (newAP || newAP == 0) {
                 var arr = new Array<IVector2>();
                 var cost = 0;
                 for (var i = 0; i < this._nodes.length; i++) {
@@ -62,8 +62,7 @@
             else {
                 this._nodes[0] = this.begin;
                 this._costs[0] = 0;
-                this.pointer.x = this.begin.x;
-                this.pointer.y = this.begin.y;
+                this.pointer = this.begin;
             }
             return this;
         }

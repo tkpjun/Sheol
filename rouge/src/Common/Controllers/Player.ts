@@ -173,8 +173,9 @@
             var moves;
             if (path._nodes.length == 1) {
                 var obj = this.lvl.objects.filter((obj) => { return obj.x == path.begin.x && obj.y == path.begin.y; })[0]
-            if (obj) {
-                    this.con.addLine(obj.pick(this.char));
+                if (obj) {
+                    //this.con.addLine(obj.pick(this.char));
+                    this.lvl.pickObject(obj, this.char, this.con);
                 }
                 else {
                     this.con.addLine("Nothing of interest here!");
@@ -184,34 +185,31 @@
 
             switch (this.state) {
                 case States.Move:
+                    var target = { x: path.pointer.x, y: path.pointer.y };
                     moves = this.char.requestMoves(2, path.cost() / 2);
                     var c = this.char;
                     var m = this.manager;
                     if (moves > 0) {
-                        path.trim(moves * 2);
-                        function nextStep(i, last?) {
-                        return () => {
+                        //path.trim(moves * 2);
+                        function nextStep(i, last?, callback?) {
+                            return () => {
                                 c.dir = Vec.sub(path._nodes[i], { x: c.x, y: c.y });
                                 c.x = path._nodes[i].x;
                                 c.y = path._nodes[i].y;
                                 m.currPath.unwrap = path; //dumb way to redraw screen
-                                //manager.currPath.unwrap = new AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
-                                /*
-                                if (i == path._nodes.length - 1) {
-                                    char.stats.ap -= path.cost();
-                                }*/
                                 if (last) {
-                                    m.currPath.unwrap = new AstarPath({ x: c.x, y: c.y }, null, c.stats.ap);
-                                    //endTurn();
+                                    var p = new AstarPath({ x: c.x, y: c.y }, target, c.stats.ap);
+                                    p.connect(callback);
+                                    m.currPath.unwrap = p;
                                 }
                             }
-                    }
+                        }
                         function bool(i) {
-                        return i < path._nodes.length && i <= moves
-                    }
+                            return i < path._nodes.length && i <= moves
+                        }
                         for (var i = 1; bool(i); i++) {
                             if (!bool(i + 1)) {
-                                this.char.addAction(nextStep(i, true))
+                                this.char.addAction(nextStep(i, true, this.callback))
                         }
                             else
                                 this.char.addAction(nextStep(i));

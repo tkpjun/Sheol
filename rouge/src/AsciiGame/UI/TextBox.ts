@@ -25,8 +25,8 @@ module AsciiGame.UI {
             return this;
         }
 
-        getMatrix(width: number): DrawMatrix {
-            var matrix = new DrawMatrix(this.x, this.y, width, this.height);
+        getMatrix(width: number): DrawableMatrix {
+            var matrix = new DrawableMatrix(this.x, this.y, width, this.height);
             var used = 0;
             var index = this.lines.length - 1;
             var mod = 0;

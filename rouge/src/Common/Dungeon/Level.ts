@@ -12,7 +12,17 @@
             this.map = createMap(type);
             this.entities = new Array<IEntity>();
             this.objects = new Array<IObject>();
+
+            addItems(this);
+            addEnemies(this);
         }
 
+        pickObject(object: IObject, entity: IEntity, console: IConsole) {
+            console.addLine(object.pick(entity));
+            if (object instanceof ItemObject) {
+                var index = this.objects.indexOf(object);
+                this.objects.splice(index);
+            }
+        }
     }
 } 

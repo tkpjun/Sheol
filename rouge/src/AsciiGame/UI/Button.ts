@@ -24,9 +24,9 @@ module AsciiGame.UI {
             this.attach(callback);
         }
 
-        getMatrix(dim: Rect): DrawMatrix {
+        getMatrix(dim: Rect): DrawableMatrix {
             var color = this.getColor();
-            var matrix = new DrawMatrix(dim.x, dim.y, dim.w, dim.h, this.getColor());
+            var matrix = new DrawableMatrix(dim.x, dim.y, dim.w, dim.h, this.getColor());
             if (this.corner) {
                 matrix.addString(0, 0, this.corner, dim.w - 1);
             }

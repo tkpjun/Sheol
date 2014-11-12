@@ -5,8 +5,8 @@
         header: string;
         text: string;
 
-        getMatrix(dim: Rect): DrawMatrix {
-            var matrix = new DrawMatrix(dim.x, dim.y, dim.w, dim.h);
+        getMatrix(dim: Rect): DrawableMatrix {
+            var matrix = new DrawableMatrix(dim.x, dim.y, dim.w, dim.h);
             var y = 1;
             if (this.header) {
                 var headerX;

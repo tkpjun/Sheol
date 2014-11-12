@@ -32,8 +32,8 @@
             this.focus = index;
         }
 
-        getMatrix(dim: Rect): DrawMatrix {
-            var matrix = new DrawMatrix(dim.x, dim.y, dim.w, dim.h, this.bgColor);
+        getMatrix(dim: Rect): DrawableMatrix {
+            var matrix = new DrawableMatrix(dim.x, dim.y, dim.w, dim.h, this.bgColor);
             var space = dim.w - this.offset * (this.elements.length - 1) - 2 * this.offEnds;
             var step = Math.floor(space / this.weights.reduce((x, y) => { return x + y }));
             var nextX = dim.x + this.offEnds;

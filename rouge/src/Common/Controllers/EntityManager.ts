@@ -36,7 +36,7 @@
             player1.y = room.getCenter()[1];
             this.characters.push(player1);
             this.level.scheduler.add(
-                new Controllers.ChangeProperty(this.currEntity, player1), true, 1);
+                new ChangeProperty(this.currEntity, player1), true, 1);
 
             var player2 = new Entities.PlayerChar("char2");
             player2.equipment.equipWeapon(Items.getWeapon(Items.Weapons.Spear));
@@ -45,20 +45,11 @@
             player2.y = room.getCenter()[1];
             this.characters.push(player2);
             this.level.scheduler.add(
-                new Controllers.ChangeProperty(this.currEntity, player2), true, 1);
+                new ChangeProperty(this.currEntity, player2), true, 1);
 
+            this.level.entities.forEach(e => this.level.scheduler.add(
+                new ChangeProperty(this.currEntity, e), true, 1.1));
             this.characters.forEach((c) => { this.level.entities.push(c) });
-
-            for (var i = 0; i < rooms.length; i++){
-                if (i % 6 != 0) continue;
-
-                var enemy = Entities.getEnemy("debug" + i/6);
-                enemy.x = rooms[i].getLeft();
-                enemy.y = rooms[i].getBottom();
-                //console.log(enemy.x +", "+ enemy.y)
-                this.level.entities.push(enemy);
-                this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true, 1);
-            }
         }
 
         update() {

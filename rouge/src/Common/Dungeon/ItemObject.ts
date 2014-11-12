@@ -6,7 +6,7 @@
         private _y: number;
         item: IItem;
 
-        constructor(item: IItem, x: number, y: number) {
+        constructor(x: number, y: number, item: IItem) {
             this._x = x;
             this._y = y;
             this.item = item;
@@ -32,7 +32,7 @@
 
         pick(who: Entities.Entity): string {
             who.inventory.push(this.item);
-            return null;
+            return "You picked up a " + this.item.name + ".";
         }
     }
 }  

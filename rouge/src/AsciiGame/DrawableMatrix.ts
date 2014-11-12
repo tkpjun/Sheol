@@ -2,7 +2,7 @@
 module AsciiGame {
     import Controllers = Common.Controllers;
 
-    export class DrawMatrix {
+    export class DrawableMatrix {
 
         xOffset: number;
         yOffset: number;
@@ -23,7 +23,7 @@ module AsciiGame {
             
         }
 
-        addString(x: number, y: number, str: string, wrapAt?: number, color?: string, bgColor?: string): DrawMatrix {
+        addString(x: number, y: number, str: string, wrapAt?: number, color?: string, bgColor?: string): DrawableMatrix {
             if (!str) return this;
             var lines = new Array<string>();
             var bgc;
@@ -53,7 +53,7 @@ module AsciiGame {
             return this;
         }
 
-        addPath(path: Controllers.Path, offsetX: number, offsetY: number, maxAP?: number, excludeFirst?: boolean, color?: string): DrawMatrix {
+        addPath(path: Controllers.Path, offsetX: number, offsetY: number, maxAP?: number, excludeFirst?: boolean, color?: string): DrawableMatrix {
             if (!path) return this;
 
             var nodes = path._nodes;
@@ -90,7 +90,7 @@ module AsciiGame {
             return this;
         }
 
-        addOverlay(other: DrawMatrix, alpha?: number): DrawMatrix {
+        addOverlay(other: DrawableMatrix, alpha?: number): DrawableMatrix {
             var newXOff = Math.min(this.xOffset, other.xOffset);
             var newYOff = Math.min(this.yOffset, other.yOffset);
 

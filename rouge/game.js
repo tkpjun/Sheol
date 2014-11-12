@@ -28,6 +28,7 @@
 var AsciiGame;
 (function (AsciiGame) {
     var Entities = Common.Entities;
+    var C = Common;
 
     function symbolO(item) {
         throw ("TODO");
@@ -49,14 +50,32 @@ var AsciiGame;
     }
     AsciiGame.colorE = colorE;
 
-    function getDrawable(entity) {
+    function getDrawableE(entity) {
         if (entity instanceof Entities.PlayerChar) {
             return { symbol: "@" };
         } else {
             return { symbol: "e" };
         }
     }
-    AsciiGame.getDrawable = getDrawable;
+    AsciiGame.getDrawableE = getDrawableE;
+
+    function getDrawableO(obj) {
+        if (obj instanceof C.Dungeon.ItemObject) {
+            var i = obj;
+            if (i.item instanceof C.Items.ArmorPiece) {
+                var a = i.item;
+                return { symbol: "[", color: "blue" };
+            } else if (i.item instanceof C.Items.Weapon) {
+                var w = i.item;
+                return { symbol: ")", color: "green" };
+            } else {
+                return { symbol: "?" };
+            }
+        } else {
+            return { symbol: "%", color: "red" };
+        }
+    }
+    AsciiGame.getDrawableO = getDrawableO;
 
     function wrapString(str, limit) {
         var arr = new Array();
@@ -126,6 +145,48 @@ var Common;
             return map;
         }
         Dungeon.createMap = createMap;
+
+        function addItems(level) {
+            var viableCells = new Array();
+            for (var x = 0; x < level.map._width; x++) {
+                for (var y = 0; y < level.map._height; y++) {
+                    if (level.map[x + "," + y] !== " ") {
+                        viableCells.push({ x: x, y: y });
+                    }
+                }
+            }
+            for (var times = 0; times < 15; times++) {
+                var cell = viableCells[Math.floor(ROT.RNG.getUniform() * viableCells.length)];
+                var weaponType = Math.floor(ROT.RNG.getUniform() * Object.keys(Common.Items.Weapons).length / 2);
+                var weapon = Common.Items.getWeapon(weaponType);
+                level.objects.push(new Dungeon.ItemObject(cell.x, cell.y, weapon));
+
+                cell = viableCells[Math.floor(ROT.RNG.getUniform() * viableCells.length)];
+                var armorType = Math.floor(ROT.RNG.getUniform() * Object.keys(Common.Items.Armors).length / 2);
+                var armor = Common.Items.getArmor(armorType);
+                level.objects.push(new Dungeon.ItemObject(cell.x, cell.y, armor));
+            }
+        }
+        Dungeon.addItems = addItems;
+
+        function addEnemies(level) {
+            var viableCells = new Array();
+            for (var x = 0; x < level.map._width; x++) {
+                for (var y = 0; y < level.map._height; y++) {
+                    if (level.map[x + "," + y] !== " ") {
+                        viableCells.push({ x: x, y: y });
+                    }
+                }
+            }
+            for (var times = 0; times < 25; times++) {
+                var cell = viableCells[Math.floor(ROT.RNG.getUniform() * viableCells.length)];
+                var enemy = Common.Entities.getEnemy("debug" + times);
+                enemy.x = cell.x;
+                enemy.y = cell.y;
+                level.entities.push(enemy);
+            }
+        }
+        Dungeon.addEnemies = addEnemies;
     })(Common.Dungeon || (Common.Dungeon = {}));
     var Dungeon = Common.Dungeon;
 })(Common || (Common = {}));
@@ -178,7 +239,7 @@ var AsciiGame;
         };
 
         Camera.prototype.getMapView = function (map) {
-            var matrix = new AsciiGame.DrawMatrix(this.xOffset, this.yOffset, this.width, this.height);
+            var matrix = new AsciiGame.DrawableMatrix(this.xOffset, this.yOffset, this.width, this.height);
 
             for (var key in map) {
                 var parts = key.split(",");
@@ -216,7 +277,7 @@ var AsciiGame;
             objects.forEach(function (o) {
                 if (o.x < _this.x || o.y < _this.y || o.x > _this.x + _this.width - 1 || o.y > _this.y + _this.height - 1) {
                 } else {
-                    var d = { symbol: "%", color: "red" };
+                    var d = AsciiGame.getDrawableO(o);
                     matrix.matrix[o.x - _this.x][o.y - _this.y].symbol = d.symbol;
                     matrix.matrix[o.x - _this.x][o.y - _this.y].color = d.color;
                 }
@@ -229,7 +290,7 @@ var AsciiGame;
             entities.forEach(function (e) {
                 if (e.x < _this.x || e.y < _this.y || e.x > _this.x + _this.width - 1 || e.y > _this.y + _this.height - 1) {
                 } else {
-                    var d = AsciiGame.getDrawable(e);
+                    var d = AsciiGame.getDrawableE(e);
                     matrix.matrix[e.x - _this.x][e.y - _this.y].symbol = d.symbol;
                     matrix.matrix[e.x - _this.x][e.y - _this.y].color = d.color;
                     if (matrix.matrix[e.x + e.dir.x - _this.x])
@@ -430,8 +491,8 @@ var Common;
 /// <reference path="../Common/Controllers/Controllers.ts" />
 var AsciiGame;
 (function (AsciiGame) {
-    var DrawMatrix = (function () {
-        function DrawMatrix(xOffset, yOffset, width, height, bgColor) {
+    var DrawableMatrix = (function () {
+        function DrawableMatrix(xOffset, yOffset, width, height, bgColor) {
             this.xOffset = xOffset;
             this.yOffset = yOffset;
 
@@ -443,7 +504,7 @@ var AsciiGame;
                 }
             }
         }
-        DrawMatrix.prototype.addString = function (x, y, str, wrapAt, color, bgColor) {
+        DrawableMatrix.prototype.addString = function (x, y, str, wrapAt, color, bgColor) {
             if (!str)
                 return this;
             var lines = new Array();
@@ -475,7 +536,7 @@ var AsciiGame;
             return this;
         };
 
-        DrawMatrix.prototype.addPath = function (path, offsetX, offsetY, maxAP, excludeFirst, color) {
+        DrawableMatrix.prototype.addPath = function (path, offsetX, offsetY, maxAP, excludeFirst, color) {
             var _this = this;
             if (!path)
                 return this;
@@ -516,7 +577,7 @@ var AsciiGame;
             return this;
         };
 
-        DrawMatrix.prototype.addOverlay = function (other, alpha) {
+        DrawableMatrix.prototype.addOverlay = function (other, alpha) {
             var newXOff = Math.min(this.xOffset, other.xOffset);
             var newYOff = Math.min(this.yOffset, other.yOffset);
 
@@ -578,7 +639,7 @@ var AsciiGame;
             return this;
         };
 
-        DrawMatrix.prototype.draw = function (display) {
+        DrawableMatrix.prototype.draw = function (display) {
             for (var i = 0; i < this.matrix.length; i++) {
                 for (var j = 0; j < this.matrix[0].length; j++) {
                     if (!this.matrix[i][j])
@@ -588,9 +649,9 @@ var AsciiGame;
                 }
             }
         };
-        return DrawMatrix;
+        return DrawableMatrix;
     })();
-    AsciiGame.DrawMatrix = DrawMatrix;
+    AsciiGame.DrawableMatrix = DrawableMatrix;
 })(AsciiGame || (AsciiGame = {}));
 /// <reference path="../Common/Common.ts" />
 var AsciiGame;
@@ -789,7 +850,7 @@ var AsciiGame;
             var p1 = characters[0];
             var p2 = characters[1];
             var w = AsciiGame.Settings.SidebarWidth;
-            var matrix = new AsciiGame.DrawMatrix(0, 0, w, 23);
+            var matrix = new AsciiGame.DrawableMatrix(0, 0, w, 23);
 
             for (var i = 0; i < AsciiGame.Settings.SidebarWidth; i++) {
                 matrix.matrix[i][0] = { symbol: " ", bgColor: this.color1 };
@@ -857,7 +918,7 @@ var AsciiGame;
             var w = AsciiGame.Settings.SidebarWidth;
             var wDisp = AsciiGame.Settings.DisplayWidth;
             var leftEdge = wDisp - w;
-            var matrix = new AsciiGame.DrawMatrix(leftEdge, 0, w, AsciiGame.Settings.DisplayHeight);
+            var matrix = new AsciiGame.DrawableMatrix(leftEdge, 0, w, AsciiGame.Settings.DisplayHeight);
             if (!baseTime)
                 baseTime = 0;
 
@@ -892,7 +953,7 @@ var AsciiGame;
                 };
             }
             for (var i = 0; i < both.length && i < 9; i++) {
-                var drawable = AsciiGame.getDrawable(both[i].entity);
+                var drawable = AsciiGame.getDrawableE(both[i].entity);
                 var entity = both[i].entity;
                 matrix.addString(1, i * 3 + 2, entity.name, AsciiGame.Settings.SidebarWidth - 4);
                 matrix.addString(1, i * 3 + 3, "HP:" + entity.stats.hp + "/" + entity.stats.hpMax, AsciiGame.Settings.SidebarWidth - 4);
@@ -986,7 +1047,7 @@ var AsciiGame;
             }
 
             this.bottomBar[1].dimensions.x = AsciiGame.Settings.DisplayWidth - this.bottomBar[1].dimensions.w - AsciiGame.Settings.SidebarWidth;
-            return new AsciiGame.DrawMatrix(AsciiGame.Settings.SidebarWidth, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight, AsciiGame.Settings.DisplayWidth - 2 * AsciiGame.Settings.SidebarWidth, AsciiGame.Settings.BottomBarHeight, this.color1).addOverlay(this.bottomBar[0].getMatrix()).addOverlay(this.bottomBar[1].getMatrix());
+            return new AsciiGame.DrawableMatrix(AsciiGame.Settings.SidebarWidth, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight, AsciiGame.Settings.DisplayWidth - 2 * AsciiGame.Settings.SidebarWidth, AsciiGame.Settings.BottomBarHeight, this.color1).addOverlay(this.bottomBar[0].getMatrix()).addOverlay(this.bottomBar[1].getMatrix());
         };
         return GameUI;
     })();
@@ -1213,7 +1274,7 @@ var AsciiGame;
 
             Button.prototype.getMatrix = function (dim) {
                 var color = this.getColor();
-                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, dim.w, dim.h, this.getColor());
+                var matrix = new AsciiGame.DrawableMatrix(dim.x, dim.y, dim.w, dim.h, this.getColor());
                 if (this.corner) {
                     matrix.addString(0, 0, this.corner, dim.w - 1);
                 }
@@ -1290,7 +1351,7 @@ var AsciiGame;
             function Description() {
             }
             Description.prototype.getMatrix = function (dim) {
-                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, dim.w, dim.h);
+                var matrix = new AsciiGame.DrawableMatrix(dim.x, dim.y, dim.w, dim.h);
                 var y = 1;
                 if (this.header) {
                     var headerX;
@@ -1359,7 +1420,7 @@ var AsciiGame;
             };
 
             HoriList.prototype.getMatrix = function (dim) {
-                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, dim.w, dim.h, this.bgColor);
+                var matrix = new AsciiGame.DrawableMatrix(dim.x, dim.y, dim.w, dim.h, this.bgColor);
                 var space = dim.w - this.offset * (this.elements.length - 1) - 2 * this.offEnds;
                 var step = Math.floor(space / this.weights.reduce(function (x, y) {
                     return x + y;
@@ -1435,7 +1496,7 @@ var AsciiGame;
             };
 
             TextBox.prototype.getMatrix = function (width) {
-                var matrix = new AsciiGame.DrawMatrix(this.x, this.y, width, this.height);
+                var matrix = new AsciiGame.DrawableMatrix(this.x, this.y, width, this.height);
                 var used = 0;
                 var index = this.lines.length - 1;
                 var mod = 0;
@@ -1525,13 +1586,13 @@ var AsciiGame;
 
             VertList.prototype.indexIsVisible = function (i) {
                 if (this.visibleElements)
-                    return i < this.visibleElements;
+                    return i < this.visibleElements && i < this.elements.length;
                 else
                     return i < this.elements.length;
             };
 
             VertList.prototype.getMatrix = function (dim) {
-                var matrix = new AsciiGame.DrawMatrix(dim.x, dim.y, dim.w, dim.h, this.bgColor);
+                var matrix = new AsciiGame.DrawableMatrix(dim.x, dim.y, dim.w, dim.h, this.bgColor);
                 var space = dim.h - this.offset * (this.elements.length - 1) - 2 * this.offEnds;
                 ;
                 var step = Math.floor(space / this.weights.reduce(function (x, y) {
@@ -1623,7 +1684,7 @@ var Common;
                 else
                     newAP = this._lengthInAP;
 
-                if (newAP) {
+                if (newAP || newAP == 0) {
                     var arr = new Array();
                     var cost = 0;
                     for (var i = 0; i < this._nodes.length; i++) {
@@ -1648,8 +1709,7 @@ var Common;
                 } else {
                     this._nodes[0] = this.begin;
                     this._costs[0] = 0;
-                    this.pointer.x = this.begin.x;
-                    this.pointer.y = this.begin.y;
+                    this.pointer = this.begin;
                 }
                 return this;
             };
@@ -1798,22 +1858,12 @@ var Common;
                 this.characters.push(player2);
                 this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, player2), true, 1);
 
+                this.level.entities.forEach(function (e) {
+                    return _this.level.scheduler.add(new Controllers.ChangeProperty(_this.currEntity, e), true, 1.1);
+                });
                 this.characters.forEach(function (c) {
                     _this.level.entities.push(c);
                 });
-
-                for (var i = 0; i < rooms.length; i++) {
-                    if (i % 6 != 0)
-                        continue;
-
-                    var enemy = Common.Entities.getEnemy("debug" + i / 6);
-                    enemy.x = rooms[i].getLeft();
-                    enemy.y = rooms[i].getBottom();
-
-                    //console.log(enemy.x +", "+ enemy.y)
-                    this.level.entities.push(enemy);
-                    this.level.scheduler.add(new Controllers.ChangeProperty(this.currEntity, enemy), true, 1);
-                }
             };
 
             EntityManager.prototype.update = function () {
@@ -2053,7 +2103,8 @@ var Common;
                         return obj.x == path.begin.x && obj.y == path.begin.y;
                     })[0];
                     if (obj) {
-                        this.con.addLine(obj.pick(this.char));
+                        //this.con.addLine(obj.pick(this.char));
+                        this.lvl.pickObject(obj, this.char, this.con);
                     } else {
                         this.con.addLine("Nothing of interest here!");
                     }
@@ -2062,26 +2113,22 @@ var Common;
 
                 switch (this.state) {
                     case 0 /* Move */:
+                        var target = { x: path.pointer.x, y: path.pointer.y };
                         moves = this.char.requestMoves(2, path.cost() / 2);
                         var c = this.char;
                         var m = this.manager;
                         if (moves > 0) {
-                            path.trim(moves * 2);
-                            function nextStep(i, last) {
+                            //path.trim(moves * 2);
+                            function nextStep(i, last, callback) {
                                 return function () {
                                     c.dir = Common.Vec.sub(path._nodes[i], { x: c.x, y: c.y });
                                     c.x = path._nodes[i].x;
                                     c.y = path._nodes[i].y;
                                     m.currPath.unwrap = path; //dumb way to redraw screen
-
-                                    //manager.currPath.unwrap = new AstarPath({ x: char.x, y: char.y }, null, char.stats.ap);
-                                    /*
-                                    if (i == path._nodes.length - 1) {
-                                    char.stats.ap -= path.cost();
-                                    }*/
                                     if (last) {
-                                        m.currPath.unwrap = new Controllers.AstarPath({ x: c.x, y: c.y }, null, c.stats.ap);
-                                        //endTurn();
+                                        var p = new Controllers.AstarPath({ x: c.x, y: c.y }, target, c.stats.ap);
+                                        p.connect(callback);
+                                        m.currPath.unwrap = p;
                                     }
                                 };
                             }
@@ -2090,7 +2137,7 @@ var Common;
                             }
                             for (var i = 1; bool(i); i++) {
                                 if (!bool(i + 1)) {
-                                    this.char.addAction(nextStep(i, true));
+                                    this.char.addAction(nextStep(i, true, this.callback));
                                 } else
                                     this.char.addAction(nextStep(i));
                             }
@@ -2241,7 +2288,7 @@ var Common;
 (function (Common) {
     (function (Dungeon) {
         var ItemObject = (function () {
-            function ItemObject(item, x, y) {
+            function ItemObject(x, y, item) {
                 this._x = x;
                 this._y = y;
                 this.item = item;
@@ -2286,7 +2333,7 @@ var Common;
 
             ItemObject.prototype.pick = function (who) {
                 who.inventory.push(this.item);
-                return null;
+                return "You picked up a " + this.item.name + ".";
             };
             return ItemObject;
         })();
@@ -2303,7 +2350,17 @@ var Common;
                 this.map = Dungeon.createMap(type);
                 this.entities = new Array();
                 this.objects = new Array();
+
+                Dungeon.addItems(this);
+                Dungeon.addEnemies(this);
             }
+            Level.prototype.pickObject = function (object, entity, console) {
+                console.addLine(object.pick(entity));
+                if (object instanceof Dungeon.ItemObject) {
+                    var index = this.objects.indexOf(object);
+                    this.objects.splice(index);
+                }
+            };
             return Level;
         })();
         Dungeon.Level = Level;
@@ -2620,15 +2677,15 @@ var Common;
 
             PlayerChar.prototype.requestMoves = function (cost, times) {
                 var moves = 0;
+                if (this.stats.ap < cost && moves < times) {
+                    moves += this.movesFromStamina(cost, times - moves);
+                }
                 for (var i = 0; i < times; i++) {
                     if (this.stats.ap - cost >= 0) {
                         moves += 1;
                         this.stats.ap -= cost;
                     } else
                         break;
-                }
-                if (moves < times) {
-                    moves += this.movesFromStamina(cost, times - moves);
                 }
                 return moves;
             };

@@ -29,7 +29,7 @@
     <TypeScriptCompile Include="parallel.d.ts" />
     <TypeScriptCompile Include="src\AsciiGame\Camera.ts" />
     <TypeScriptCompile Include="src\AsciiGame\Core\Control.ts" />
-    <TypeScriptCompile Include="src\AsciiGame\DrawMatrix.ts" />
+    <TypeScriptCompile Include="src\AsciiGame\DrawableMatrix.ts" />
     <TypeScriptCompile Include="src\AsciiGame\GameScreen.ts" />
     <TypeScriptCompile Include="src\AsciiGame\GameUI.ts" />
     <TypeScriptCompile Include="src\AsciiGame\MainMenuScreen.ts" />

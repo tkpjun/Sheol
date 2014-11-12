@@ -26,12 +26,32 @@ module AsciiGame {
         throw ("TODO");
     }
 
-    export function getDrawable(entity: C.IEntity): IDrawable {
+    export function getDrawableE(entity: C.IEntity): IDrawable {
         if (entity instanceof Entities.PlayerChar) {
             return { symbol: "@" };
         }
         else {
             return { symbol: "e" };
+        }
+    }
+
+    export function getDrawableO(obj: C.IObject) {
+        if (obj instanceof C.Dungeon.ItemObject) {
+            var i = <C.Dungeon.ItemObject>obj;
+            if (i.item instanceof C.Items.ArmorPiece) {
+                var a = <C.Items.ArmorPiece>i.item;
+                return { symbol: "[", color: "blue" };
+            }
+            else if (i.item instanceof C.Items.Weapon) {
+                var w = <C.Items.Weapon>i.item;
+                return { symbol: ")", color: "green" };
+            }
+            else {
+                return { symbol: "?" };
+            }
+        }
+        else {
+            return { symbol: "%", color: "red" };
         }
     }
 

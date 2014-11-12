@@ -28,6 +28,9 @@ module Common.Entities {
 
         requestMoves(cost: number, times: number): number {
             var moves = 0;
+            if (this.stats.ap < cost && moves < times) {
+                moves += this.movesFromStamina(cost, times - moves);
+            }
             for (var i = 0; i < times; i++) {
                 if (this.stats.ap - cost >= 0) {
                     moves += 1;
@@ -35,9 +38,6 @@ module Common.Entities {
                 }
                 else
                     break;
-            }
-            if (moves < times) {
-                moves += this.movesFromStamina(cost, times - moves);
             }
             return moves;
         }

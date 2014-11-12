@@ -10,7 +10,7 @@
             this.element = element;
         }
 
-        getMatrix(): DrawMatrix {
+        getMatrix(): DrawableMatrix {
             return this.element.getMatrix(this.dimensions);
         }
 
