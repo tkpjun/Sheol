@@ -25,6 +25,24 @@ module AsciiGame {
             this.context = new Array<UI.Box>();
             this.mouseLastOver = new Common.ObservableProperty<UI.IElement>();
 
+            this.alwaysInContext.push(new UI.Box(new UI.Rect(0, 0, 3, 2),
+                new UI.Button(" ^", "v", () => {
+                    if (screen.textBox.height != 2) {
+                        screen.textBox.height = 2;
+                    }
+                    else {
+                        screen.textBox.height = 8;
+                    }
+                })));
+            this.alwaysInContext.push(new UI.Box(new UI.Rect(0, 0, 3, 2),
+                new UI.Button(null, "LOG", () => {
+                    if (screen.textBox.height == 8) {
+                        screen.textBox.height = Settings.DisplayHeight - Settings.BottomBarHeight;
+                    }
+                    else {
+                        screen.textBox.height = 8;
+                    }
+                })));
             this.initDpad(screen.manager.player);
             this.initLeftBar();
             this.initRightBar();
@@ -99,6 +117,30 @@ module AsciiGame {
             }
 
             return target;
+        }
+
+        getTextBoxButton(box: UI.TextBox): DrawableMatrix{
+            this.alwaysInContext[0].dimensions.x = Settings.DisplayWidth - Settings.SidebarWidth - 3;
+            var matrix = new DrawableMatrix(this.alwaysInContext[0].dimensions.x, 0, 3, box.height);
+            console.log("1")
+            matrix.addOverlay(this.alwaysInContext[0].getMatrix());
+            console.log("2")
+
+            if (box.height > 6) {
+                this.alwaysInContext[1].isVisible = true;
+                this.alwaysInContext[1].dimensions.x = Settings.DisplayWidth - Settings.SidebarWidth - 3;
+                this.alwaysInContext[1].dimensions.y = Math.min(box.height - 2, Settings.DisplayHeight - Settings.BottomBarHeight - 3);
+                if (box.height < Settings.DisplayHeight / 2)
+                    (<UI.Button>this.alwaysInContext[1].element).label = "LOG";
+                else
+                (<UI.Button>this.alwaysInContext[1].element).label = "RET";
+                matrix.addOverlay(this.alwaysInContext[1].getMatrix());
+            }
+            else {
+                this.alwaysInContext[1].isVisible = false;
+            }
+
+            return matrix;
         }
 
         private initLeftBar() {

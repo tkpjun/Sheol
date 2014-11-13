@@ -29,11 +29,16 @@ module AsciiGame.UI {
             var matrix = new DrawableMatrix(this.x, this.y, width, this.height);
             var used = 0;
             var index = this.lines.length - 1;
-            var mod = 0;
+            var mod = 2;
 
             while (used < this.height && index >= 0) {
-                if (used >= this.height - 2)
+                /*if (used < 2)
                     mod = 2;
+                else if (used >= this.height - 2)
+                    mod = 2;
+                else
+                    mod = 0;*/
+
                 var nextLine = this.lines[index];
                 if (nextLine.length > width - 2 - mod) {
                     var split = AsciiGame.wrapString(nextLine, width - 2 - mod);

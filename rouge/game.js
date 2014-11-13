@@ -665,7 +665,7 @@ var AsciiGame;
             var _this = this;
             this.dungeon = new Array(new Dungeon.Level(0 /* Mines */));
             this.currLevel = 0;
-            this.textBox = new AsciiGame.UI.TextBox(AsciiGame.Settings.SidebarWidth, 0, 7, function () {
+            this.textBox = new AsciiGame.UI.TextBox(AsciiGame.Settings.SidebarWidth, 0, 2, function () {
                 return _this.advanceFrame();
             });
             this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
@@ -699,7 +699,7 @@ var AsciiGame;
             var _this = this;
             this.manager.engine.lock();
             this.camera.updateView(this.manager.level);
-            this.draw(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap).addOverlay(this.textBox.getMatrix(this.camera.width), 0.75));
+            this.draw(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap).addOverlay(this.textBox.getMatrix(this.camera.width), 0.75).addOverlay(this.ui.getTextBoxButton(this.textBox)));
             this.draw(this.ui.getLeftBar(this.manager.characters));
             this.draw(this.ui.getDPad());
             this.draw(this.ui.getRightBar(this.manager.level.scheduler, this.manager.currEntity.unwrap, this.manager.level.entities.filter(function (e) {
@@ -707,21 +707,6 @@ var AsciiGame;
             }), this.manager.player));
             this.draw(this.ui.getBottomBar(this.manager.player));
 
-            /*
-            var matrix = new DrawMatrix(0, 0, null, Settings.DisplayWidth, Settings.DisplayHeight)
-            .addOverlay(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap))
-            .addOverlay(this.textBox.getMatrix(this.camera.width))
-            .addOverlay(GameUI.getLeftBar(this.manager.characters))
-            .addOverlay(GameUI.getDPad())
-            .addOverlay(GameUI.getRightBar(
-            this.manager.level.scheduler,
-            this.manager.currEntity.unwrap,
-            this.manager.level.entities.filter((e) => {
-            return this.camera.sees(e.x, e.y);
-            }))
-            )
-            .addOverlay(GameUI.getBottomBar())
-            this.nextToDraw.unwrap = matrix;  */
             this.manager.engine.unlock();
         };
 
@@ -772,6 +757,20 @@ var AsciiGame;
             this.context = new Array();
             this.mouseLastOver = new Common.ObservableProperty();
 
+            this.alwaysInContext.push(new AsciiGame.UI.Box(new AsciiGame.UI.Rect(0, 0, 3, 2), new AsciiGame.UI.Button(" ^", "v", function () {
+                if (screen.textBox.height != 2) {
+                    screen.textBox.height = 2;
+                } else {
+                    screen.textBox.height = 8;
+                }
+            })));
+            this.alwaysInContext.push(new AsciiGame.UI.Box(new AsciiGame.UI.Rect(0, 0, 3, 2), new AsciiGame.UI.Button(null, "LOG", function () {
+                if (screen.textBox.height == 8) {
+                    screen.textBox.height = AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight;
+                } else {
+                    screen.textBox.height = 8;
+                }
+            })));
             this.initDpad(screen.manager.player);
             this.initLeftBar();
             this.initRightBar();
@@ -841,6 +840,29 @@ var AsciiGame;
             }
 
             return target;
+        };
+
+        GameUI.prototype.getTextBoxButton = function (box) {
+            this.alwaysInContext[0].dimensions.x = AsciiGame.Settings.DisplayWidth - AsciiGame.Settings.SidebarWidth - 3;
+            var matrix = new AsciiGame.DrawableMatrix(this.alwaysInContext[0].dimensions.x, 0, 3, box.height);
+            console.log("1");
+            matrix.addOverlay(this.alwaysInContext[0].getMatrix());
+            console.log("2");
+
+            if (box.height > 6) {
+                this.alwaysInContext[1].isVisible = true;
+                this.alwaysInContext[1].dimensions.x = AsciiGame.Settings.DisplayWidth - AsciiGame.Settings.SidebarWidth - 3;
+                this.alwaysInContext[1].dimensions.y = Math.min(box.height - 2, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight - 3);
+                if (box.height < AsciiGame.Settings.DisplayHeight / 2)
+                    this.alwaysInContext[1].element.label = "LOG";
+                else
+                    this.alwaysInContext[1].element.label = "RET";
+                matrix.addOverlay(this.alwaysInContext[1].getMatrix());
+            } else {
+                this.alwaysInContext[1].isVisible = false;
+            }
+
+            return matrix;
         };
 
         GameUI.prototype.initLeftBar = function () {
@@ -1136,15 +1158,19 @@ var AsciiGame;
     (function (UI) {
         var Box = (function () {
             function Box(dimensions, element) {
+                this.isVisible = true;
                 this.dimensions = dimensions;
                 this.element = element;
             }
             Box.prototype.getMatrix = function () {
-                return this.element.getMatrix(this.dimensions);
+                if (this.isVisible)
+                    return this.element.getMatrix(this.dimensions);
+                else
+                    return null;
             };
 
             Box.prototype.whatIsAt = function (x, y) {
-                if (this.dimensions.isWithin(x, y)) {
+                if (this.isVisible && this.dimensions.isWithin(x, y)) {
                     var next = { fst: this.element, snd: this.dimensions };
                     var last = next.fst;
                     while (next) {
@@ -1157,7 +1183,7 @@ var AsciiGame;
             };
 
             Box.prototype.mouseOver = function (x, y) {
-                if (this.dimensions.isWithin(x, y)) {
+                if (this.isVisible && this.dimensions.isWithin(x, y)) {
                     this.element.mouseOver();
                     var next = this.element.whatIsAt(x, y, this.dimensions);
                     while (next) {
@@ -1170,7 +1196,7 @@ var AsciiGame;
                 }
             };
             Box.prototype.mouseDown = function (x, y) {
-                if (this.dimensions.isWithin(x, y)) {
+                if (this.isVisible && this.dimensions.isWithin(x, y)) {
                     this.element.mouseDown();
                     var next = this.element.whatIsAt(x, y, this.dimensions);
                     while (next) {
@@ -1182,7 +1208,7 @@ var AsciiGame;
                     return false;
             };
             Box.prototype.mouseUp = function (x, y) {
-                if (this.dimensions.isWithin(x, y)) {
+                if (this.isVisible && this.dimensions.isWithin(x, y)) {
                     this.element.mouseUp();
                     var next = this.element.whatIsAt(x, y, this.dimensions);
                     while (next) {
@@ -1499,11 +1525,15 @@ var AsciiGame;
                 var matrix = new AsciiGame.DrawableMatrix(this.x, this.y, width, this.height);
                 var used = 0;
                 var index = this.lines.length - 1;
-                var mod = 0;
+                var mod = 2;
 
                 while (used < this.height && index >= 0) {
-                    if (used >= this.height - 2)
-                        mod = 2;
+                    /*if (used < 2)
+                    mod = 2;
+                    else if (used >= this.height - 2)
+                    mod = 2;
+                    else
+                    mod = 0;*/
                     var nextLine = this.lines[index];
                     if (nextLine.length > width - 2 - mod) {
                         var split = AsciiGame.wrapString(nextLine, width - 2 - mod);

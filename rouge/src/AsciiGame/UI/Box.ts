@@ -4,6 +4,7 @@
 
         dimensions: Rect
         element: IElement;
+        isVisible: boolean = true;
 
         constructor(dimensions: Rect, element: IElement) {
             this.dimensions = dimensions;
@@ -11,11 +12,14 @@
         }
 
         getMatrix(): DrawableMatrix {
-            return this.element.getMatrix(this.dimensions);
+            if (this.isVisible)
+                return this.element.getMatrix(this.dimensions);
+            else
+                return null;
         }
 
         whatIsAt(x: number, y: number): IElement {
-            if (this.dimensions.isWithin(x, y)) {
+            if (this.isVisible && this.dimensions.isWithin(x, y)) {
                 var next = { fst: this.element, snd: this.dimensions };
                 var last = next.fst;
                 while (next) {
@@ -29,7 +33,7 @@
         }
 
         mouseOver(x: number, y: number): boolean {
-            if (this.dimensions.isWithin(x, y)) {
+            if (this.isVisible && this.dimensions.isWithin(x, y)) {
                 this.element.mouseOver();
                 var next = this.element.whatIsAt(x, y, this.dimensions);
                 while (next) {
@@ -43,7 +47,7 @@
             }
         }
         mouseDown(x: number, y: number): boolean {
-            if (this.dimensions.isWithin(x, y)) {
+            if (this.isVisible && this.dimensions.isWithin(x, y)) {
                 this.element.mouseDown();
                 var next = this.element.whatIsAt(x, y, this.dimensions);
                 while (next) {
@@ -56,7 +60,7 @@
                 return false;
         }
         mouseUp(x: number, y: number): boolean {
-            if (this.dimensions.isWithin(x, y)) {
+            if (this.isVisible && this.dimensions.isWithin(x, y)) {
                 this.element.mouseUp();
                 var next = this.element.whatIsAt(x, y, this.dimensions);
                 while (next) {

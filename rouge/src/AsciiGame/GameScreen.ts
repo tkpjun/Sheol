@@ -20,7 +20,7 @@ module AsciiGame {
         constructor(drawCallback: (DrawMatrix) => void) {
             this.dungeon = new Array<Dungeon.Level>(new Dungeon.Level(Dungeon.MapTypes.Mines));
             this.currLevel = 0;
-            this.textBox = new UI.TextBox(Settings.SidebarWidth, 0, 7, () => this.advanceFrame());
+            this.textBox = new UI.TextBox(Settings.SidebarWidth, 0, 2, () => this.advanceFrame());
             this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
             this.manager.init(new Controllers.Player(this.textBox, this.manager));
             //this.nextToDraw = new C.ObservableProperty<DrawMatrix>();
@@ -55,7 +55,8 @@ module AsciiGame {
                 this.camera.x,
                 this.camera.y,
                 this.manager.currEntity.unwrap.stats.ap)
-                .addOverlay(this.textBox.getMatrix(this.camera.width), 0.75));
+                .addOverlay(this.textBox.getMatrix(this.camera.width), 0.75)
+                .addOverlay(this.ui.getTextBoxButton(this.textBox)));
             this.draw(this.ui.getLeftBar(this.manager.characters));
             this.draw(this.ui.getDPad());
             this.draw(this.ui.getRightBar(
@@ -65,22 +66,7 @@ module AsciiGame {
                     return this.camera.sees(e.x, e.y);
                 }),
                 this.manager.player));
-            this.draw(this.ui.getBottomBar(this.manager.player));
-            /*
-            var matrix = new DrawMatrix(0, 0, null, Settings.DisplayWidth, Settings.DisplayHeight)
-                .addOverlay(this.camera.view.addPath(this.manager.currPath.unwrap, this.camera.x, this.camera.y, this.manager.currEntity.unwrap.stats.ap))
-                .addOverlay(this.textBox.getMatrix(this.camera.width))
-                .addOverlay(GameUI.getLeftBar(this.manager.characters))
-                .addOverlay(GameUI.getDPad())
-                .addOverlay(GameUI.getRightBar(
-                    this.manager.level.scheduler,
-                    this.manager.currEntity.unwrap,
-                    this.manager.level.entities.filter((e) => {
-                            return this.camera.sees(e.x, e.y);
-                        }))
-                    )
-                .addOverlay(GameUI.getBottomBar())
-            this.nextToDraw.unwrap = matrix;  */      
+            this.draw(this.ui.getBottomBar(this.manager.player));     
 
             this.manager.engine.unlock();
         }
