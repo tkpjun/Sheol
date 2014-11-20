@@ -22,7 +22,7 @@ module AsciiGame {
             this.currLevel = 0;
             this.textBox = new UI.TextBox(Settings.SidebarWidth, 0, 2, () => this.advanceFrame());
             this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
-            this.manager.init(new Controllers.Player(this.textBox, this.manager));
+            this.manager.init(new Controllers.Player(this.textBox, this.manager), new Controllers.BasicAI(this.textBox, this.manager));
             //this.nextToDraw = new C.ObservableProperty<DrawMatrix>();
             this.camera = new Camera(Settings.SidebarWidth,
                 Settings.DisplayWidth - Settings.SidebarWidth * 2,

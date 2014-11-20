@@ -141,6 +141,13 @@ declare module ROT.FOV {
         compute(x: number, y: number, R: number, callback: (x: number, y: number, r: number, visibility: number) => void);
         constructor(lightPassesCallback: Function, options: any);
     }
+
+    export class RecursiveShadowcasting implements IFOV {
+        constructor(lightPassesCallback: Function, options?: any);
+        compute(x: number, y: number, R: number, callback: (x: number, y: number, r: number, visibility: number) => void);
+        compute180(x: number, y: number, R: number, dir: number, callback: (x: number, y: number, r: number, visibility: number) => void);
+        compute90(x: number, y: number, R: number, dir: number, callback: (x: number, y: number, r: number, visibility: number) => void);
+    }
 }
 
 declare module ROT.Map {

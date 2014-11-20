@@ -8,6 +8,7 @@
         characters: Entities.PlayerChar[];
         engine: ROT.Engine;
         player: Player;
+        ai: BasicAI;
 
         constructor(level: Dungeon.Level) {
             this.level = level;
@@ -25,7 +26,8 @@
             this.engine.start();
         }
 
-        init(player: Player) {
+        init(player: Player, ai: BasicAI) {
+            this.ai = ai;
             this.player = player;
             var rooms = (<ROT.Map.Dungeon>this.level.map).getRooms()
             var room = rooms[0];
@@ -103,7 +105,8 @@
             }
             else if (entity instanceof Entities.Enemy) {
                 var enemy = <Entities.Enemy>entity;
-                enemy.addAction(() => { enemy._hasTurn = false; });
+                //enemy.addAction(() => { enemy._hasTurn = false; });
+                this.ai.activate(enemy);
             }
         }
     }

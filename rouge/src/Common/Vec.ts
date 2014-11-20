@@ -32,5 +32,8 @@
         static sub(a: IVector2, b: IVector2): IVector2 {
             return { x: a.x - b.x, y: a.y - b.y };
         }
+        static mul(a: IVector2, b: number): IVector2 {
+            return { x: b * a.x, y: b * a.y };
+        }
     }
 } 

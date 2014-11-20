@@ -22,7 +22,7 @@ var Common;
         function getEnemy(name) {
             switch (name) {
                 default:
-                    return new Entities.Enemy(name, new Entities.Statset(30, 30, 10, 10));
+                    return new Entities.Enemy(name, new Entities.Statset(30, 15, 8, 10));
                     break;
             }
         }
@@ -436,6 +436,11 @@ var Common;
             return cell !== " " && entitiesOK;
         }
         Controllers.isPassable = isPassable;
+        function lightPasses(loc, level) {
+            var cell = level.map[loc.x + "," + loc.y];
+            return cell !== " ";
+        }
+        Controllers.lightPasses = lightPasses;
         function diagonalNbors(loc, neighbor) {
             if (Math.abs(loc.x - neighbor.x) == 1 && Math.abs(loc.y - neighbor.y) == 1) {
                 return true;
@@ -622,7 +627,7 @@ var AsciiGame;
             this.currLevel = 0;
             this.textBox = new AsciiGame.UI.TextBox(AsciiGame.Settings.SidebarWidth, 0, 2, function () { return _this.advanceFrame(); });
             this.manager = new Controllers.EntityManager(this.dungeon[this.currLevel]);
-            this.manager.init(new Controllers.Player(this.textBox, this.manager));
+            this.manager.init(new Controllers.Player(this.textBox, this.manager), new Controllers.BasicAI(this.textBox, this.manager));
             //this.nextToDraw = new C.ObservableProperty<DrawMatrix>();
             this.camera = new AsciiGame.Camera(AsciiGame.Settings.SidebarWidth, AsciiGame.Settings.DisplayWidth - AsciiGame.Settings.SidebarWidth * 2, 0, AsciiGame.Settings.DisplayHeight - AsciiGame.Settings.BottomBarHeight);
             this.ui = new AsciiGame.GameUI(this);
@@ -1692,15 +1697,99 @@ var Common;
 (function (Common) {
     var Controllers;
     (function (Controllers) {
-        var BasicAI;
-        (function (BasicAI) {
-            var char;
-            var lvl;
-            var state = 2 /* Inactive */;
-            var manager;
-            var con;
-            var callback;
-        })(BasicAI = Controllers.BasicAI || (Controllers.BasicAI = {}));
+        var BasicAI = (function () {
+            function BasicAI(console, entityManager) {
+                this.state = 2 /* Inactive */;
+                this.manager = entityManager;
+                this.con = console;
+            }
+            BasicAI.prototype.activate = function (entity) {
+                var _this = this;
+                if (this.state == 2 /* Inactive */) {
+                    this.entity = entity;
+                    this.callback = function (x, y) {
+                        return Controllers.isPassable(_this.entity, { x: x, y: y }, _this.manager.level);
+                    };
+                    this.lvl = this.manager.level;
+                    this.state = 0 /* Move */;
+                    this.manager.currPath.unwrap = new Controllers.AstarPath({ x: this.entity.x, y: this.entity.y }, null, this.entity.stats.ap);
+                    var target = this.chooseTarget(this.findSeenEntities());
+                    if (target) {
+                        //TODO
+                        console.log("Found target: " + target.name);
+                        this.endTurn();
+                    }
+                    else {
+                        var loc = Common.Vec.add({ x: this.entity.x, y: this.entity.y }, Common.Vec.mul(this.entity.dir, 5));
+                        this.moveTo(loc);
+                        this.endTurn();
+                    }
+                }
+            };
+            BasicAI.prototype.findSeenEntities = function () {
+                var level = this.lvl;
+                var fov = new ROT.FOV.RecursiveShadowcasting(function (x, y) {
+                    return Controllers.lightPasses({ x: x, y: y }, level);
+                });
+                var seen = new Array();
+                fov.compute90(this.entity.x, this.entity.y, 8, 6, function (x, y, r, visibility) {
+                    seen.push({ x: x, y: y });
+                });
+                return this.lvl.entities.filter(function (e) {
+                    return seen.some(function (value, index, array) {
+                        return value.x == e.x && value.y == e.y;
+                    });
+                });
+            };
+            BasicAI.prototype.chooseTarget = function (seen) {
+                var players = seen.filter(function (e) {
+                    return e instanceof Common.Entities.PlayerChar;
+                });
+                if (players.length > 0)
+                    return players[0];
+                else
+                    return null;
+            };
+            BasicAI.prototype.moveTo = function (target) {
+                var m = this.manager;
+                var path = m.currPath.unwrap;
+                path.pointer = target;
+                path.connect(this.callback);
+                var e = this.entity;
+                function nextStep(i, last, callback) {
+                    return function () {
+                        e.dir = Common.Vec.sub(path.nodes[i], { x: e.x, y: e.y });
+                        e.x = path.nodes[i].x;
+                        e.y = path.nodes[i].y;
+                        m.currPath.unwrap = path; //dumb way to redraw screen
+                        if (last) {
+                            var p = new Controllers.AstarPath({ x: e.x, y: e.y }, target, e.stats.ap);
+                            p.connect(callback);
+                            m.currPath.unwrap = p;
+                        }
+                    };
+                }
+                for (var i = 1; i < path.nodes.length; i++) {
+                    if (!(i + 1 < path.nodes.length)) {
+                        this.entity.addAction(nextStep(i, true, this.callback));
+                    }
+                    else
+                        this.entity.addAction(nextStep(i));
+                }
+            };
+            BasicAI.prototype.attackTo = function (x, y) {
+            };
+            BasicAI.prototype.endTurn = function () {
+                var _this = this;
+                this.entity.addAction(function () {
+                    _this.entity._hasTurn = false;
+                    _this.state = 2 /* Inactive */;
+                    _this.manager.currPath.unwrap = null;
+                });
+            };
+            return BasicAI;
+        })();
+        Controllers.BasicAI = BasicAI;
     })(Controllers = Common.Controllers || (Common.Controllers = {}));
 })(Common || (Common = {}));
 var Common;
@@ -1741,8 +1830,9 @@ var Common;
             EntityManager.prototype.start = function () {
                 this.engine.start();
             };
-            EntityManager.prototype.init = function (player) {
+            EntityManager.prototype.init = function (player, ai) {
                 var _this = this;
+                this.ai = ai;
                 this.player = player;
                 var rooms = this.level.map.getRooms();
                 var room = rooms[0];
@@ -1812,9 +1902,8 @@ var Common;
                 }
                 else if (entity instanceof Common.Entities.Enemy) {
                     var enemy = entity;
-                    enemy.addAction(function () {
-                        enemy._hasTurn = false;
-                    });
+                    //enemy.addAction(() => { enemy._hasTurn = false; });
+                    this.ai.activate(enemy);
                 }
             };
             return EntityManager;
@@ -2391,8 +2480,43 @@ var Common;
             Enemy.prototype.hasTurn = function () {
                 return this._hasTurn;
             };
+            Enemy.prototype.requestMoves = function (cost, times) {
+                var moves = 0;
+                if (this.stats.ap < cost && moves < times) {
+                    moves += this.movesFromStamina(cost, times - moves);
+                }
+                for (var i = 0; i < times; i++) {
+                    if (this.stats.ap - cost >= 0) {
+                        moves += 1;
+                        this.stats.ap -= cost;
+                    }
+                    else
+                        break;
+                }
+                return moves;
+            };
+            Enemy.prototype.movesFromStamina = function (cost, times) {
+                var moves = 0;
+                for (var i = 0; i < times; i++) {
+                    var nextCost = 0;
+                    for (var j = 0; j < cost; j++) {
+                        nextCost += Math.ceil((-this.stats.ap + j) / 2) + 1;
+                    }
+                    if (this.stats.stamina >= nextCost) {
+                        moves += 1;
+                        this.stats.stamina -= nextCost;
+                        this.stats.ap -= cost;
+                    }
+                    else
+                        break;
+                }
+                return moves;
+            };
             Enemy.prototype.newTurn = function () {
+                if (this.stats.ap > 0)
+                    this.stats.setStamina(Math.min(this.stats.stamina + this.stats.ap, this.stats.staminaMax));
                 this.stats.ap = this.stats.apMax;
+                this.stats.setStamina(Math.min(this.stats.stamina + 3, this.stats.staminaMax));
                 this._hasTurn = true;
             };
             return Enemy;
@@ -3196,6 +3320,9 @@ var Common;
         };
         Vec.sub = function (a, b) {
             return { x: a.x - b.x, y: a.y - b.y };
+        };
+        Vec.mul = function (a, b) {
+            return { x: b * a.x, y: b * a.y };
         };
         return Vec;
     })();

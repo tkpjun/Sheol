@@ -30,6 +30,11 @@
         return cell !== " " && entitiesOK;
     }
 
+    export function lightPasses(loc: IVector2, level: Dungeon.Level): boolean {
+        var cell = level.map[loc.x + "," + loc.y];
+        return cell !== " ";
+    }
+
     export function diagonalNbors(loc: IVector2, neighbor: IVector2): boolean {
         if (Math.abs(loc.x - neighbor.x) == 1 &&
             Math.abs(loc.y - neighbor.y) == 1) {
