@@ -39,8 +39,7 @@
         notify();
     }
 
-    export interface Tuple2<T, U> {
-        fst: T;
-        snd: U;
+    export function d20(): number {
+        return Math.ceil(ROT.RNG.getUniform() * 20)
     }
 }

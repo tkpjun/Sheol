@@ -56,7 +56,7 @@ module AsciiGame {
         addPath(path: Controllers.Path, offsetX: number, offsetY: number, maxAP?: number, excludeFirst?: boolean, color?: string): DrawableMatrix {
             if (!path) return this;
 
-            var nodes = path._nodes;
+            var nodes = path.nodes;
             var limited = path.limitedNodes();
             if (!color) color = "slateblue";
             if (excludeFirst) {

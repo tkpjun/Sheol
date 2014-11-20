@@ -122,9 +122,7 @@ module AsciiGame {
         getTextBoxButton(box: UI.TextBox): DrawableMatrix{
             this.alwaysInContext[0].dimensions.x = Settings.DisplayWidth - Settings.SidebarWidth - 3;
             var matrix = new DrawableMatrix(this.alwaysInContext[0].dimensions.x, 0, 3, box.height);
-            console.log("1")
             matrix.addOverlay(this.alwaysInContext[0].getMatrix());
-            console.log("2")
 
             if (box.height > 6) {
                 this.alwaysInContext[1].isVisible = true;

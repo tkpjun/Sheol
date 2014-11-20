@@ -65,14 +65,14 @@
             return matrix;
         }
 
-        whatIsAt(x: number, y: number, dim: Rect): Common.Tuple2<IElement, Rect> {
+        whatIsAt(x: number, y: number, dim: Rect): [IElement, Rect] {
             var space = dim.h - this.offset * (this.elements.length - 1) - 2 * this.offEnds;;
             var step = Math.floor(space / this.weights.reduce((x, y) => { return x + y }));
             var nextY = dim.y + this.offEnds;;
             for (var i = 0; this.indexIsVisible(i); i++) {
                 var rect = new Rect(dim.x, nextY, dim.w, step);
                 if (rect.isWithin(x, y)) {
-                    return { fst: this.elements[i], snd: rect };
+                    return [this.elements[i], rect];
                 }
                 nextY += this.offset;
                 nextY += this.weights[i] * step;

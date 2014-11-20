@@ -18,9 +18,9 @@
             this.attackDmg = attack.damage;
             this.critDmg = 0;
             this.attackMul = attack.multiplier;
-            this.hitRoll = Math.ceil(ROT.RNG.getUniform() * 20) + attack.hitSkill.value;
+            this.hitRoll = d20() + attack.hitSkill.value;
             this.defender = defender;
-            this.evadeRoll = Math.ceil(ROT.RNG.getUniform() * 20) + evadeSkill.value;
+            this.evadeRoll = d20() + evadeSkill.value;
             var modMul = this.attackMul;
             var modEvd = this.evadeRoll;
             var modHit = this.hitRoll;

@@ -4,10 +4,10 @@ module Common.Controllers {
     export class StraightPath extends Path {
         constructor(from: IVector2, to?: IVector2, lengthInAP?: number) {
             super();
-            this._lengthInAP = lengthInAP;
+            this.lengthInAP = lengthInAP;
             this.begin = from;
-            this._nodes.push(from);
-            this._costs.push(0);
+            this.nodes.push(from);
+            this.costs.push(0);
 
             if (to) {               
                 this.pointer = to;
@@ -18,8 +18,8 @@ module Common.Controllers {
         }
 
         connect(passableFn: (x: number, y: number) => boolean) {
-            this._nodes.length = 0;
-            this._costs.length = 0;
+            this.nodes.length = 0;
+            this.costs.length = 0;
 
             this.createPath(passableFn, this.begin, this.pointer);
             this.updateCosts();
@@ -27,7 +27,7 @@ module Common.Controllers {
 
         private createPath(passableFn: (x: number, y: number) => boolean, from: IVector2, to: IVector2) {
             var last = from;
-            this._nodes.push(last);
+            this.nodes.push(last);
             var k = (to.y - from.y) / (to.x - from.x);
             //console.log(k);
             var addition = Math.min(1, Math.abs(1 / k));
@@ -50,12 +50,12 @@ module Common.Controllers {
                 }
 
                 if (Math.round(next.x) !== Math.round(last.x) || Math.round(next.y) !== Math.round(last.y))
-                    this._nodes.push({x: Math.round(next.x), y: Math.round(next.y)});
+                    this.nodes.push({x: Math.round(next.x), y: Math.round(next.y)});
 
                 last = next;
             }
             var condition = () => {
-                if (!passableFn(this._nodes[this._nodes.length - 1].x, this._nodes[this._nodes.length - 1].y))
+                if (!passableFn(this.nodes[this.nodes.length - 1].x, this.nodes[this.nodes.length - 1].y))
                     return false;
 
                 if (k == Infinity) {

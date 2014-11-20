@@ -20,11 +20,11 @@
 
         whatIsAt(x: number, y: number): IElement {
             if (this.isVisible && this.dimensions.isWithin(x, y)) {
-                var next = { fst: this.element, snd: this.dimensions };
-                var last = next.fst;
+                var next: [IElement, Rect] = [this.element, this.dimensions];
+                var last = next[0];
                 while (next) {
-                    last = next.fst;
-                    next = next.fst.whatIsAt(x, y, next.snd);
+                    last = next[0];
+                    next = next[0].whatIsAt(x, y, next[1]);
                 }
                 return last;
             }
@@ -37,8 +37,8 @@
                 this.element.mouseOver();
                 var next = this.element.whatIsAt(x, y, this.dimensions);
                 while (next) {
-                    next.fst.mouseOver();
-                    next = next.fst.whatIsAt(x, y, next.snd);
+                    next[0].mouseOver();
+                    next = next[0].whatIsAt(x, y, next[1]);
                 }
                 return true;
             }
@@ -51,8 +51,8 @@
                 this.element.mouseDown();
                 var next = this.element.whatIsAt(x, y, this.dimensions);
                 while (next) {
-                    next.fst.mouseDown();
-                    next = next.fst.whatIsAt(x, y, next.snd);
+                    next[0].mouseDown();
+                    next = next[0].whatIsAt(x, y, next[1]);
                 }
                 return true;
             }
@@ -64,8 +64,8 @@
                 this.element.mouseUp();
                 var next = this.element.whatIsAt(x, y, this.dimensions);
                 while (next) {
-                    next.fst.mouseUp();
-                    next = next.fst.whatIsAt(x, y, next.snd);
+                    next[0].mouseUp();
+                    next = next[0].whatIsAt(x, y, next[1]);
                 }
                 return true;
             }

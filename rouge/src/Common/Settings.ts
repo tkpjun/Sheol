@@ -8,5 +8,8 @@
         static get MapHeight(): number {
             return 32;
         }
+        static get MoveCost(): number {
+            return 2;
+        }
     }
 } 

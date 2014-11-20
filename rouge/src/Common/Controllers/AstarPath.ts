@@ -7,10 +7,10 @@ module Common.Controllers {
 
         constructor(from: IVector2, to?: IVector2, lengthInAP?: number) {
             super();
-            this._lengthInAP = lengthInAP;
+            this.lengthInAP = lengthInAP;
             this.begin = from;
-            this._nodes.push(from);
-            this._costs.push(0);
+            this.nodes.push(from);
+            this.costs.push(0);
 
             if (to) {               
                 this.pointer = to;
@@ -21,19 +21,19 @@ module Common.Controllers {
         }
 
         connect(passableFn: (x: number, y: number) => boolean) {
-            this._nodes.length = 0;
-            this._costs.length = 0;
+            this.nodes.length = 0;
+            this.costs.length = 0;
 
             this._astar = new ROT.Path.AStar(this.pointer.x, this.pointer.y, passableFn, { topology: 4 });
             this._astar.compute(this.begin.x, this.begin.y, (x, y) => {
-                this._nodes.push({ x: x, y: y });
+                this.nodes.push({ x: x, y: y });
             });
             //this.fixPath(passableFn);
             this.updateCosts();
 
             if (!passableFn(this.pointer.x, this.pointer.y)) {
-                this._nodes.pop();
-                this._costs.pop();
+                this.nodes.pop();
+                this.costs.pop();
             }
         }
     }

@@ -30,7 +30,7 @@
             return matrix;
         }
 
-        whatIsAt(x: number, y: number): Common.Tuple2<IElement, Rect> {
+        whatIsAt(x: number, y: number): [IElement, Rect] {
             return null;
         }
 

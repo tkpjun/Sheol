@@ -19,7 +19,7 @@
             //GameUI.init();
 
             var resize = () => {
-                var size = this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight);
+                var size = this.display.computeFontSize(Number.MAX_VALUE, window.innerHeight - 3);
                 this.display.setOptions({ fontSize: size });
 
                 while (this.display.computeFontSize(window.innerWidth, Number.MAX_VALUE) >= size) {

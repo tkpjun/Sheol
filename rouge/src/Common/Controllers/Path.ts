@@ -2,20 +2,20 @@
 
     export class Path {
 
-        _nodes: Array<IVector2>;
-        _costs: Array<number>;
-        _lengthInAP: number;
+        nodes: Array<IVector2>;
+        protected costs: Array<number>;
+        protected lengthInAP: number;
         pointer: IVector2;
         begin: IVector2;
 
         constructor() {
-            this._nodes = new Array<IVector2>();
-            this._costs = new Array<number>();
-            this._costs.push(0);
+            this.nodes = new Array<IVector2>();
+            this.costs = new Array<number>();
+            this.costs.push(0);
         }
 
         cost(): number {
-            return this._costs.reduce((x, y) => x+y);
+            return this.costs.reduce((x, y) => x+y);
         }
 
         connect(passableFn: (x: number, y: number) => boolean) {
@@ -23,66 +23,66 @@
         }
 
         disconnect() {
-            this._nodes.length = 1;
-            this._costs.length = 1;
+            this.nodes.length = 1;
+            this.costs.length = 1;
         }
 
         isConnected(): boolean {
-            return this._nodes.length > 1;
+            return this.nodes.length > 1;
         }
 
         limitedNodes(ap?: number): Array<IVector2> {
             var newAP;
             if (ap) newAP = ap;
-            else newAP = this._lengthInAP;
+            else newAP = this.lengthInAP;
 
             if (newAP || newAP == 0) {
                 var arr = new Array<IVector2>();
                 var cost = 0;
-                for (var i = 0; i < this._nodes.length; i++) {
-                    if (cost + this._costs[i] > newAP) {
+                for (var i = 0; i < this.nodes.length; i++) {
+                    if (cost + this.costs[i] > newAP) {
                         break;
                     }
 
-                    arr.push(this._nodes[i]);
-                    cost += this._costs[i];
+                    arr.push(this.nodes[i]);
+                    cost += this.costs[i];
                 }
                 return arr;
             }
-            else return this._nodes;
+            else return this.nodes;
         }
 
         trim(ap?: number): Path {
-            this._nodes = this.limitedNodes(ap);
-            this._costs.length = this._nodes.length;
-            if (this._nodes.length > 0) {
-                this.pointer.x = this._nodes[this._nodes.length - 1].x;
-                this.pointer.y = this._nodes[this._nodes.length - 1].y;
+            this.nodes = this.limitedNodes(ap);
+            this.costs.length = this.nodes.length;
+            if (this.nodes.length > 0) {
+                this.pointer.x = this.nodes[this.nodes.length - 1].x;
+                this.pointer.y = this.nodes[this.nodes.length - 1].y;
             }
             else {
-                this._nodes[0] = this.begin;
-                this._costs[0] = 0;
+                this.nodes[0] = this.begin;
+                this.costs[0] = 0;
                 this.pointer = this.begin;
             }
             return this;
         }
 
         updateCosts() {
-            var arr = this._nodes;
-            this._costs = new Array<number>();
-            this._costs.push(0);
+            var arr = this.nodes;
+            this.costs = new Array<number>();
+            this.costs.push(0);
             for (var i = 0; i < arr.length - 1; i++) {
                 if (!arr[i + 1]) break;
 
-                this._costs.push(this.calculateCost(arr[i], arr[i + 1]));
+                this.costs.push(this.calculateCost(arr[i], arr[i + 1]));
             }
         }
 
         private calculateCost(n1: IVector2, n2: IVector2): number {
             if (diagonalNbors(n1, n2)) {
-                return 3;
+                return Settings.MoveCost + 1;
             }
-            else return 2;
+            else return Settings.MoveCost;
         }
 
     }
