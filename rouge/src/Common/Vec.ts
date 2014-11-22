@@ -26,6 +26,10 @@
             return { x: -1, y: 1 };
         }
 
+        static isEqual(a: IVector2, b: IVector2) {
+            return a.x == b.x && a.y == b.y;
+        }
+
         static add(a: IVector2, b: IVector2): IVector2 {
             return { x: a.x + b.x, y: a.y + b.y };
         }

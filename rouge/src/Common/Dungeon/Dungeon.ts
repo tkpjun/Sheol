@@ -12,12 +12,12 @@
 
         switch(type) {
             case MapTypes.Mines:
-                map = new ROT.Map.Digger(200, Settings.MapHeight, {
+                map = new ROT.Map.Digger(100, Settings.MapHeight, {
                     dugPercentage: 0.55,
                     roomWidth: [4, 9],
                     roomHeight: [3, 7],
                     corridorLength: [1, 5],
-                    timeLimit: 1000
+                    timeLimit: 3000
                 });
                 break;
         }

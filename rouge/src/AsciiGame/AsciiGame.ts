@@ -82,4 +82,10 @@ module AsciiGame {
 
         return arr;
     }
+
+    export function mixColors(back: string, front: string, alpha: number): string {
+        if (!back) back = "black";
+        if (!front) front = "black";
+        return ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(back), ROT.Color.fromString(front), alpha)));
+    }
 }

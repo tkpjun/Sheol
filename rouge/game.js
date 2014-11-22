@@ -105,6 +105,14 @@ var AsciiGame;
         return arr;
     }
     AsciiGame.wrapString = wrapString;
+    function mixColors(back, front, alpha) {
+        if (!back)
+            back = "black";
+        if (!front)
+            front = "black";
+        return ROT.Color.toRGB((ROT.Color.interpolate(ROT.Color.fromString(back), ROT.Color.fromString(front), alpha)));
+    }
+    AsciiGame.mixColors = mixColors;
 })(AsciiGame || (AsciiGame = {}));
 var Common;
 (function (Common) {
@@ -121,12 +129,12 @@ var Common;
             var map;
             switch (type) {
                 case 0 /* Mines */:
-                    map = new ROT.Map.Digger(200, Common.Settings.MapHeight, {
+                    map = new ROT.Map.Digger(100, Common.Settings.MapHeight, {
                         dugPercentage: 0.55,
                         roomWidth: [4, 9],
                         roomHeight: [3, 7],
                         corridorLength: [1, 5],
-                        timeLimit: 1000
+                        timeLimit: 3000
                     });
                     break;
             }
@@ -259,7 +267,7 @@ var AsciiGame;
         Camera.prototype.addObjects = function (matrix, objects) {
             var _this = this;
             objects.forEach(function (o) {
-                if (o.x < _this.x || o.y < _this.y || o.x > _this.x + _this.width - 1 || o.y > _this.y + _this.height - 1) {
+                if (!_this.isWithinBounds(o.x, o.y)) {
                 }
                 else {
                     var d = AsciiGame.getDrawableO(o);
@@ -272,17 +280,30 @@ var AsciiGame;
         Camera.prototype.addEntities = function (matrix, entities) {
             var _this = this;
             entities.forEach(function (e) {
-                if (e.x < _this.x || e.y < _this.y || e.x > _this.x + _this.width - 1 || e.y > _this.y + _this.height - 1) {
+                if (!_this.isWithinBounds(e.x, e.y)) {
                 }
                 else {
                     var d = AsciiGame.getDrawableE(e);
                     matrix.matrix[e.x - _this.x][e.y - _this.y].symbol = d.symbol;
                     matrix.matrix[e.x - _this.x][e.y - _this.y].color = d.color;
-                    if (matrix.matrix[e.x + e.dir.x - _this.x])
-                        matrix.matrix[e.x + e.dir.x - _this.x][e.y + e.dir.y - _this.y].bgColor = "tan";
+                    if (matrix.matrix[e.x + e.dir.x - _this.x]) {
+                        if (!e.fov) {
+                            matrix.matrix[e.x + e.dir.x - _this.x][e.y + e.dir.y - _this.y].bgColor = "tan";
+                        }
+                        else {
+                            e.fov.forEach(function (cell) {
+                                if (_this.isWithinBounds(cell.x, cell.y)) {
+                                    matrix.matrix[cell.x - _this.x][cell.y - _this.y].bgColor = AsciiGame.mixColors(matrix.matrix[cell.x - _this.x][cell.y - _this.y].bgColor, "orange", 0.15);
+                                }
+                            });
+                        }
+                    }
                 }
             });
             return matrix;
+        };
+        Camera.prototype.isWithinBounds = function (x, y) {
+            return !(x < this.x || y < this.y || x > this.x + this.width - 1 || y > this.y + this.height - 1);
         };
         return Camera;
     })();
@@ -1706,37 +1727,99 @@ var Common;
             BasicAI.prototype.activate = function (entity) {
                 var _this = this;
                 if (this.state == 2 /* Inactive */) {
-                    this.entity = entity;
+                    this.char = entity;
                     this.callback = function (x, y) {
-                        return Controllers.isPassable(_this.entity, { x: x, y: y }, _this.manager.level);
+                        return Controllers.isPassable(_this.char, { x: x, y: y }, _this.manager.level);
                     };
                     this.lvl = this.manager.level;
                     this.state = 0 /* Move */;
-                    this.manager.currPath.unwrap = new Controllers.AstarPath({ x: this.entity.x, y: this.entity.y }, null, this.entity.stats.ap);
+                    this.manager.currPath.unwrap = new Controllers.AstarPath({ x: this.char.x, y: this.char.y }, null, this.char.stats.ap);
+                    if (!this.char.fov || this.char.state != 0 /* Inattentive */) {
+                        this.updateFov();
+                    }
                     var target = this.chooseTarget(this.findSeenEntities());
                     if (target) {
                         //TODO
-                        console.log("Found target: " + target.name);
-                        this.endTurn();
+                        console.log(this.char.name + " is hunting " + target.name);
+                        this.char.state = 2 /* Hunting */;
                     }
-                    else {
-                        var loc = Common.Vec.add({ x: this.entity.x, y: this.entity.y }, Common.Vec.mul(this.entity.dir, 5));
-                        this.moveTo(loc);
-                        this.endTurn();
+                    else if (this.char.state == 2 /* Hunting */) {
+                        console.log(this.char.name + " is searching for something");
+                        this.char.state = 1 /* Awake */;
                     }
+                    if (this.char.state == 2 /* Hunting */) {
+                        this.moveTo(this.closestTileNextTo(target.x, target.y));
+                    }
+                    if (this.char.state == 1 /* Awake */) {
+                        this.moveTo(this.randomMovableTile());
+                    }
+                    this.endTurn();
                 }
             };
-            BasicAI.prototype.findSeenEntities = function () {
+            BasicAI.prototype.randomMovableTile = function () {
+                var _this = this;
+                var fov = new ROT.FOV.RecursiveShadowcasting(function (x, y) {
+                    return Controllers.lightPasses({ x: x, y: y }, _this.lvl);
+                }, { topology: 4 });
+                var moves = Math.floor(this.char.stats.ap / 2);
+                var possible = new Array();
+                fov.compute180(this.char.x, this.char.y, moves, this.dirIntoNumber(this.char.dir), function (x, y, r, visibility) {
+                    possible.push({ x: x, y: y });
+                });
+                possible.filter(function (cell) {
+                    return _this.callback(cell.x, cell.y);
+                });
+                return possible[ROT.RNG.getUniformInt(0, possible.length - 1)];
+            };
+            BasicAI.prototype.closestTileNextTo = function (x, y) {
+                var cx = this.char.x;
+                var cy = this.char.y;
+                var tx = x;
+                var ty = y;
+                if (cx < x)
+                    tx = x - 1;
+                if (cx > x)
+                    tx = x + 1;
+                if (cy < y)
+                    ty = y - 1;
+                if (cy > y)
+                    ty = y + 1;
+                return { x: tx, y: ty };
+            };
+            BasicAI.prototype.updateFov = function (char) {
+                if (!char)
+                    char = this.char;
                 var level = this.lvl;
                 var fov = new ROT.FOV.RecursiveShadowcasting(function (x, y) {
                     return Controllers.lightPasses({ x: x, y: y }, level);
-                });
+                }, { topology: 4 });
                 var seen = new Array();
-                fov.compute90(this.entity.x, this.entity.y, 8, 6, function (x, y, r, visibility) {
-                    seen.push({ x: x, y: y });
-                });
+                var res = {}; //Without this step the seen array has duplicates in it
+                switch (this.char.state) {
+                    case 2 /* Hunting */:
+                        fov.compute(char.x, char.y, 5, function (x, y, r, visibility) {
+                            //seen.push({x:x, y:y});
+                            res[x + "," + y] = x + "," + y;
+                        });
+                        break;
+                    default:
+                        fov.compute90(char.x, char.y, 5, this.dirIntoNumber(this.char.dir), function (x, y, r, visibility) {
+                            //seen.push({x:x, y:y});
+                            res[x + "," + y] = x + "," + y;
+                        });
+                        break;
+                }
+                delete res[char.x + "," + char.y];
+                for (var key in res) {
+                    var xy = key.split(",");
+                    seen.push({ x: xy[0], y: xy[1] });
+                }
+                this.char.fov = seen;
+            };
+            BasicAI.prototype.findSeenEntities = function () {
+                var _this = this;
                 return this.lvl.entities.filter(function (e) {
-                    return seen.some(function (value, index, array) {
+                    return _this.char.fov.some(function (value, index, array) {
                         return value.x == e.x && value.y == e.y;
                     });
                 });
@@ -1751,16 +1834,18 @@ var Common;
                     return null;
             };
             BasicAI.prototype.moveTo = function (target) {
+                var t = this;
                 var m = this.manager;
                 var path = m.currPath.unwrap;
                 path.pointer = target;
                 path.connect(this.callback);
-                var e = this.entity;
+                var e = this.char;
                 function nextStep(i, last, callback) {
                     return function () {
                         e.dir = Common.Vec.sub(path.nodes[i], { x: e.x, y: e.y });
                         e.x = path.nodes[i].x;
                         e.y = path.nodes[i].y;
+                        t.updateFov(e);
                         m.currPath.unwrap = path; //dumb way to redraw screen
                         if (last) {
                             var p = new Controllers.AstarPath({ x: e.x, y: e.y }, target, e.stats.ap);
@@ -1771,21 +1856,33 @@ var Common;
                 }
                 for (var i = 1; i < path.nodes.length; i++) {
                     if (!(i + 1 < path.nodes.length)) {
-                        this.entity.addAction(nextStep(i, true, this.callback));
+                        this.char.addAction(nextStep(i, true, this.callback));
                     }
                     else
-                        this.entity.addAction(nextStep(i));
+                        this.char.addAction(nextStep(i));
                 }
             };
             BasicAI.prototype.attackTo = function (x, y) {
             };
             BasicAI.prototype.endTurn = function () {
                 var _this = this;
-                this.entity.addAction(function () {
-                    _this.entity._hasTurn = false;
+                this.char.addAction(function () {
+                    _this.char._hasTurn = false;
                     _this.state = 2 /* Inactive */;
                     _this.manager.currPath.unwrap = null;
                 });
+            };
+            BasicAI.prototype.dirIntoNumber = function (dir) {
+                if (Common.Vec.isEqual(dir, Common.Vec.North))
+                    return 0;
+                else if (Common.Vec.isEqual(dir, Common.Vec.East))
+                    return 2;
+                else if (Common.Vec.isEqual(dir, Common.Vec.South))
+                    return 4;
+                else if (Common.Vec.isEqual(dir, Common.Vec.West))
+                    return 6;
+                else
+                    throw ("Unimplemented direction!");
             };
             return BasicAI;
         })();
@@ -2458,6 +2555,12 @@ var Common;
 (function (Common) {
     var Entities;
     (function (Entities) {
+        (function (EnemyState) {
+            EnemyState[EnemyState["Inattentive"] = 0] = "Inattentive";
+            EnemyState[EnemyState["Awake"] = 1] = "Awake";
+            EnemyState[EnemyState["Hunting"] = 2] = "Hunting";
+        })(Entities.EnemyState || (Entities.EnemyState = {}));
+        var EnemyState = Entities.EnemyState;
         var Enemy = (function (_super) {
             __extends(Enemy, _super);
             function Enemy(name, stats, skills, traits) {
@@ -2473,6 +2576,7 @@ var Common;
                 this.stats = stats;
                 this._hasTurn = true;
                 this.dir = Common.Vec.West;
+                this.state = 0 /* Inattentive */;
             }
             Enemy.prototype.hasAP = function () {
                 return this.stats.ap > 0;
@@ -3315,6 +3419,9 @@ var Common;
             enumerable: true,
             configurable: true
         });
+        Vec.isEqual = function (a, b) {
+            return a.x == b.x && a.y == b.y;
+        };
         Vec.add = function (a, b) {
             return { x: a.x + b.x, y: a.y + b.y };
         };

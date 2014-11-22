@@ -1,11 +1,16 @@
 ﻿///<reference path="Entity.ts"/>
 module Common.Entities {
 
+    export enum EnemyState {
+        Inattentive, Awake, Hunting
+    }
+
     export class Enemy extends Entity {
 
         equipment: any;
         effects: any;
-        _hasTurn: boolean;
+        _hasTurn: boolean;     
+        state: EnemyState;
 
         constructor(name: string, stats: Statset, skills?: Skillset, traits?: Trait[]) {
             super(name);
@@ -20,6 +25,7 @@ module Common.Entities {
             this.stats = stats;               
             this._hasTurn = true;
             this.dir = Vec.West;
+            this.state = EnemyState.Inattentive;
         }
 
         hasAP(): boolean {

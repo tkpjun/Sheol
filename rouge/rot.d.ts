@@ -70,6 +70,7 @@
         static getSeed(): number;
         static getState();
         static getUniform(): number;
+        static getUniformInt(lowerBound: number, upperBound: number): number;
         static getWeightedValue(data: any): string;
         static setSeed(seed: number);
         static setState(state);

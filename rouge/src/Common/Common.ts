@@ -7,6 +7,7 @@
 
     export interface IEntity{
         name: string;
+        fov: Array<IVector2>;
         description: string;
         x: number;
         y: number;

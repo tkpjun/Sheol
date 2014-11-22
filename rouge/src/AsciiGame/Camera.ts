@@ -102,7 +102,7 @@ module AsciiGame {
 
         private addObjects(matrix: DrawableMatrix, objects: Array<C.IObject>): DrawableMatrix {
             objects.forEach((o) => {
-                if (o.x < this.x || o.y < this.y || o.x > this.x + this.width - 1 || o.y > this.y + this.height - 1) {
+                if (!this.isWithinBounds(o.x, o.y)) {
 
                 }
                 else {
@@ -117,19 +117,33 @@ module AsciiGame {
         private addEntities(matrix: DrawableMatrix, entities: Array<C.IEntity>): DrawableMatrix {
 
             entities.forEach((e) => {
-                if (e.x < this.x || e.y < this.y || e.x > this.x + this.width - 1 || e.y > this.y + this.height - 1) {
+                if (!this.isWithinBounds(e.x, e.y)) {
 
                 }
                 else {
                     var d = getDrawableE(e);
                     matrix.matrix[e.x - this.x][e.y - this.y].symbol = d.symbol;
                     matrix.matrix[e.x - this.x][e.y - this.y].color = d.color;
-                    if (matrix.matrix[e.x + e.dir.x - this.x])
+                if (matrix.matrix[e.x + e.dir.x - this.x]) {
+                    if (!e.fov) {
                         matrix.matrix[e.x + e.dir.x - this.x][e.y + e.dir.y - this.y].bgColor = "tan";
+                    }
+                    else {
+                        e.fov.forEach((cell) => {
+                            if (this.isWithinBounds(cell.x, cell.y)) {
+                                matrix.matrix[cell.x - this.x][cell.y - this.y].bgColor = mixColors(
+                                    matrix.matrix[cell.x - this.x][cell.y - this.y].bgColor, "orange", 0.15);
+                            }
+                        });
+                    }
+                }
                 }
             })
             return matrix;
         }
 
+        private isWithinBounds(x, y) {
+            return !(x < this.x || y < this.y || x > this.x + this.width - 1 || y > this.y + this.height - 1)
+        }
     }
 }

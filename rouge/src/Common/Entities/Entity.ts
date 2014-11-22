@@ -13,6 +13,7 @@
         private actionQueue: Array<() => void>;
         dir: IVector2;
         currWeapon: Items.Weapon;
+        fov: Array<IVector2>;
 
         constructor(name: string) {
             this.name = name;
