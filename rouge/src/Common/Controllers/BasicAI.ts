@@ -28,23 +28,26 @@
                 }
                 var target = this.chooseTarget(this.findSeenEntities());
                 if (target) {
-                    //TODO
-                    console.log(this.char.name + " is hunting " + target.name);
-                    this.char.state = Entities.EnemyState.Hunting;
-                }
-                else if (this.char.state == Entities.EnemyState.Hunting) {
-                    console.log(this.char.name + " is searching for something");
-                    this.char.state = Entities.EnemyState.Awake
+                    this.goHunting(this.char, target);
                 }
 
-                if (this.char.state == Entities.EnemyState.Hunting) {
+                if (this.char.state == Entities.EnemyState.Hunting && target) {
                     this.moveTo(this.closestTileNextTo(target.x, target.y));
                 }
-                if (this.char.state == Entities.EnemyState.Awake) {
+                else if (!target && this.char.state != Entities.EnemyState.Inattentive) {
                     this.moveTo(this.randomMovableTile());
                 }
                 this.endTurn();
             }
+        }
+
+        private goAwake(char) {
+            console.log(char.name + " is searching for something");
+            this.char.state = Entities.EnemyState.Awake;
+        }
+        private goHunting(char, target: IEntity) {
+            console.log(char.name + " is hunting " + target.name);
+            this.char.state = Entities.EnemyState.Hunting;
         }
 
         private randomMovableTile(): IVector2 {
@@ -70,7 +73,7 @@
             return {x:tx, y:ty};
         }
 
-        private updateFov(char?) {
+        private updateFov(char?: Entities.Enemy) {
             if (!char) char = this.char;
             var level = this.lvl;
             var fov = new ROT.FOV.RecursiveShadowcasting((x, y) => { return lightPasses({ x: x, y: y }, level) }, {topology: 4});
@@ -96,12 +99,14 @@
                 var xy = key.split(",");
                 seen.push({ x: xy[0], y: xy[1] });
             }
+            seen.push({x: char.x + char.dir.x, y: char.y + char.dir.y});
             this.char.fov = seen;
         }
 
-        private findSeenEntities(): IEntity[] {          
+        private findSeenEntities(char?): IEntity[]{  
+            if (!char) char = this.char;        
             return this.lvl.entities.filter((e) => {
-                return this.char.fov.some((value, index, array) => {
+                return char.fov.some((value, index, array) => {
                     return value.x == e.x && value.y == e.y
                 })
             });
@@ -122,6 +127,10 @@
             path.pointer = target;
             path.connect(this.callback);
             var e = this.char;
+            var moves = e.requestMoves(Settings.MoveCost, path.nodes.length);
+            function bool(i) {
+                return i < path.nodes.length && i <= moves
+            }
 
             function nextStep(i, last?, callback?) {
                 return () => {
@@ -131,13 +140,19 @@
                     t.updateFov(e);
                     m.currPath.unwrap = path; //dumb way to redraw screen
                     if (last) {
+                        if (t.findSeenEntities(e).length == 0) {
+                            console.log("Ding");
+                            t.goAwake(e);
+                            t.updateFov(e);
+                        }
+
                         var p = new AstarPath({ x: e.x, y: e.y }, target, e.stats.ap);
                         p.connect(callback);
                         m.currPath.unwrap = p;
                     }
                 }
             }
-            for (var i = 1; i < path.nodes.length; i++) {
+            for (var i = 1; bool(i); i++) {
                 if (!(i + 1 < path.nodes.length)) {
                     this.char.addAction(nextStep(i, true, this.callback))
                 }

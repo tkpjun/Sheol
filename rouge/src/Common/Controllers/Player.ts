@@ -248,6 +248,10 @@
                                     this.con.addLine(result.defender.name.substring(0, 1).toUpperCase() + result.defender.name.substring(1) + " was struck down!");
                                     this.manager.kill(result.defender);
                                 }
+                                else if(result.defender instanceof Entities.Enemy) {
+                                    var e = <Entities.Enemy>result.defender;
+                                    e.state = Entities.EnemyState.Hunting;
+                                }
                             }
                             path.pointer = ptr;
                             path.connect(this.callback);

@@ -1739,22 +1739,24 @@ var Common;
                     }
                     var target = this.chooseTarget(this.findSeenEntities());
                     if (target) {
-                        //TODO
-                        console.log(this.char.name + " is hunting " + target.name);
-                        this.char.state = 2 /* Hunting */;
+                        this.goHunting(this.char, target);
                     }
-                    else if (this.char.state == 2 /* Hunting */) {
-                        console.log(this.char.name + " is searching for something");
-                        this.char.state = 1 /* Awake */;
-                    }
-                    if (this.char.state == 2 /* Hunting */) {
+                    if (this.char.state == 2 /* Hunting */ && target) {
                         this.moveTo(this.closestTileNextTo(target.x, target.y));
                     }
-                    if (this.char.state == 1 /* Awake */) {
+                    else if (!target && this.char.state != 0 /* Inattentive */) {
                         this.moveTo(this.randomMovableTile());
                     }
                     this.endTurn();
                 }
+            };
+            BasicAI.prototype.goAwake = function (char) {
+                console.log(char.name + " is searching for something");
+                this.char.state = 1 /* Awake */;
+            };
+            BasicAI.prototype.goHunting = function (char, target) {
+                console.log(char.name + " is hunting " + target.name);
+                this.char.state = 2 /* Hunting */;
             };
             BasicAI.prototype.randomMovableTile = function () {
                 var _this = this;
@@ -1814,12 +1816,14 @@ var Common;
                     var xy = key.split(",");
                     seen.push({ x: xy[0], y: xy[1] });
                 }
+                seen.push({ x: char.x + char.dir.x, y: char.y + char.dir.y });
                 this.char.fov = seen;
             };
-            BasicAI.prototype.findSeenEntities = function () {
-                var _this = this;
+            BasicAI.prototype.findSeenEntities = function (char) {
+                if (!char)
+                    char = this.char;
                 return this.lvl.entities.filter(function (e) {
-                    return _this.char.fov.some(function (value, index, array) {
+                    return char.fov.some(function (value, index, array) {
                         return value.x == e.x && value.y == e.y;
                     });
                 });
@@ -1840,6 +1844,10 @@ var Common;
                 path.pointer = target;
                 path.connect(this.callback);
                 var e = this.char;
+                var moves = e.requestMoves(Common.Settings.MoveCost, path.nodes.length);
+                function bool(i) {
+                    return i < path.nodes.length && i <= moves;
+                }
                 function nextStep(i, last, callback) {
                     return function () {
                         e.dir = Common.Vec.sub(path.nodes[i], { x: e.x, y: e.y });
@@ -1848,13 +1856,18 @@ var Common;
                         t.updateFov(e);
                         m.currPath.unwrap = path; //dumb way to redraw screen
                         if (last) {
+                            if (t.findSeenEntities(e).length == 0) {
+                                console.log("Ding");
+                                t.goAwake(e);
+                                t.updateFov(e);
+                            }
                             var p = new Controllers.AstarPath({ x: e.x, y: e.y }, target, e.stats.ap);
                             p.connect(callback);
                             m.currPath.unwrap = p;
                         }
                     };
                 }
-                for (var i = 1; i < path.nodes.length; i++) {
+                for (var i = 1; bool(i); i++) {
                     if (!(i + 1 < path.nodes.length)) {
                         this.char.addAction(nextStep(i, true, this.callback));
                     }
@@ -2239,6 +2252,10 @@ var Common;
                                     if (result.fatal) {
                                         _this.con.addLine(result.defender.name.substring(0, 1).toUpperCase() + result.defender.name.substring(1) + " was struck down!");
                                         _this.manager.kill(result.defender);
+                                    }
+                                    else if (result.defender instanceof Common.Entities.Enemy) {
+                                        var e = result.defender;
+                                        e.state = 2 /* Hunting */;
                                     }
                                 }
                                 path.pointer = ptr;
